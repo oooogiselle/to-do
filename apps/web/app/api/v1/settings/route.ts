@@ -9,10 +9,13 @@ export const GET = route(async (_req, { supabase, user }) => {
   const settings = unwrap(await supabase.from("settings").select(COLUMNS).single());
   const { data: google } = await adminClient()
     .from("google_accounts")
-    .select("email")
+    .select("email, needs_reconnect")
     .eq("user_id", user.id)
-    .maybeSingle<{ email: string }>();
-  return { settings, google: google ? { email: google.email } : null };
+    .maybeSingle<{ email: string; needs_reconnect: boolean }>();
+  return {
+    settings,
+    google: google ? { email: google.email, needs_reconnect: google.needs_reconnect } : null,
+  };
 });
 
 export const PATCH = route(async (req, { supabase, user }) => {

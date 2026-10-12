@@ -26,7 +26,7 @@ import type {
 
 export type SettingsResponse = {
   settings: Settings;
-  google: { email: string } | null;
+  google: { email: string; needs_reconnect: boolean } | null;
 };
 export type TaskDetail = Task & { steps: Step[]; time_blocks: TimeBlock[] };
 

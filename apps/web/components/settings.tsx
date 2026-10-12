@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { WorkingHours } from "@tt/shared";
 import { api } from "@/lib/client/api";
 import { keys, useCalendars, useSettings, useUpdateSettings } from "@/lib/client/data";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 const GOOGLE_MESSAGES: Record<string, string> = {
   connected: "Google Calendar connected. Your calendars are syncing now.",
@@ -61,12 +62,16 @@ export function SettingsView() {
 
         <Section title="Google account">
           <div className="flex flex-wrap items-center gap-3">
-            <span className={google ? "" : "text-muted"}>
-              {google ? `Connected as ${google.email}` : "Not connected"}
+            <span className={google?.needs_reconnect ? "text-warn" : google ? "" : "text-muted"}>
+              {google?.needs_reconnect
+                ? `Access for ${google.email} expired. Reconnect to keep your calendar in sync.`
+                : google
+                  ? `Connected as ${google.email}`
+                  : "Not connected"}
             </span>
             <a
               href="/api/google/connect"
-              className="rounded-md border border-line-strong px-3 py-1.5 hover:border-ink"
+              className={`rounded-md px-3 py-1.5 ${google?.needs_reconnect ? "bg-ink text-paper hover:opacity-90" : "border border-line-strong hover:border-ink"}`}
             >
               {google ? "Reconnect" : "Connect Google Calendar"}
             </a>
@@ -105,6 +110,21 @@ export function SettingsView() {
         {updateSettings.isError && (
           <p className="text-risk">Couldn&apos;t save: {updateSettings.error.message}</p>
         )}
+
+        <div className="flex items-center gap-4 pb-6">
+          <button
+            onClick={async () => {
+              await createBrowserSupabase().auth.signOut();
+              window.location.assign("/login");
+            }}
+            className="rounded-md border border-line-strong px-3 py-1.5 hover:border-ink"
+          >
+            Sign out
+          </button>
+          <a href="/privacy" className="text-muted underline hover:text-ink">
+            Privacy
+          </a>
+        </div>
       </div>
     </div>
   );

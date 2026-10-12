@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
       email: info.email ?? "",
       refresh_token_enc: encrypt(tokens.refresh_token),
       scopes: tokens.scope ?? "",
+      needs_reconnect: false,
     });
   if (error) throw new Error(error.message);
 

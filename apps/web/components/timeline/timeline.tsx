@@ -282,7 +282,18 @@ function Header(props: {
 
 function ConnectBanner() {
   const { data } = useSettings();
-  if (!data || data.google) return null;
+  if (!data) return null;
+  if (data.google?.needs_reconnect) {
+    return (
+      <p className="border-b border-warn/40 bg-warn-bg px-4 py-2 text-warn">
+        Google Calendar access expired, so events aren&apos;t updating.{" "}
+        <a href="/api/google/connect" className="font-medium underline">
+          Reconnect
+        </a>
+      </p>
+    );
+  }
+  if (data.google) return null;
   return (
     <p className="border-b border-line bg-surface px-4 py-2 text-muted">
       Your calendar isn&apos;t connected yet.{" "}
