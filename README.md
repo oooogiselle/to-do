@@ -8,6 +8,12 @@ Plan: phases 1–5 (backend → web timeline → AI + scheduling → iOS → off
 - `packages/shared`: zod schemas, generated DB types, timezone helpers
 - `supabase/`: migrations and local config
 
+## Try it without Google (demo mode)
+With Docker running: `pnpm install && pnpm db:start`, then `pnpm demo`. This resets the local
+database, seeds a sample week, and starts the app at http://localhost:3000. Choose
+"Use demo account" on the sign-in page. Refresh and calendar toggles need a real Google
+connection, so they won't work in the demo.
+
 ## Local setup
 1. `pnpm install`
 2. Create a Google OAuth client (Web application) with the Calendar API enabled. Add redirect URIs

@@ -10,7 +10,8 @@
     "typecheck": "turbo run typecheck",
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
-    "db:types": "supabase gen types typescript --local > packages/shared/src/db.ts"
+    "db:types": "supabase gen types typescript --local > packages/shared/src/db.ts",
+    "demo": "node scripts/demo.mjs && cd apps/web && ALLOWED_EMAIL=demo@example.com NEXT_PUBLIC_DEMO=1 pnpm dev"
   },
   "devDependencies": {
     "prettier": "^3.3.3",
