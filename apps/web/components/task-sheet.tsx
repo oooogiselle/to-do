@@ -183,6 +183,9 @@ export function TaskSheet({ taskId, onClose }: { taskId: string; onClose: () => 
         </div>
 
         <NotesField task={task} onCommit={(notes) => update({ notes })} />
+        {task.source_quote && (
+          <p className="text-xs text-muted">From your import: “{task.source_quote}”</p>
+        )}
 
         <StepsEditor taskId={task.id} steps={steps} disabled={saving} />
 

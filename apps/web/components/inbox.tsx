@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { formatMinutes, type List, type Priority, type Task } from "@tt/shared";
 import { isTemp, useCreateList, useModel } from "@/lib/client/data";
 import { useCompletion } from "@/lib/client/completion";
@@ -47,6 +48,12 @@ export function Inbox() {
       <div className="mx-auto max-w-3xl px-4 py-5">
         <div className="mb-5 flex flex-wrap items-center gap-3">
           <h1 className="text-xl font-semibold tracking-tight">Inbox</h1>
+          <Link
+            href="/import"
+            className="rounded-md border border-line px-2.5 py-1 text-muted hover:border-line-strong hover:text-ink"
+          >
+            Import tasks
+          </Link>
           <div className="ml-auto flex items-center gap-3 text-muted">
             <label className="flex items-center gap-1.5">
               <input

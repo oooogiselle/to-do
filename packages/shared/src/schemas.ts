@@ -31,6 +31,9 @@ export const Task = z.object({
   priority: Priority,
   estimate_min: z.number().int().nullable(),
   status: TaskStatus,
+  /** Set when the task came from an AI import; source_quote is the text it came from. */
+  import_id: z.string().uuid().nullable(),
+  source_quote: z.string().nullable(),
 });
 export type Task = z.infer<typeof Task>;
 
@@ -77,7 +80,9 @@ export type Calendar = z.infer<typeof Calendar>;
 /** Working hours per weekday (0 = Sunday), as "HH:mm" local times. null = day off. */
 export const WorkingHours = z.record(
   z.enum(["0", "1", "2", "3", "4", "5", "6"]),
-  z.object({ start: z.string().regex(/^\d\d:\d\d$/), end: z.string().regex(/^\d\d:\d\d$/) }).nullable(),
+  z
+    .object({ start: z.string().regex(/^\d\d:\d\d$/), end: z.string().regex(/^\d\d:\d\d$/) })
+    .nullable(),
 );
 export type WorkingHours = z.infer<typeof WorkingHours>;
 

@@ -1,5 +1,11 @@
 import type { z } from "zod";
 import type {
+  ImportCommit,
+  ImportCommitResult,
+  SyllabusExtractionResult,
+  TextExtractionResult,
+} from "./import";
+import type {
   Calendar,
   EventsResponse,
   List,
@@ -61,34 +67,39 @@ export function createApiClient({ baseUrl, getToken, fetch: f = fetch }: Opts) {
     sync: (since?: string) =>
       call<SyncResponse>("GET", `/sync${since ? `?since=${encodeURIComponent(since)}` : ""}`),
     events: (from: Date, to: Date) =>
-      call<EventsResponse>(
-        "GET",
-        `/events?from=${from.toISOString()}&to=${to.toISOString()}`,
-      ),
+      call<EventsResponse>("GET", `/events?from=${from.toISOString()}&to=${to.toISOString()}`),
 
     createList: (body: z.infer<typeof ListCreate>) => call<List>("POST", "/lists", body),
-    updateList: (id: string, body: z.infer<typeof ListPatch>) => call<List>("PATCH", `/lists/${id}`, body),
+    updateList: (id: string, body: z.infer<typeof ListPatch>) =>
+      call<List>("PATCH", `/lists/${id}`, body),
     deleteList: (id: string) => call<void>("DELETE", `/lists/${id}`),
 
     task: (id: string) => call<TaskDetail>("GET", `/tasks/${id}`),
     createTask: (body: z.infer<typeof TaskCreate>) => call<Task>("POST", "/tasks", body),
-    updateTask: (id: string, body: z.infer<typeof TaskPatch>) => call<Task>("PATCH", `/tasks/${id}`, body),
+    updateTask: (id: string, body: z.infer<typeof TaskPatch>) =>
+      call<Task>("PATCH", `/tasks/${id}`, body),
     deleteTask: (id: string) => call<void>("DELETE", `/tasks/${id}`),
 
     createStep: (body: z.infer<typeof StepCreate>) => call<Step>("POST", "/steps", body),
-    updateStep: (id: string, body: z.infer<typeof StepPatch>) => call<Step>("PATCH", `/steps/${id}`, body),
+    updateStep: (id: string, body: z.infer<typeof StepPatch>) =>
+      call<Step>("PATCH", `/steps/${id}`, body),
     deleteStep: (id: string) => call<void>("DELETE", `/steps/${id}`),
 
     settings: () => call<SettingsResponse>("GET", "/settings"),
-    updateSettings: (body: z.infer<typeof SettingsPatch>) => call<Settings>("PATCH", "/settings", body),
+    updateSettings: (body: z.infer<typeof SettingsPatch>) =>
+      call<Settings>("PATCH", "/settings", body),
 
     calendars: () => call<Calendar[]>("GET", "/calendars"),
     setCalendarSelected: (id: string, selected: boolean) =>
       call<Calendar>("PATCH", `/calendars/${encodeURIComponent(id)}`, { selected }),
     refreshCalendars: () => call<{ ok: true; synced: number }>("POST", "/calendars/refresh"),
 
-    createTimeBlock: (body: { task_id: string; step_id?: string | null; start: string; end: string }) =>
-      call<TimeBlock>("POST", "/time-blocks", body),
+    createTimeBlock: (body: {
+      task_id: string;
+      step_id?: string | null;
+      start: string;
+      end: string;
+    }) => call<TimeBlock>("POST", "/time-blocks", body),
     moveTimeBlock: (id: string, body: { start: string; end: string }) =>
       call<TimeBlock>("PATCH", `/time-blocks/${id}`, body),
     deleteTimeBlock: (id: string) => call<void>("DELETE", `/time-blocks/${id}`),
@@ -97,6 +108,12 @@ export function createApiClient({ baseUrl, getToken, fetch: f = fetch }: Opts) {
 
     breakdown: (taskId: string, mode: "default" | "more_detailed" = "default") =>
       call<{ steps: ProposedStep[] }>("POST", `/tasks/${taskId}/breakdown`, { mode }),
+    extractText: (text: string) =>
+      call<TextExtractionResult>("POST", "/imports/extract-text", { text }),
+    extractSyllabus: (body: { text: string } | { storage_path: string; file_name?: string }) =>
+      call<SyllabusExtractionResult>("POST", "/imports/extract-syllabus", body),
+    commitImport: (body: ImportCommit) => call<ImportCommitResult>("POST", "/imports/commit", body),
+
     replaceSteps: (taskId: string, steps: ProposedStep[]) =>
       call<{ task: Task; steps: Step[] }>("PUT", `/tasks/${taskId}/steps`, { steps }),
   };

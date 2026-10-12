@@ -1,0 +1,27 @@
+CS 74: Algorithms — Fall 2026
+Instructor: Prof. R. Alvarez    Lectures: Mon/Wed 10:10–11:25, Kemeny 008
+
+GRADING
+Problem sets 40%, Midterm 1 15%, Midterm 2 15%, Final exam 30%.
+
+PROBLEM SETS
+Problem sets are due on Gradescope at 11:59pm on the dates below.
+  Problem Set 1 — Asymptotics and recurrences .......... due Fri, Sept 25
+  Problem Set 2 — Divide and conquer ................... due Fri, Oct 9
+  Problem Set 3 — Greedy algorithms .................... due Fri, Oct 23
+  Problem Set 4 — Dynamic programming .................. due Fri, Nov 6
+  Problem Set 5 — Graph algorithms ..................... due Fri, Nov 20
+  Problem Set 6 — NP-completeness ...................... due Fri, Dec 4
+
+EXAMS
+  Midterm 1: Thursday, October 15, 7:00–9:00pm, Filene 13 (covers PS 1–2 material)
+  Midterm 2: Thursday, November 12, 7:00–9:00pm, Filene 13
+  Final exam: scheduled by the registrar during finals week (Dec 10–15)
+
+READINGS (CLRS) — read before the lecture listed
+  Mon Sept 14: Ch. 2–3
+  Mon Sept 21: Ch. 4
+  Mon Oct 5:   Ch. 15
+  Mon Oct 19:  Ch. 16
+
+Late policy: two free late days per term.

@@ -29,3 +29,13 @@ the 15-minute cron (`GET /api/cron/gcal` with `Authorization: Bearer $CRON_SECRE
 `POST /api/v1/calendars/refresh`.
 
 After changing the schema: `pnpm db:reset && pnpm db:types`.
+
+## AI features
+Set `ANTHROPIC_API_KEY` (and optionally `AI_MONTHLY_CAP_USD`, default $5) in `apps/web/.env.local`.
+- **Break down** on a task proposes steps with estimates.
+- **Import** (nav, Inbox, or ⌘Enter in quick add) turns pasted text or a syllabus PDF/photo into
+  tasks. Everything lands on a review screen first; re-importing a revised syllabus offers
+  updates instead of duplicates. Uploaded files are deleted right after they're read.
+
+To check extraction quality against the fixtures in `scripts/fixtures/` (a few cents per run),
+start the app with a key and run `node scripts/eval-import.mjs`.

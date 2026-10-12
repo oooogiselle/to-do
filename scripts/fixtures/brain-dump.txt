@@ -1,0 +1,34 @@
+From: Priya (TA, Econ 10)
+Subject: Re: Problem set 5 + section swap
+
+Hi all, quick reminders before the weekend. Problem Set 5 is due next Wednesday at 5pm on Gradescope.
+Please make sure your graphs are labeled; we took points off last time. Office hours this week are
+Thursday 3–4:30 in the econ lounge as usual.
+
+Also, if you want to switch sections, fill out the swap form by Friday. Spots are limited.
+
+Thanks,
+Priya
+
+---
+
+Meeting notes: Hackathon team (Sun)
+
+We decided to build the study-group matcher. Maya is doing the backend. Jordan is doing design mocks
+and will share them Tuesday. I need to set up the GitHub repo and invite everyone tonight, and write
+the project README by Wednesday. We should all register on Devpost before the Thursday deadline at noon.
+Next sync is Friday after lunch.
+
+---
+
+Brain dump (things I keep forgetting)
+
+- call the pharmacy about the refill
+- return library books, they're due the 20th
+- Venmo Sam for the concert tickets
+- reply to the Stripe recruiter about interview times, ideally tomorrow
+- figure out spring housing at some point
+- the CS61 midterm review sheet is posted, go through it before Saturday
+- buy a birthday gift for mom (her birthday is Nov 2)
+
+Random thoughts: the new coffee place on Main is good. Weather's getting cold.

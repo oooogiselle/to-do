@@ -14,6 +14,8 @@
   --open-ink: #2f6b4a;
   --now: #4058d6;
   --risk: #c8382f;
+  --warn: #b26a00;
+  --warn-bg: #fff4dc;
   --focus: #4058d6;
 }
 
@@ -31,6 +33,8 @@
     --open-ink: #8fd0aa;
     --now: #8195ff;
     --risk: #ff7a70;
+    --warn: #f0b44c;
+    --warn-bg: #3a2c12;
     --focus: #8195ff;
   }
 }
@@ -48,6 +52,8 @@
   --open-ink: #8fd0aa;
   --now: #8195ff;
   --risk: #ff7a70;
+  --warn: #f0b44c;
+  --warn-bg: #3a2c12;
   --focus: #8195ff;
 }
 
@@ -64,6 +70,8 @@
   --color-open-ink: var(--open-ink);
   --color-now: var(--now);
   --color-risk: var(--risk);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
   --font-sans: var(--font-plex), ui-sans-serif, system-ui, sans-serif;
 }
 

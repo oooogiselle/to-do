@@ -6,4 +6,5 @@ export * from "./parse/quickAdd";
 export * from "./format/eventTitle";
 export * from "./risk/dueRisk";
 export * from "./api";
+export * from "./import";
 export type { Database, Json, Tables, TablesInsert, TablesUpdate } from "./db";

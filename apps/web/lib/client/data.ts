@@ -145,6 +145,8 @@ export function useCreateTask() {
           priority: v.body.priority ?? "none",
           estimate_min: v.body.estimate_min ?? null,
           status: "open" as const,
+          import_id: null,
+          source_quote: null,
         }),
         id: v.tempId,
       }),
