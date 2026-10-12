@@ -133,3 +133,41 @@ export type SyncResponse = z.infer<typeof SyncResponse>;
 
 export const EventsResponse = z.object({ events: z.array(CalendarEvent) });
 export type EventsResponse = z.infer<typeof EventsResponse>;
+
+// ---- Scheduling & AI ----
+
+const MAX_BLOCK_MIN = 12 * 60;
+
+export const TimeBlockCreate = z
+  .object({
+    task_id: z.string().uuid(),
+    step_id: z.string().uuid().nullable().optional(),
+    start: z.string().datetime({ offset: true }),
+    end: z.string().datetime({ offset: true }),
+  })
+  .refine((b) => Date.parse(b.end) > Date.parse(b.start), "end must be after start")
+  .refine(
+    (b) => Date.parse(b.end) - Date.parse(b.start) <= MAX_BLOCK_MIN * 60_000,
+    "Blocks can be at most 12 hours",
+  );
+
+export const TimeBlockPatch = z
+  .object({
+    start: z.string().datetime({ offset: true }),
+    end: z.string().datetime({ offset: true }),
+  })
+  .refine((b) => Date.parse(b.end) > Date.parse(b.start), "end must be after start");
+
+export const BreakdownMode = z.enum(["default", "more_detailed"]);
+export const BreakdownRequest = z.object({ mode: BreakdownMode.default("default") });
+
+export const ProposedStep = z.object({
+  title: z.string().min(1).max(200),
+  estimate_min: z.number().int().min(5).max(480),
+});
+export type ProposedStep = z.infer<typeof ProposedStep>;
+export const BreakdownResponse = z.object({ steps: z.array(ProposedStep) });
+export type BreakdownResponse = z.infer<typeof BreakdownResponse>;
+
+/** Accepting a breakdown: replaces the task's unfinished steps; done steps are kept. */
+export const StepsReplace = z.object({ steps: z.array(ProposedStep).min(1).max(20) });

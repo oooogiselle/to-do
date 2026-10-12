@@ -1,5 +1,6 @@
 import { TaskPatch } from "@tt/shared";
 import { parseBody, route, unwrap } from "@/lib/api";
+import { removeUpcomingBlocks } from "@/lib/blocks";
 
 type P = { id: string };
 
@@ -38,8 +39,9 @@ export const PATCH = route<P>(async (req, { supabase, params }) => {
   );
 });
 
-/** Soft-deletes the task and its steps. Its gcal blocks are removed in the scheduling phase. */
-export const DELETE = route<P>(async (_req, { supabase, params }) => {
+/** Soft-deletes the task and its steps, and removes its upcoming blocks from gcal. */
+export const DELETE = route<P>(async (_req, { supabase, user, params }) => {
+  await removeUpcomingBlocks(supabase, user.id, { task_id: params.id });
   const now = new Date().toISOString();
   unwrap(
     await supabase

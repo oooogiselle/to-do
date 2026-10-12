@@ -1,6 +1,7 @@
 import { after } from "next/server";
 import { CalendarSelectionPatch } from "@tt/shared";
 import { HttpError, parseBody, route, unwrap } from "@/lib/api";
+import { isDemo } from "@/lib/demo";
 import { activateCalendar, deactivateCalendar } from "@/lib/gcal/manage";
 
 /** Toggles whether a calendar counts as busy time; starts or stops syncing it. */
@@ -20,6 +21,7 @@ export const PATCH = route<{ id: string }>(async (req, { supabase, user, params 
       .select("id, summary, color, selected, is_tasks_calendar")
       .single(),
   );
+  if (isDemo()) return updated;
   after(() =>
     (selected ? activateCalendar(user.id, id) : deactivateCalendar(user.id, id)).catch((e) =>
       console.error("calendar toggle", e),

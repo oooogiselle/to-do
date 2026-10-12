@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import type { List, Settings, Step, SyncResponse, Task } from "@tt/shared";
+import type { List, Settings, Step, SyncResponse, Task, TimeBlock } from "@tt/shared";
 import { api } from "./api";
 
 export const keys = {
@@ -228,3 +228,90 @@ export function useUpdateSettings() {
 }
 
 export const isTemp = (id: string) => id.startsWith("temp-");
+
+// ---------- Time blocks (scheduling) ----------
+
+function updateBlocks(s: SyncResponse, fn: (blocks: TimeBlock[]) => TimeBlock[]): SyncResponse {
+  return { ...s, time_blocks: fn(s.time_blocks) };
+}
+
+export function useCreateBlock() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: { tempId: string; body: Parameters<typeof api.createTimeBlock>[0] }) =>
+      api.createTimeBlock(v.body),
+    onMutate: async (v) => {
+      await qc.cancelQueries({ queryKey: keys.sync });
+      const t = now();
+      const temp: TimeBlock = {
+        id: v.tempId,
+        created_at: t,
+        updated_at: t,
+        deleted_at: null,
+        task_id: v.body.task_id,
+        step_id: v.body.step_id ?? null,
+        gcal_event_id: "",
+        start: v.body.start,
+        end: v.body.end,
+      };
+      return { prev: patchSnapshot(qc, (s) => updateBlocks(s, (b) => [...b, temp])) };
+    },
+    onError: (_e, _v, ctx) => ctx?.prev && qc.setQueryData(keys.sync, ctx.prev),
+    onSuccess: (block, v) =>
+      patchSnapshot(qc, (s) =>
+        updateBlocks(s, (b) => b.map((x) => (x.id === v.tempId ? block : x))),
+      ),
+  });
+}
+
+export function useMoveBlock() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: { id: string; start: string; end: string }) =>
+      api.moveTimeBlock(v.id, { start: v.start, end: v.end }),
+    onMutate: async (v) => {
+      await qc.cancelQueries({ queryKey: keys.sync });
+      return {
+        prev: patchSnapshot(qc, (s) =>
+          updateBlocks(s, (b) =>
+            b.map((x) => (x.id === v.id ? { ...x, start: v.start, end: v.end } : x)),
+          ),
+        ),
+      };
+    },
+    onError: (_e, _v, ctx) => ctx?.prev && qc.setQueryData(keys.sync, ctx.prev),
+  });
+}
+
+export function useDeleteBlock() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteTimeBlock(id),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: keys.sync });
+      return {
+        prev: patchSnapshot(qc, (s) =>
+          updateBlocks(s, (b) => b.map((x) => (x.id === id ? { ...x, deleted_at: now() } : x))),
+        ),
+      };
+    },
+    onError: (_e, _v, ctx) => ctx?.prev && qc.setQueryData(keys.sync, ctx.prev),
+  });
+}
+
+export function useRemoveUpcomingBlocks() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: api.removeUpcomingBlocks,
+    onSettled: () => qc.invalidateQueries({ queryKey: keys.sync }),
+  });
+}
+
+export function useReplaceSteps() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: { taskId: string; steps: Parameters<typeof api.replaceSteps>[1] }) =>
+      api.replaceSteps(v.taskId, v.steps),
+    onSettled: () => qc.invalidateQueries({ queryKey: keys.sync }),
+  });
+}

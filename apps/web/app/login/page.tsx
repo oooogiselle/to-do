@@ -24,10 +24,7 @@ function LoginForm() {
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-6">
       <h1 className="text-2xl font-semibold">Timeline To-Do</h1>
       {error && <p className="text-sm text-risk">{ERRORS[error] ?? ERRORS.signin}</p>}
-      <button
-        onClick={signIn}
-        className="rounded-md bg-ink px-4 py-2 text-paper hover:opacity-90"
-      >
+      <button onClick={signIn} className="rounded-md bg-ink px-4 py-2 text-paper hover:opacity-90">
         Sign in with Google
       </button>
       {DEMO && <DemoSignIn />}
@@ -50,7 +47,9 @@ function DemoSignIn() {
       <button onClick={signIn} className="text-muted underline hover:text-ink">
         Use demo account
       </button>
-      {failed && <p className="text-sm text-risk">Demo account not found. Run `pnpm demo` again.</p>}
+      {failed && (
+        <p className="text-sm text-risk">Demo account not found. Run `pnpm demo` again.</p>
+      )}
     </>
   );
 }

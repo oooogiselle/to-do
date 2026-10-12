@@ -11,6 +11,7 @@ import type {
   StepCreate,
   StepPatch,
   SyncResponse,
+  ProposedStep,
   Task,
   TaskCreate,
   TaskPatch,
@@ -85,6 +86,19 @@ export function createApiClient({ baseUrl, getToken, fetch: f = fetch }: Opts) {
     setCalendarSelected: (id: string, selected: boolean) =>
       call<Calendar>("PATCH", `/calendars/${encodeURIComponent(id)}`, { selected }),
     refreshCalendars: () => call<{ ok: true; synced: number }>("POST", "/calendars/refresh"),
+
+    createTimeBlock: (body: { task_id: string; step_id?: string | null; start: string; end: string }) =>
+      call<TimeBlock>("POST", "/time-blocks", body),
+    moveTimeBlock: (id: string, body: { start: string; end: string }) =>
+      call<TimeBlock>("PATCH", `/time-blocks/${id}`, body),
+    deleteTimeBlock: (id: string) => call<void>("DELETE", `/time-blocks/${id}`),
+    removeUpcomingBlocks: (body: { task_id: string; step_id?: string }) =>
+      call<{ removed: number }>("DELETE", "/time-blocks/upcoming", body),
+
+    breakdown: (taskId: string, mode: "default" | "more_detailed" = "default") =>
+      call<{ steps: ProposedStep[] }>("POST", `/tasks/${taskId}/breakdown`, { mode }),
+    replaceSteps: (taskId: string, steps: ProposedStep[]) =>
+      call<{ task: Task; steps: Step[] }>("PUT", `/tasks/${taskId}/steps`, { steps }),
   };
 }
 

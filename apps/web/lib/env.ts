@@ -38,7 +38,11 @@ export const env = {
   get cronSecret() {
     return required("CRON_SECRET");
   },
-  get allowedEmail() {
-    return required("ALLOWED_EMAIL").toLowerCase();
+  /** Comma-separated; normally just the owner's address. */
+  get allowedEmails() {
+    return required("ALLOWED_EMAIL")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
   },
 };

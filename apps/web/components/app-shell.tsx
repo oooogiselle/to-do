@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { BlockRemovalBanner } from "./block-removal-banner";
 import { Nav } from "./nav";
 import { QuickAdd } from "./quick-add";
 import { TaskSheet } from "./task-sheet";
@@ -49,6 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Nav onQuickAdd={() => setQuickAdd(true)} />
       <main className="min-h-0 min-w-0 flex-1">{children}</main>
       <QuickAdd open={quickAdd} onClose={closeQuickAdd} />
+      <BlockRemovalBanner />
       <Suspense>
         <OpenTaskSheet />
       </Suspense>

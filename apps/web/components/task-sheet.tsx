@@ -12,6 +12,10 @@ import {
   useUpdateTask,
 } from "@/lib/client/data";
 import { fromLocalInput, toLocalInput } from "@/lib/client/time";
+import { useCompletion } from "@/lib/client/completion";
+import { BreakdownPanel } from "./task-sheet/breakdown-panel";
+import { SchedulePanel } from "./task-sheet/schedule-panel";
+import { ScheduledBlocks } from "./task-sheet/scheduled-blocks";
 
 const PRIORITIES: { value: Priority; label: string }[] = [
   { value: "none", label: "None" },
@@ -52,11 +56,14 @@ function CommitInput({
 }
 
 export function TaskSheet({ taskId, onClose }: { taskId: string; onClose: () => void }) {
-  const { taskById, stepsByTask, lists, settings } = useModel();
+  const { taskById, stepsByTask, blocks, lists, settings } = useModel();
   const task = taskById.get(taskId);
   const steps = stepsByTask.get(taskId) ?? [];
+  const taskBlocks = blocks.filter((b) => b.task_id === taskId);
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const { setTaskDone } = useCompletion();
+  const [panel, setPanel] = useState<"breakdown" | "schedule" | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -84,7 +91,8 @@ export function TaskSheet({ taskId, onClose }: { taskId: string; onClose: () => 
           type="checkbox"
           aria-label={task.status === "done" ? "Mark as not done" : "Mark as done"}
           checked={task.status === "done"}
-          onChange={(e) => update({ status: e.target.checked ? "done" : "open" })}
+          disabled={saving}
+          onChange={(e) => setTaskDone(task.id, e.target.checked)}
           className="mt-1.5 size-4 accent-[var(--now)]"
         />
         <CommitInput
@@ -178,22 +186,30 @@ export function TaskSheet({ taskId, onClose }: { taskId: string; onClose: () => 
 
         <StepsEditor taskId={task.id} steps={steps} disabled={saving} />
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            disabled
-            title="Coming with AI breakdown"
-            className="rounded-md border border-line px-3 py-1.5 text-muted opacity-60"
-          >
-            Break down
-          </button>
-          <button
-            disabled
-            title="Coming with scheduling"
-            className="rounded-md border border-line px-3 py-1.5 text-muted opacity-60"
-          >
-            Schedule
-          </button>
-        </div>
+        {panel === "breakdown" ? (
+          <BreakdownPanel task={task} onClose={() => setPanel(null)} />
+        ) : panel === "schedule" ? (
+          <SchedulePanel task={task} onClose={() => setPanel(null)} />
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <button
+              disabled={saving}
+              onClick={() => setPanel("breakdown")}
+              className="rounded-md border border-line-strong px-3 py-1.5 hover:border-ink disabled:opacity-50"
+            >
+              Break down
+            </button>
+            <button
+              disabled={saving || task.status !== "open"}
+              onClick={() => setPanel("schedule")}
+              className="rounded-md border border-line-strong px-3 py-1.5 hover:border-ink disabled:opacity-50"
+            >
+              Schedule
+            </button>
+          </div>
+        )}
+
+        <ScheduledBlocks blocks={taskBlocks} steps={steps} tz={settings.timezone} />
       </div>
 
       <div className="border-t border-line p-4">
@@ -245,6 +261,7 @@ function StepsEditor({
   const createStep = useCreateStep();
   const updateStep = useUpdateStep();
   const deleteStep = useDeleteStep();
+  const { setStepDone } = useCompletion();
   const [title, setTitle] = useState("");
 
   const add = (e: React.FormEvent) => {
@@ -269,7 +286,7 @@ function StepsEditor({
               aria-label={`Done: ${s.title}`}
               checked={s.done}
               disabled={isTemp(s.id)}
-              onChange={(e) => updateStep.mutate({ id: s.id, patch: { done: e.target.checked } })}
+              onChange={(e) => setStepDone(taskId, s.id, e.target.checked)}
               className="size-4 accent-[var(--now)]"
             />
             <CommitInput

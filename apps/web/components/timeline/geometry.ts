@@ -56,3 +56,14 @@ export function assignLanes<T extends { startMin: number; endMin: number }>(
   flush();
   return out;
 }
+
+/** Instant for `minute` minutes into local `day` (inverse of daySegment, DST-aware). */
+export function instantAt(day: string, minute: number, tz: string): number {
+  const dayStart = zonedInstant(day, "00:00", tz).getTime();
+  const dayEnd = zonedInstant(addDays(day, 1), "00:00", tz).getTime();
+  const scale = (dayEnd - dayStart) / 60_000 / DAY_MIN;
+  return dayStart + minute * scale * 60_000;
+}
+
+export const SNAP_MIN = 15;
+export const snap = (min: number) => Math.round(min / SNAP_MIN) * SNAP_MIN;

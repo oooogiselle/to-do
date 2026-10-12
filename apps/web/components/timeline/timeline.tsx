@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { DndContext, DragOverlay, useDraggable, useDroppable } from "@dnd-kit/core";
 import {
   addDays,
   eventTitle,
@@ -14,10 +15,12 @@ import {
   type TimeBlock,
 } from "@tt/shared";
 import { api } from "@/lib/client/api";
-import { useEvents, useModel, useSettings } from "@/lib/client/data";
+import { isTemp, useEvents, useModel, useSettings } from "@/lib/client/data";
 import { fmtDay, fmtTime, minutesIntoDay } from "@/lib/client/time";
 import { useOpenTask } from "@/components/app-shell";
-import { assignLanes, daySegment, HOUR_PX } from "./geometry";
+import { assignLanes, daySegment, HOUR_PX, instantAt } from "./geometry";
+import type { DragItem, DropPreview } from "./dnd";
+import { useTimelineDnd } from "./use-timeline-dnd";
 import { DueRail } from "./due-rail";
 
 type View = "day" | "week";
@@ -50,6 +53,7 @@ function TimelineView() {
   const tz = settings.timezone;
   const now = useNow();
   const today = localDate(new Date(now), tz);
+  const dnd = useTimelineDnd(tz);
 
   const [view, setView] = useState<View>("week");
   const [anchor, setAnchor] = useState<string | null>(null);
@@ -132,31 +136,72 @@ function TimelineView() {
       : `${fmtDay(days[0]!, tz)} – ${fmtDay(days[6]!, tz)}`;
 
   return (
-    <div className="flex h-full min-h-0 flex-col lg:flex-row">
-      <section className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <Header
-          title={title}
-          view={view}
-          onView={changeView}
-          onPrev={() => step(-1)}
-          onNext={() => step(1)}
-          onToday={() => setAnchor(null)}
-        />
-        <ConnectBanner />
-        <Grid
-          days={days}
-          today={today}
-          now={now}
-          tz={tz}
-          events={events}
-          blocks={visibleBlocks}
-          freeSlots={freeSlots}
-          blockLabel={blockLabel}
-          scrollToHour={earliestStart(settings.working_hours)}
-          loading={isLoading}
-        />
-      </section>
-      <DueRail from={from} to={to} now={now} events={events} />
+    <DndContext
+      sensors={dnd.sensors}
+      collisionDetection={dnd.collisionDetection}
+      onDragStart={dnd.onDragStart}
+      onDragMove={dnd.onDragMove}
+      onDragEnd={dnd.onDragEnd}
+      onDragCancel={dnd.onDragCancel}
+      autoScroll={{ threshold: { x: 0, y: 0.15 } }}
+    >
+      <div className="flex h-full min-h-0 flex-col lg:flex-row">
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <Header
+            title={title}
+            view={view}
+            onView={changeView}
+            onPrev={() => step(-1)}
+            onNext={() => step(1)}
+            onToday={() => setAnchor(null)}
+          />
+          <ConnectBanner />
+          <Grid
+            days={days}
+            today={today}
+            now={now}
+            tz={tz}
+            events={events}
+            blocks={visibleBlocks}
+            freeSlots={freeSlots}
+            blockLabel={blockLabel}
+            scrollToHour={earliestStart(settings.working_hours)}
+            loading={isLoading}
+            preview={dnd.preview}
+            dragging={dnd.active}
+          />
+        </section>
+        <DueRail from={from} to={to} now={now} events={events} />
+      </div>
+      <DragOverlay dropAnimation={null}>
+        {dnd.active && dnd.active.kind !== "block" && <DragChip item={dnd.active} />}
+      </DragOverlay>
+      {dnd.error && (
+        <div
+          role="alert"
+          className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-md border border-risk/40 bg-surface px-4 py-2 shadow-lg"
+        >
+          <span className="text-risk">Couldn&apos;t schedule that: {dnd.error.message}</span>
+          <button onClick={dnd.resetError} className="text-muted hover:text-ink">
+            Dismiss
+          </button>
+        </div>
+      )}
+    </DndContext>
+  );
+}
+
+function DragChip({ item }: { item: DragItem }) {
+  return (
+    <div
+      className="w-56 cursor-grabbing rounded border-l-[3px] px-2 py-1.5 text-xs shadow-lg"
+      style={{
+        borderColor: item.color,
+        background: `color-mix(in srgb, ${item.color} 22%, var(--surface))`,
+      }}
+    >
+      <div className="truncate font-medium">{item.title}</div>
+      <div className="text-muted">{formatMinutes(item.minutes)}</div>
     </div>
   );
 }
@@ -260,6 +305,8 @@ function Grid(props: {
   blockLabel: (b: TimeBlock) => { title: string; color: string };
   scrollToHour: number;
   loading: boolean;
+  preview: DropPreview | null;
+  dragging: DragItem | null;
 }) {
   const { days, tz } = props;
   const openTask = useOpenTask();
@@ -354,8 +401,11 @@ function DayColumn(props: {
   freeSlots: { start: number; end: number }[];
   blockLabel: (b: TimeBlock) => { title: string; color: string };
   onOpenTask: (id: string) => void;
+  preview: DropPreview | null;
+  dragging: DragItem | null;
 }) {
   const { day, tz } = props;
+  const { setNodeRef, isOver } = useDroppable({ id: day });
 
   const items = useMemo(() => {
     const out = [];
@@ -385,7 +435,9 @@ function DayColumn(props: {
 
   return (
     <div
-      className="relative border-l border-line"
+      ref={setNodeRef}
+      data-day={day}
+      className={`relative border-l border-line ${isOver ? "bg-now/[0.03]" : ""}`}
       style={{
         backgroundImage: `repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px ${HOUR_PX}px)`,
       }}
@@ -433,29 +485,35 @@ function DayColumn(props: {
             </div>
           );
         }
-        const b = it.block;
-        const { title, color } = props.blockLabel(b);
         return (
-          <button
+          <BlockItem
             key={it.key}
-            onClick={() => props.onOpenTask(b.task_id)}
-            title={`${title}\n${fmtTime(b.start, tz)}–${fmtTime(b.end, tz)}`}
-            className="absolute overflow-hidden rounded border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-tight text-ink"
-            style={{
-              ...style,
-              borderColor: color,
-              background: `color-mix(in srgb, ${color} 22%, var(--surface))`,
-            }}
-          >
-            <div className="truncate font-medium">{title}</div>
-            {!compact && (
-              <div className="truncate opacity-75">
-                {fmtTime(b.start, tz)}–{fmtTime(b.end, tz)}
-              </div>
-            )}
-          </button>
+            block={it.block}
+            style={style}
+            compact={compact}
+            tz={tz}
+            now={props.now}
+            label={props.blockLabel(it.block)}
+            onOpen={props.onOpenTask}
+            hidden={props.dragging?.kind === "block" && props.dragging.blockId === it.block.id}
+          />
         );
       })}
+
+      {props.preview?.day === day && props.dragging && (
+        <div
+          className={`pointer-events-none absolute inset-x-1 z-20 rounded border-2 border-dashed px-1.5 py-0.5 text-xs font-medium ${props.preview.past ? "border-risk text-risk" : "border-now text-now"}`}
+          style={{
+            top: (props.preview.startMin / 60) * HOUR_PX,
+            height: (props.preview.minutes / 60) * HOUR_PX,
+            background: "color-mix(in srgb, var(--surface) 70%, transparent)",
+          }}
+        >
+          {props.preview.past
+            ? "That time has passed"
+            : `${fmtTime(instantAt(day, props.preview.startMin, tz), tz)}–${fmtTime(instantAt(day, props.preview.startMin + props.preview.minutes, tz), tz)}`}
+        </div>
+      )}
 
       {nowMin !== null && (
         <div
@@ -467,5 +525,54 @@ function DayColumn(props: {
         </div>
       )}
     </div>
+  );
+}
+
+function BlockItem(props: {
+  block: TimeBlock;
+  style: React.CSSProperties;
+  compact: boolean;
+  tz: string;
+  now: number;
+  label: { title: string; color: string };
+  onOpen: (taskId: string) => void;
+  hidden: boolean;
+}) {
+  const { block: b, tz, label } = props;
+  const minutes = Math.round((Date.parse(b.end) - Date.parse(b.start)) / 60_000);
+  // Past blocks are a record of work done; only upcoming ones can be moved.
+  const movable = !isTemp(b.id) && Date.parse(b.end) > props.now;
+  const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
+    id: `block-${b.id}`,
+    disabled: !movable,
+    data: {
+      kind: "block",
+      blockId: b.id,
+      title: label.title,
+      minutes,
+      color: label.color,
+    } satisfies DragItem,
+  });
+  return (
+    <button
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      onClick={() => !isDragging && props.onOpen(b.task_id)}
+      title={`${label.title}\n${fmtTime(b.start, tz)}–${fmtTime(b.end, tz)}${movable ? "\nDrag to reschedule" : ""}`}
+      className={`absolute overflow-hidden rounded border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-tight text-ink ${movable ? "cursor-grab touch-none" : ""} ${props.hidden ? "opacity-30" : ""} ${isTemp(b.id) ? "animate-pulse" : ""}`}
+      style={{
+        ...props.style,
+        borderColor: label.color,
+        background: `color-mix(in srgb, ${label.color} 22%, var(--surface))`,
+      }}
+    >
+      <div className="truncate font-medium">{label.title}</div>
+      {!props.compact && (
+        <div className="truncate opacity-75">
+          {fmtTime(b.start, tz)}–{fmtTime(b.end, tz)}
+        </div>
+      )}
+    </button>
   );
 }

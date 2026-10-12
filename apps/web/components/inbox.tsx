@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { formatMinutes, type List, type Priority, type Task } from "@tt/shared";
-import { isTemp, useCreateList, useModel, useUpdateTask } from "@/lib/client/data";
+import { isTemp, useCreateList, useModel } from "@/lib/client/data";
+import { useCompletion } from "@/lib/client/completion";
 import { fmtDue } from "@/lib/client/time";
 import { useOpenTask } from "@/components/app-shell";
 
@@ -113,7 +114,7 @@ export function Inbox() {
 
 function TaskRow({ task, tz, unscheduled }: { task: Task; tz: string; unscheduled: boolean }) {
   const openTask = useOpenTask();
-  const updateTask = useUpdateTask();
+  const { setTaskDone } = useCompletion();
   const done = task.status === "done";
   const overdue = !done && task.due_at && Date.parse(task.due_at) < Date.now();
   return (
@@ -123,9 +124,7 @@ function TaskRow({ task, tz, unscheduled }: { task: Task; tz: string; unschedule
         aria-label={done ? `Mark ${task.title} as not done` : `Mark ${task.title} as done`}
         checked={done}
         disabled={isTemp(task.id)}
-        onChange={(e) =>
-          updateTask.mutate({ id: task.id, patch: { status: e.target.checked ? "done" : "open" } })
-        }
+        onChange={(e) => setTaskDone(task.id, e.target.checked)}
         className="size-4 accent-[var(--now)]"
       />
       <button

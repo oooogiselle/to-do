@@ -18,7 +18,7 @@ export class HttpError extends Error {
 export type AuthedContext = { user: User; supabase: SupabaseClient<Database> };
 
 export function isAllowedEmail(email: string | undefined): boolean {
-  return !!email && email.toLowerCase() === env.allowedEmail;
+  return !!email && env.allowedEmails.includes(email.toLowerCase());
 }
 
 /**
