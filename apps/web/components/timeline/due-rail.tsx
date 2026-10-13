@@ -15,8 +15,8 @@ import { fmtDue } from "@/lib/client/time";
 import { useOpenTask } from "@/components/app-shell";
 import type { DragItem } from "./dnd";
 
-// A dragged task becomes one block of its remaining work, capped so it stays one sitting.
-const MAX_DRAG_BLOCK_MIN = 180;
+// A dragged task becomes one block of its remaining estimated work, in 15-minute steps.
+const dragMinutes = (min: number) => Math.min(Math.max(Math.ceil(min / 15) * 15, 15), 12 * 60);
 const RANGES = [7, 14, 30] as const;
 type Range = (typeof RANGES)[number];
 const RANGE_KEY = "dueRail.days";
@@ -34,6 +34,8 @@ type RailItem = {
   task: Task;
   steps: Step[];
   neededMin: number;
+  /** False when neither the task nor its steps have an estimate (the default length is used). */
+  estimated: boolean;
   freeMin: number;
   atRisk: boolean;
   overdue: boolean;
@@ -74,6 +76,7 @@ export function DueRail({ now }: { now: number }) {
       const stepEst = steps
         .filter((s) => !s.done)
         .reduce((sum, s) => sum + (s.estimate_min ?? 0), 0);
+      const estimated = !!task.estimate_min || steps.some((s) => s.estimate_min);
       const remaining = steps.some((s) => s.estimate_min)
         ? stepEst
         : (task.estimate_min ?? settings.default_block_min);
@@ -95,7 +98,14 @@ export function DueRail({ now }: { now: number }) {
         blocks.filter((b) => b.step_id && Date.parse(b.end) > now).map((b) => b.step_id),
       );
       const openSteps = steps.filter((s) => !s.done && !scheduledSteps.has(s.id));
-      out.push({ task, steps: openSteps, ...risk, atRisk: overdue || risk.atRisk, overdue });
+      out.push({
+        task,
+        steps: openSteps,
+        ...risk,
+        estimated,
+        atRisk: overdue || risk.atRisk,
+        overdue,
+      });
     }
     return out.sort((a, b) => Date.parse(a.task.due_at!) - Date.parse(b.task.due_at!));
   }, [tasks, stepsByTask, blocks, events, settings, tz, to, now]);
@@ -167,14 +177,15 @@ function RailTask(props: {
   defaultMin: number;
   onOpen: () => void;
 }) {
-  const { task, steps, neededMin, freeMin, atRisk, overdue } = props.item;
+  const { task, steps, neededMin, freeMin, atRisk, overdue, estimated } = props.item;
+  const minutes = dragMinutes(neededMin);
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
     id: `task-${task.id}`,
     data: {
       kind: "task",
       taskId: task.id,
       title: task.title,
-      minutes: Math.min(neededMin, MAX_DRAG_BLOCK_MIN),
+      minutes,
       color: props.color,
     } satisfies DragItem,
   });
@@ -207,6 +218,11 @@ function RailTask(props: {
               ? `Needs ${formatMinutes(neededMin)}, only ${formatMinutes(freeMin)} open before then`
               : `Needs ${formatMinutes(neededMin)}, ${formatMinutes(freeMin)} open before then`}
         </div>
+        {!estimated && (
+          <div className="pl-4 text-xs text-muted">
+            No estimate yet, so it drags as {formatMinutes(minutes)}. Open it to set one.
+          </div>
+        )}
       </button>
       {steps.length > 0 && (
         <ul className="mb-1 ml-6 border-l border-line">
@@ -227,7 +243,7 @@ function RailTask(props: {
 
 function RailStep(props: { step: Step; task: Task; color: string; defaultMin: number }) {
   const { step, task } = props;
-  const minutes = step.estimate_min ?? props.defaultMin;
+  const minutes = dragMinutes(step.estimate_min ?? props.defaultMin);
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
     id: `step-${step.id}`,
     data: {
