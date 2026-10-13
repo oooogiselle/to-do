@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import {
   dueRisk,
@@ -10,13 +10,25 @@ import {
   type Step,
   type Task,
 } from "@tt/shared";
-import { useModel } from "@/lib/client/data";
+import { useEvents, useModel } from "@/lib/client/data";
 import { fmtDue } from "@/lib/client/time";
 import { useOpenTask } from "@/components/app-shell";
 import type { DragItem } from "./dnd";
 
 // A dragged task becomes one block of its remaining work, capped so it stays one sitting.
 const MAX_DRAG_BLOCK_MIN = 180;
+const RANGES = [7, 14, 30] as const;
+type Range = (typeof RANGES)[number];
+const RANGE_KEY = "dueRail.days";
+
+function savedRange(): Range {
+  try {
+    const n = Number(localStorage.getItem(RANGE_KEY));
+    return (RANGES as readonly number[]).includes(n) ? (n as Range) : 14;
+  } catch {
+    return 14;
+  }
+}
 
 type RailItem = {
   task: Task;
@@ -28,23 +40,21 @@ type RailItem = {
 };
 
 /**
- * Open tasks due in the visible range (plus anything overdue) that still have unscheduled
- * work. Flagged red when the open time left before the deadline can't cover that work.
+ * Open tasks due in the next 7/14/30 days (plus anything overdue) that still have
+ * unscheduled work, soonest first. Flagged red when the open time left before the
+ * deadline can't cover that work.
  */
-export function DueRail({
-  from,
-  to,
-  now,
-  events,
-}: {
-  from: number;
-  to: number;
-  now: number;
-  events: CalendarEvent[];
-}) {
+export function DueRail({ now }: { now: number }) {
   const { tasks, stepsByTask, blocks, listById, settings } = useModel();
   const openTask = useOpenTask();
   const tz = settings.timezone;
+  const [days, setDays] = useState<Range>(14);
+  useEffect(() => setDays(savedRange()), []);
+  // Whole hours so the events query key doesn't change every minute.
+  const from = Math.floor(now / 3_600_000) * 3_600_000;
+  const to = from + days * 86_400_000;
+  const { data } = useEvents(from, to);
+  const events: CalendarEvent[] = useMemo(() => data?.events ?? [], [data]);
 
   const items = useMemo(() => {
     const free = findFreeSlots([...events, ...blocks], {
@@ -58,7 +68,7 @@ export function DueRail({
       if (task.status !== "open" || !task.due_at) continue;
       const due = Date.parse(task.due_at);
       const overdue = due < now;
-      if (!overdue && (due < from || due >= to)) continue;
+      if (!overdue && due >= to) continue;
 
       const steps = stepsByTask.get(task.id) ?? [];
       const stepEst = steps
@@ -88,7 +98,7 @@ export function DueRail({
       out.push({ task, steps: openSteps, ...risk, atRisk: overdue || risk.atRisk, overdue });
     }
     return out.sort((a, b) => Date.parse(a.task.due_at!) - Date.parse(b.task.due_at!));
-  }, [tasks, stepsByTask, blocks, events, settings, tz, from, to, now]);
+  }, [tasks, stepsByTask, blocks, events, settings, tz, to, now]);
 
   return (
     <aside
@@ -96,7 +106,30 @@ export function DueRail({
       className="flex max-h-[40vh] shrink-0 flex-col border-t border-line bg-surface lg:max-h-none lg:w-72 lg:border-t-0 lg:border-l"
     >
       <div className="px-4 pt-3 pb-2">
-        <h2 className="text-[15px] font-semibold tracking-tight">Due</h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-[15px] font-semibold tracking-tight">Due</h2>
+          <label className="flex items-center gap-1.5 text-xs text-muted">
+            <span className="sr-only">Show tasks due in the</span>
+            Next
+            <select
+              value={days}
+              onChange={(e) => {
+                const n = Number(e.target.value) as Range;
+                setDays(n);
+                try {
+                  localStorage.setItem(RANGE_KEY, String(n));
+                } catch {}
+              }}
+              className="rounded border border-line bg-paper px-1 py-0.5 text-ink"
+            >
+              {RANGES.map((n) => (
+                <option key={n} value={n}>
+                  {n} days
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         {items.length > 0 && (
           <p className="text-xs text-muted">
             Drag a task or step onto the timeline to schedule it.
@@ -105,7 +138,7 @@ export function DueRail({
       </div>
       {items.length === 0 ? (
         <p className="px-4 pb-4 text-muted">
-          Nothing left to schedule for these days. Press ⌘K to add a task with a due date.
+          Nothing due in the next {days} days needs time. Press ⌘K to add a task with a due date.
         </p>
       ) : (
         <ul className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">

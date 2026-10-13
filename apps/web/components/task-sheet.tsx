@@ -11,7 +11,7 @@ import {
   useUpdateStep,
   useUpdateTask,
 } from "@/lib/client/data";
-import { fromLocalInput, toLocalInput } from "@/lib/client/time";
+import { DuePicker } from "./due-picker";
 import { useCompletion } from "@/lib/client/completion";
 import { BreakdownPanel } from "./task-sheet/breakdown-panel";
 import { SchedulePanel } from "./task-sheet/schedule-panel";
@@ -117,7 +117,7 @@ export function TaskSheet({ taskId, onClose }: { taskId: string; onClose: () => 
           </label>
           <select
             id="task-list"
-            value={task.list_id ?? ""}
+            value={task.list_id && lists.some((l) => l.id === task.list_id) ? task.list_id : ""}
             onChange={(e) => update({ list_id: e.target.value || null })}
             className={field}
           >
@@ -129,16 +129,14 @@ export function TaskSheet({ taskId, onClose }: { taskId: string; onClose: () => 
             ))}
           </select>
 
-          <label htmlFor="task-due" className="text-muted">
-            Due
-          </label>
-          <input
-            id="task-due"
-            type="datetime-local"
-            value={toLocalInput(task.due_at, settings.timezone)}
-            onChange={(e) => update({ due_at: fromLocalInput(e.target.value, settings.timezone) })}
-            className={field}
-          />
+          <span className="text-muted">Due</span>
+          <div>
+            <DuePicker
+              value={task.due_at}
+              onChange={(due_at) => update({ due_at })}
+              tz={settings.timezone}
+            />
+          </div>
 
           <span className="text-muted">Priority</span>
           <div role="radiogroup" aria-label="Priority" className="flex gap-1">

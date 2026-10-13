@@ -218,6 +218,23 @@ export function useCreateList() {
   });
 }
 
+export function useUpdateList() {
+  return useOptimistic({
+    mutationFn: (v: { id: string; patch: Parameters<typeof api.updateList>[1] }) =>
+      api.updateList(v.id, v.patch),
+    apply: (s, v) => updateRow(s, "lists", v.id, v.patch),
+    settle: (s, list) => upsertRow(s, "lists", list),
+  });
+}
+
+/** Its tasks stay; with the list gone they show under "No list". */
+export function useDeleteList() {
+  return useOptimistic({
+    mutationFn: (id: string) => api.deleteList(id),
+    apply: (s, id) => updateRow(s, "lists", id, { deleted_at: now() }),
+  });
+}
+
 export function useUpdateSettings() {
   const qc = useQueryClient();
   return useMutation({

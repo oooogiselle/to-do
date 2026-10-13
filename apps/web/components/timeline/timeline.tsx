@@ -171,7 +171,7 @@ function TimelineView() {
             dragging={dnd.active}
           />
         </section>
-        <DueRail from={from} to={to} now={now} events={events} />
+        <DueRail now={now} />
       </div>
       <DragOverlay dropAnimation={null}>
         {dnd.active && dnd.active.kind !== "block" && <DragChip item={dnd.active} />}

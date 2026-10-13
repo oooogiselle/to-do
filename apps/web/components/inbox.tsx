@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { formatMinutes, type List, type Priority, type Task } from "@tt/shared";
-import { isTemp, useCreateList, useModel } from "@/lib/client/data";
+import { isTemp, useCreateList, useDeleteList, useModel, useUpdateList } from "@/lib/client/data";
 import { useCompletion } from "@/lib/client/completion";
 import { fmtDue } from "@/lib/client/time";
 import { useOpenTask } from "@/components/app-shell";
@@ -83,15 +83,15 @@ export function Inbox() {
           <div className="space-y-6">
             {groups.map((g) => (
               <section key={g.list?.id ?? "none"}>
-                <h2 className="mb-1.5 flex items-center gap-2 font-semibold">
-                  <span
-                    className="size-2.5 rounded-full"
-                    style={{ background: g.list?.color ?? "var(--line-strong)" }}
-                    aria-hidden
-                  />
-                  {g.list?.name ?? "No list"}
-                  <span className="font-normal text-muted">{g.tasks.length}</span>
-                </h2>
+                {g.list ? (
+                  <ListHeading list={g.list} count={g.tasks.length} />
+                ) : (
+                  <h2 className="mb-1.5 flex items-center gap-2 font-semibold">
+                    <span className="size-2.5 rounded-full bg-line-strong" aria-hidden />
+                    No list
+                    <span className="font-normal text-muted">{g.tasks.length}</span>
+                  </h2>
+                )}
                 {g.tasks.length ? (
                   <ul className="divide-y divide-line rounded-lg border border-line bg-surface">
                     {g.tasks.map((t) => (
@@ -167,6 +167,106 @@ function TaskRow({ task, tz, unscheduled }: { task: Task; tz: string; unschedule
   );
 }
 
+function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
+  return (
+    <div role="radiogroup" aria-label="List color" className="flex gap-1">
+      {LIST_COLORS.map((c) => (
+        <button
+          type="button"
+          key={c}
+          role="radio"
+          aria-checked={value === c}
+          aria-label={c}
+          onClick={() => onChange(c)}
+          className={`size-5 rounded-full ${value === c ? "ring-2 ring-ink ring-offset-2 ring-offset-paper" : ""}`}
+          style={{ background: c }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ListHeading({ list, count }: { list: List; count: number }) {
+  const updateList = useUpdateList();
+  const deleteList = useDeleteList();
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(list.name);
+  const [color, setColor] = useState(list.color);
+
+  const startEditing = () => {
+    setName(list.name);
+    setColor(list.color);
+    setEditing(true);
+  };
+  const save = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    updateList.mutate({ id: list.id, patch: { name: name.trim(), color } });
+    setEditing(false);
+  };
+
+  if (!editing) {
+    return (
+      <h2 className="group mb-1.5 flex items-center gap-2 font-semibold">
+        <span className="size-2.5 rounded-full" style={{ background: list.color }} aria-hidden />
+        {list.name}
+        <span className="font-normal text-muted">{count}</span>
+        {!isTemp(list.id) && (
+          <button
+            onClick={startEditing}
+            aria-label={`Edit list ${list.name}`}
+            className="text-xs font-normal text-muted opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-ink"
+          >
+            Edit
+          </button>
+        )}
+      </h2>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={save}
+      onKeyDown={(e) => e.key === "Escape" && setEditing(false)}
+      className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border border-line-strong bg-surface p-2"
+    >
+      <label htmlFor={`list-name-${list.id}`} className="sr-only">
+        List name
+      </label>
+      <input
+        id={`list-name-${list.id}`}
+        autoFocus
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="rounded-md border border-line bg-paper px-2.5 py-1.5 font-semibold outline-none focus:border-line-strong"
+      />
+      <ColorPicker value={color} onChange={setColor} />
+      <button type="submit" className="rounded-md bg-ink px-3 py-1.5 text-paper hover:opacity-90">
+        Save
+      </button>
+      <button
+        type="button"
+        onClick={() => setEditing(false)}
+        className="px-1 text-muted hover:text-ink"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          const note = count
+            ? ` Its ${count} open task${count === 1 ? "" : "s"} will move to No list.`
+            : "";
+          if (confirm(`Delete the list “${list.name}”?${note}`)) deleteList.mutate(list.id);
+        }}
+        className="ml-auto px-1 text-risk hover:underline"
+      >
+        Delete list
+      </button>
+    </form>
+  );
+}
+
 function NewListForm({ count }: { count: number }) {
   const createList = useCreateList();
   const [name, setName] = useState("");
@@ -193,20 +293,7 @@ function NewListForm({ count }: { count: number }) {
         placeholder="New list, e.g. CS61"
         className="rounded-md border border-line bg-surface px-2.5 py-1.5 outline-none focus:border-line-strong"
       />
-      <div role="radiogroup" aria-label="List color" className="flex gap-1">
-        {LIST_COLORS.map((c) => (
-          <button
-            type="button"
-            key={c}
-            role="radio"
-            aria-checked={color === c}
-            aria-label={c}
-            onClick={() => setColor(c)}
-            className={`size-5 rounded-full ${color === c ? "ring-2 ring-ink ring-offset-2 ring-offset-paper" : ""}`}
-            style={{ background: c }}
-          />
-        ))}
-      </div>
+      <ColorPicker value={color} onChange={setColor} />
       <button
         type="submit"
         className="rounded-md border border-line-strong px-3 py-1.5 hover:border-ink"

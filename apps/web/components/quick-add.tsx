@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseQuickAdd, type Priority } from "@tt/shared";
 import { useCreateTask, useModel } from "@/lib/client/data";
-import { fmtDue } from "@/lib/client/time";
 import { PREFILL_KEY } from "@/components/import/import-view";
+import { DuePicker } from "@/components/due-picker";
 
 const PRIORITY_LABEL: Record<Priority, string> = {
   none: "",
@@ -25,11 +25,14 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
   const createTask = useCreateTask();
   const router = useRouter();
   const [text, setText] = useState("");
+  // A date chosen in the picker overrides one typed in the text; undefined means not chosen.
+  const [pickedDue, setPickedDue] = useState<string | null | undefined>(undefined);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (!open) return;
     setText("");
+    setPickedDue(undefined);
     requestAnimationFrame(() => inputRef.current?.focus());
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
@@ -55,9 +58,25 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
 
   if (!open) return null;
 
+  const dueAt = pickedDue !== undefined ? pickedDue : (parsed?.due_at ?? null);
+  const duePicker = (
+    <DuePicker
+      value={dueAt}
+      onChange={(v) => {
+        setPickedDue(v);
+        inputRef.current?.focus();
+      }}
+      tz={settings.timezone}
+      className="text-sm"
+    />
+  );
+
   const addInstantly = () => {
     if (!parsed) return;
-    createTask.mutate({ tempId: `temp-${crypto.randomUUID()}`, body: parsed });
+    createTask.mutate({
+      tempId: `temp-${crypto.randomUUID()}`,
+      body: { ...parsed, due_at: dueAt },
+    });
     onClose();
   };
 
@@ -84,7 +103,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
       className="fixed inset-0 z-50 flex items-start justify-center bg-ink/20 px-4 pt-[15vh]"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-lg overflow-hidden rounded-lg border border-line-strong bg-surface shadow-xl">
+      <div className="w-full max-w-lg rounded-lg border border-line-strong bg-surface shadow-xl">
         <label htmlFor="quick-add" className="sr-only">
           New task
         </label>
@@ -120,14 +139,17 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
                   {list.name}
                 </span>
               )}
-              {parsed.due_at && <span>Due {fmtDue(parsed.due_at, settings.timezone)}</span>}
+              {duePicker}
               {parsed.priority !== "none" && (
                 <span>{PRIORITY_LABEL[parsed.priority]} priority</span>
               )}
               <span className="ml-auto text-xs">Enter to add, ⌘Enter to split with AI</span>
             </>
           ) : (
-            <span>Type a task. Add a list, a due date and a priority to set them.</span>
+            <>
+              <span>Type a task. Add a list, a due date and a priority to set them.</span>
+              {duePicker}
+            </>
           )}
         </div>
       </div>

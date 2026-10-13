@@ -45,17 +45,3 @@ export function fmtDue(dueAt: string, tz: string, now = Date.now()): string {
       : { month: "short", day: "numeric", timeZone: tz };
   return new Intl.DateTimeFormat("en-US", opts).format(due) + time;
 }
-
-/** Value for <input type="datetime-local"> showing `instant` as wall time in tz. */
-export function toLocalInput(instant: string | null, tz: string): string {
-  if (!instant) return "";
-  const z = new TZDate(new Date(instant).getTime(), tz);
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${z.getFullYear()}-${p(z.getMonth() + 1)}-${p(z.getDate())}T${p(z.getHours())}:${p(z.getMinutes())}`;
-}
-
-export function fromLocalInput(value: string, tz: string): string | null {
-  if (!value) return null;
-  const [date, time] = value.split("T");
-  return zonedInstant(date!, time ?? "23:59", tz).toISOString();
-}
