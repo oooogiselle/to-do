@@ -664,9 +664,9 @@ function BlockItem(props: {
         <div
           onPointerDown={startResize}
           aria-hidden
-          className="absolute inset-x-0 -bottom-0.5 h-2 cursor-ns-resize touch-none"
+          className={`absolute inset-x-0 flex cursor-ns-resize ${props.compact ? "-bottom-0.5 h-1.5" : "bottom-0 h-2.5"} touch-none items-end justify-center pb-0.5`}
         >
-          <div className="mx-auto mt-0.5 h-1 w-6 rounded-full bg-ink/30 opacity-0 group-hover:opacity-100" />
+          <div className="h-1 w-6 rounded-full bg-ink/30 opacity-0 group-hover:opacity-100" />
         </div>
       )}
     </div>

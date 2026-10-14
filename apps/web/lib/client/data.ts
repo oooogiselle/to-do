@@ -80,6 +80,17 @@ function patchSnapshot(
   return prev;
 }
 
+/**
+ * Applies an optimistic change right away, in the same render as the gesture that caused it
+ * (awaiting first leaves a frame where the old state shows). Then drops any in-flight refetch,
+ * which carries pre-change data; a cancel reverts to the state we just set.
+ */
+function optimistic(qc: QueryClient, fn: (s: SyncResponse) => SyncResponse) {
+  const prev = patchSnapshot(qc, fn);
+  void qc.cancelQueries({ queryKey: keys.sync });
+  return prev;
+}
+
 function useOptimistic<V, R>(opts: {
   mutationFn: (vars: V) => Promise<R>;
   apply: (s: SyncResponse, vars: V) => SyncResponse;
@@ -89,10 +100,7 @@ function useOptimistic<V, R>(opts: {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: opts.mutationFn,
-    onMutate: async (vars: V) => {
-      await qc.cancelQueries({ queryKey: keys.sync });
-      return { prev: patchSnapshot(qc, (s) => opts.apply(s, vars)) };
-    },
+    onMutate: (vars: V) => ({ prev: optimistic(qc, (s) => opts.apply(s, vars)) }),
     onError: (_err, _vars, ctx) => {
       if (ctx?.prev) qc.setQueryData(keys.sync, ctx.prev);
     },
@@ -259,8 +267,7 @@ export function useCreateBlock() {
   return useMutation({
     mutationFn: (v: { tempId: string; body: Parameters<typeof api.createTimeBlock>[0] }) =>
       api.createTimeBlock(v.body),
-    onMutate: async (v) => {
-      await qc.cancelQueries({ queryKey: keys.sync });
+    onMutate: (v) => {
       const t = now();
       const temp: TimeBlock = {
         id: v.tempId,
@@ -273,7 +280,7 @@ export function useCreateBlock() {
         start: v.body.start,
         end: v.body.end,
       };
-      return { prev: patchSnapshot(qc, (s) => updateBlocks(s, (b) => [...b, temp])) };
+      return { prev: optimistic(qc, (s) => updateBlocks(s, (b) => [...b, temp])) };
     },
     onError: (_e, _v, ctx) => ctx?.prev && qc.setQueryData(keys.sync, ctx.prev),
     onSuccess: (block, v) =>
@@ -284,6 +291,10 @@ export function useCreateBlock() {
 }
 
 const MOVE_BLOCK = ["move-block"] as const;
+
+/** While a move is saving, refetches return the old times; its own settle refetches anyway. */
+export const blockMovesPending = (qc: QueryClient) =>
+  qc.isMutating({ mutationKey: MOVE_BLOCK }) > 0;
 
 /**
  * Moves and resizes run one at a time, so a quick move-then-resize can't land out of order on
@@ -301,10 +312,9 @@ export function useMoveBlock() {
     },
     mutationFn: (v: { id: string; start: string; end: string }) =>
       api.moveTimeBlock(v.id, { start: v.start, end: v.end }),
-    onMutate: async (v) => {
-      await qc.cancelQueries({ queryKey: keys.sync });
+    onMutate: (v) => {
       return {
-        prev: patchSnapshot(qc, (s) =>
+        prev: optimistic(qc, (s) =>
           updateBlocks(s, (b) =>
             b.map((x) => (x.id === v.id ? { ...x, start: v.start, end: v.end } : x)),
           ),
@@ -319,10 +329,9 @@ export function useDeleteBlock() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.deleteTimeBlock(id),
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: keys.sync });
+    onMutate: (id) => {
       return {
-        prev: patchSnapshot(qc, (s) =>
+        prev: optimistic(qc, (s) =>
           updateBlocks(s, (b) => b.map((x) => (x.id === id ? { ...x, deleted_at: now() } : x))),
         ),
       };

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
-import { keys } from "@/lib/client/data";
+import { blockMovesPending, keys } from "@/lib/client/data";
 
 /** Refetches when rows change elsewhere (another tab, the phone, or a gcal sync). */
 function RealtimeInvalidation() {
@@ -13,7 +13,8 @@ function RealtimeInvalidation() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const pending = new Set<string>();
     const flush = () => {
-      if (pending.has("sync")) qc.invalidateQueries({ queryKey: keys.sync });
+      if (pending.has("sync") && !blockMovesPending(qc))
+        qc.invalidateQueries({ queryKey: keys.sync });
       if (pending.has("events")) qc.invalidateQueries({ queryKey: ["events"] });
       pending.clear();
     };
