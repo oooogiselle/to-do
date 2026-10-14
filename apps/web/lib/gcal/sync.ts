@@ -183,11 +183,14 @@ async function reconcileTimeBlock(userId: string, blockId: string, ev: calendar_
   const db = adminClient();
   const { data: block } = await db
     .from("time_blocks")
-    .select("start, end, deleted_at")
+    .select("start, end, deleted_at, updated_at")
     .eq("user_id", userId)
     .eq("id", blockId)
-    .maybeSingle<{ start: string; end: string; deleted_at: string | null }>();
+    .maybeSingle<{ start: string; end: string; deleted_at: string | null; updated_at: string }>();
   if (!block || block.deleted_at) return;
+  // A sync that fetched the event before the app's latest move/resize would otherwise write the
+  // older times back. Only Google-side edits made after our last write win.
+  if (ev.updated && Date.parse(ev.updated) < Date.parse(block.updated_at)) return;
 
   if (ev.status === "cancelled") {
     await db

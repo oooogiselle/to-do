@@ -283,9 +283,22 @@ export function useCreateBlock() {
   });
 }
 
+const MOVE_BLOCK = ["move-block"] as const;
+
+/**
+ * Moves and resizes run one at a time, so a quick move-then-resize can't land out of order on
+ * the server. Once the last one settles, the snapshot is refetched: a refetch that started
+ * while a move was in flight may have brought back the old times.
+ */
 export function useMoveBlock() {
   const qc = useQueryClient();
   return useMutation({
+    mutationKey: MOVE_BLOCK,
+    scope: { id: "move-block" },
+    onSettled: () => {
+      if (qc.isMutating({ mutationKey: MOVE_BLOCK }) <= 1)
+        qc.invalidateQueries({ queryKey: keys.sync });
+    },
     mutationFn: (v: { id: string; start: string; end: string }) =>
       api.moveTimeBlock(v.id, { start: v.start, end: v.end }),
     onMutate: async (v) => {
