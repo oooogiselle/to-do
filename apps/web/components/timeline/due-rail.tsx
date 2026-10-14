@@ -73,12 +73,12 @@ export function DueRail({ now }: { now: number }) {
       if (!overdue && due >= to) continue;
 
       const steps = stepsByTask.get(task.id) ?? [];
-      const stepEst = steps
-        .filter((s) => !s.done)
-        .reduce((sum, s) => sum + (s.estimate_min ?? 0), 0);
+      const undone = steps.filter((s) => !s.done);
+      // A step without an estimate drags as the default block, so count it as that much work.
+      const stepMin = (s: Step) => dragMinutes(s.estimate_min ?? settings.default_block_min);
       const estimated = !!task.estimate_min || steps.some((s) => s.estimate_min);
-      const remaining = steps.some((s) => s.estimate_min)
-        ? stepEst
+      const remaining = undone.some((s) => s.estimate_min)
+        ? undone.reduce((sum, s) => sum + stepMin(s), 0)
         : (task.estimate_min ?? settings.default_block_min);
       const scheduledMin = blocks
         .filter((b) => b.task_id === task.id && Date.parse(b.end) > now)
@@ -86,18 +86,24 @@ export function DueRail({ now }: { now: number }) {
           (sum, b) => sum + (Date.parse(b.end) - Math.max(Date.parse(b.start), now)) / 60_000,
           0,
         );
-      const risk = dueRisk({
-        dueAt: due,
-        remainingEstimateMin: remaining,
-        scheduledMin,
-        freeSlots: free,
-      });
-      if (risk.neededMin <= 0) continue;
       // Steps not yet done and without an upcoming block of their own.
       const scheduledSteps = new Set(
         blocks.filter((b) => b.step_id && Date.parse(b.end) > now).map((b) => b.step_id),
       );
-      const openSteps = steps.filter((s) => !s.done && !scheduledSteps.has(s.id));
+      const openSteps = undone.filter((s) => !scheduledSteps.has(s.id));
+      // Scheduling step by step keeps the task here until every step has a block. A block for
+      // the whole task covers its steps, so then only the total counts.
+      const wholeTaskBlock = blocks.some(
+        (b) => b.task_id === task.id && !b.step_id && Date.parse(b.end) > now,
+      );
+      const stepsLeft = wholeTaskBlock ? 0 : openSteps.reduce((sum, s) => sum + stepMin(s), 0);
+      const risk = dueRisk({
+        dueAt: due,
+        remainingEstimateMin: Math.max(remaining - scheduledMin, stepsLeft),
+        scheduledMin: 0,
+        freeSlots: free,
+      });
+      if (risk.neededMin <= 0) continue;
       out.push({
         task,
         steps: openSteps,
