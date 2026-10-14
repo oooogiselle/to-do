@@ -15,10 +15,17 @@ import {
   type TimeBlock,
 } from "@tt/shared";
 import { api } from "@/lib/client/api";
-import { isTemp, useEvents, useModel, useSettings } from "@/lib/client/data";
+import {
+  isTemp,
+  useDeleteBlock,
+  useEvents,
+  useModel,
+  useMoveBlock,
+  useSettings,
+} from "@/lib/client/data";
 import { fmtDay, fmtTime, minutesIntoDay } from "@/lib/client/time";
 import { useOpenTask } from "@/components/app-shell";
-import { assignLanes, daySegment, HOUR_PX, instantAt } from "./geometry";
+import { assignLanes, DAY_MIN, daySegment, HOUR_PX, instantAt, snap, SNAP_MIN } from "./geometry";
 import type { DragItem, DropPreview } from "./dnd";
 import { useTimelineDnd } from "./use-timeline-dnd";
 import { DueRail } from "./due-rail";
@@ -500,6 +507,8 @@ function DayColumn(props: {
           <BlockItem
             key={it.key}
             block={it.block}
+            day={day}
+            segStartMin={it.startMin}
             style={style}
             compact={compact}
             tz={tz}
@@ -541,6 +550,9 @@ function DayColumn(props: {
 
 function BlockItem(props: {
   block: TimeBlock;
+  day: string;
+  /** Where this block's segment starts in `day`, in minutes from midnight. */
+  segStartMin: number;
   style: React.CSSProperties;
   compact: boolean;
   tz: string;
@@ -549,7 +561,7 @@ function BlockItem(props: {
   onOpen: (taskId: string) => void;
   hidden: boolean;
 }) {
-  const { block: b, tz, label } = props;
+  const { block: b, day, tz, label } = props;
   const minutes = Math.round((Date.parse(b.end) - Date.parse(b.start)) / 60_000);
   // Past blocks are a record of work done; only upcoming ones can be moved.
   const movable = !isTemp(b.id) && Date.parse(b.end) > props.now;
@@ -564,26 +576,99 @@ function BlockItem(props: {
       color: label.color,
     } satisfies DragItem,
   });
+  const removeBlock = useDeleteBlock();
+  const moveBlock = useMoveBlock();
+
+  // Dragging the bottom edge changes the end time; it's only on the day the block ends.
+  const endsHere = localDate(new Date(Date.parse(b.end) - 1), tz) === day;
+  const [resizeEnd, setResizeEnd] = useState<number | null>(null);
+  const startResize = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const column = e.currentTarget.closest<HTMLElement>("[data-day]");
+    if (!column) return;
+    const startMs = Date.parse(b.start);
+    const endAt = (clientY: number) => {
+      const y = clientY - column.getBoundingClientRect().top;
+      const min = Math.min(snap((y / HOUR_PX) * 60), DAY_MIN);
+      const end = instantAt(day, min, tz);
+      // At least one snap step long, and never ending in the past.
+      const floor = Math.max(startMs + SNAP_MIN * 60_000, Date.now());
+      return end < floor ? Math.ceil(floor / 60_000) * 60_000 : end;
+    };
+    let end = Date.parse(b.end);
+    const move = (ev: PointerEvent) => setResizeEnd((end = endAt(ev.clientY)));
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      setResizeEnd(null);
+      if (end !== Date.parse(b.end))
+        moveBlock.mutate({ id: b.id, start: b.start, end: new Date(end).toISOString() });
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  };
+
+  const shownEnd = resizeEnd ?? b.end;
+  const style =
+    resizeEnd === null
+      ? props.style
+      : {
+          ...props.style,
+          height: Math.max(
+            ((minutesIntoDay(resizeEnd, day, tz) - props.segStartMin) / 60) * HOUR_PX - 2,
+            12,
+          ),
+          zIndex: 20,
+        };
+  const past = !movable && !isTemp(b.id);
+
   return (
-    <button
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      onClick={() => !isDragging && props.onOpen(b.task_id)}
-      title={`${label.title}\n${fmtTime(b.start, tz)}–${fmtTime(b.end, tz)}${movable ? "\nDrag to reschedule" : ""}`}
-      className={`absolute overflow-hidden rounded border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-tight text-ink ${movable ? "cursor-grab touch-none" : ""} ${props.hidden ? "opacity-30" : ""} ${isTemp(b.id) ? "animate-pulse" : ""}`}
-      style={{
-        ...props.style,
-        borderColor: label.color,
-        background: `color-mix(in srgb, ${label.color} 22%, var(--surface))`,
-      }}
-    >
-      <div className="truncate font-medium">{label.title}</div>
-      {!props.compact && (
-        <div className="truncate opacity-75">
-          {fmtTime(b.start, tz)}–{fmtTime(b.end, tz)}
+    <div className={`group absolute ${props.hidden ? "opacity-30" : ""}`} style={style}>
+      <button
+        ref={setNodeRef}
+        {...listeners}
+        {...attributes}
+        onClick={() => !isDragging && props.onOpen(b.task_id)}
+        title={`${label.title}\n${fmtTime(b.start, tz)}–${fmtTime(b.end, tz)}${movable ? "\nDrag to reschedule, drag the bottom edge to change length" : ""}`}
+        className={`absolute inset-0 overflow-hidden rounded border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-tight text-ink ${movable ? "cursor-grab touch-none" : ""} ${isTemp(b.id) ? "animate-pulse" : "pr-5"}`}
+        style={{
+          borderColor: label.color,
+          background: `color-mix(in srgb, ${label.color} 22%, var(--surface))`,
+        }}
+      >
+        <div className="truncate font-medium">{label.title}</div>
+        {(!props.compact || resizeEnd !== null) && (
+          <div className="truncate opacity-75">
+            {fmtTime(b.start, tz)}–{fmtTime(shownEnd, tz)}
+          </div>
+        )}
+      </button>
+      {!isTemp(b.id) && !isDragging && resizeEnd === null && (
+        <button
+          onClick={() => removeBlock.mutate(b.id)}
+          aria-label={`Remove ${label.title} from your calendar`}
+          title={
+            past
+              ? "Didn't get to it? Remove from calendar (the task stays in your to-dos)"
+              : "Remove from calendar (the task stays)"
+          }
+          className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded text-sm leading-none text-muted opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-surface hover:text-risk"
+        >
+          ×
+        </button>
+      )}
+      {movable && endsHere && !isDragging && (
+        <div
+          onPointerDown={startResize}
+          aria-hidden
+          className="absolute inset-x-0 -bottom-0.5 h-2 cursor-ns-resize touch-none"
+        >
+          <div className="mx-auto mt-0.5 h-1 w-6 rounded-full bg-ink/30 opacity-0 group-hover:opacity-100" />
         </div>
       )}
-    </button>
+    </div>
   );
 }

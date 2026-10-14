@@ -180,6 +180,8 @@ export function TaskSheet({ taskId, onClose }: { taskId: string; onClose: () => 
           </div>
         </div>
 
+        <ScheduledBlocks blocks={taskBlocks} steps={steps} tz={settings.timezone} />
+
         <NotesField task={task} onCommit={(notes) => update({ notes })} />
         {task.source_quote && (
           <p className="text-xs text-muted">From your import: “{task.source_quote}”</p>
@@ -209,8 +211,6 @@ export function TaskSheet({ taskId, onClose }: { taskId: string; onClose: () => 
             </button>
           </div>
         )}
-
-        <ScheduledBlocks blocks={taskBlocks} steps={steps} tz={settings.timezone} />
       </div>
 
       <div className="border-t border-line p-4">

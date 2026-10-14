@@ -45,3 +45,9 @@ export function fmtDue(dueAt: string, tz: string, now = Date.now()): string {
       : { month: "short", day: "numeric", timeZone: tz };
   return new Intl.DateTimeFormat("en-US", opts).format(due) + time;
 }
+
+/** "HH:mm" (24h) of `instant` as seen in `tz`, for <input type="time">. */
+export function localTime(instant: number | string | Date, tz: string): string {
+  const z = new TZDate(new Date(instant).getTime(), tz);
+  return `${String(z.getHours()).padStart(2, "0")}:${String(z.getMinutes()).padStart(2, "0")}`;
+}
