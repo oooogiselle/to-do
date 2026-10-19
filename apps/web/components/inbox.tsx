@@ -14,11 +14,11 @@ import {
 import { useCompletion } from "@/lib/client/completion";
 import { fmtDue, fmtWhen } from "@/lib/client/time";
 import { useOpenTask } from "@/components/app-shell";
+import { ColorPicker, PALETTE } from "@/components/color-picker";
 
 type Sort = "due" | "priority";
 const PRIORITY_RANK: Record<Priority, number> = { high: 0, med: 1, low: 2, none: 3 };
 const PRIORITY_MARK: Record<Priority, string> = { high: "!!!", med: "!!", low: "!", none: "" };
-const LIST_COLORS = ["#2563eb", "#0d9488", "#7c3aed", "#db2777", "#ea580c", "#ca8a04", "#64748b"];
 
 const byDue = (a: Task, b: Task) =>
   (a.due_at ? Date.parse(a.due_at) : Infinity) - (b.due_at ? Date.parse(b.due_at) : Infinity);
@@ -154,6 +154,13 @@ function TaskRow({ task, tz, nextAt }: { task: Task; tz: string; nextAt?: number
       >
         {task.title}
       </button>
+      {task.color && (
+        <span
+          className="size-2 shrink-0 rounded-full"
+          style={{ background: task.color }}
+          aria-hidden
+        />
+      )}
       {task.priority !== "none" && (
         <span
           className={`text-xs font-semibold ${task.priority === "high" ? "text-risk" : "text-muted"}`}
@@ -186,25 +193,6 @@ function TaskRow({ task, tz, nextAt }: { task: Task; tz: string; nextAt?: number
         </span>
       )}
     </li>
-  );
-}
-
-function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
-  return (
-    <div role="radiogroup" aria-label="List color" className="flex gap-1">
-      {LIST_COLORS.map((c) => (
-        <button
-          type="button"
-          key={c}
-          role="radio"
-          aria-checked={value === c}
-          aria-label={c}
-          onClick={() => onChange(c)}
-          className={`size-5 rounded-full ${value === c ? "ring-2 ring-ink ring-offset-2 ring-offset-paper" : ""}`}
-          style={{ background: c }}
-        />
-      ))}
-    </div>
   );
 }
 
@@ -262,7 +250,7 @@ function ListHeading({ list, count }: { list: List; count: number }) {
         onChange={(e) => setName(e.target.value)}
         className="rounded-md border border-line bg-paper px-2.5 py-1.5 font-semibold outline-none focus:border-line-strong"
       />
-      <ColorPicker value={color} onChange={setColor} />
+      <ColorPicker value={color} onChange={(c) => c && setColor(c)} label="List color" />
       <button type="submit" className="rounded-md bg-ink px-3 py-1.5 text-paper hover:opacity-90">
         Save
       </button>
@@ -292,7 +280,7 @@ function ListHeading({ list, count }: { list: List; count: number }) {
 function NewListForm({ count }: { count: number }) {
   const createList = useCreateList();
   const [name, setName] = useState("");
-  const [color, setColor] = useState(LIST_COLORS[count % LIST_COLORS.length]!);
+  const [color, setColor] = useState(PALETTE[count % PALETTE.length]!);
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -301,7 +289,7 @@ function NewListForm({ count }: { count: number }) {
       body: { name: name.trim(), color, sort_order: count },
     });
     setName("");
-    setColor(LIST_COLORS[(count + 1) % LIST_COLORS.length]!);
+    setColor(PALETTE[(count + 1) % PALETTE.length]!);
   };
   return (
     <form onSubmit={submit} className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
@@ -315,7 +303,7 @@ function NewListForm({ count }: { count: number }) {
         placeholder="New list, e.g. CS61"
         className="rounded-md border border-line bg-surface px-2.5 py-1.5 outline-none focus:border-line-strong"
       />
-      <ColorPicker value={color} onChange={setColor} />
+      <ColorPicker value={color} onChange={(c) => c && setColor(c)} label="List color" />
       <button
         type="submit"
         className="rounded-md border border-line-strong px-3 py-1.5 hover:border-ink"

@@ -11,6 +11,8 @@ const syncFields = {
 export const Priority = z.enum(["none", "low", "med", "high"]);
 export type Priority = z.infer<typeof Priority>;
 
+const HexColor = z.string().regex(/^#[0-9a-f]{6}$/i);
+
 export const TaskStatus = z.enum(["open", "done", "archived"]);
 export type TaskStatus = z.infer<typeof TaskStatus>;
 
@@ -25,6 +27,8 @@ export type List = z.infer<typeof List>;
 export const Task = z.object({
   ...syncFields,
   list_id: z.string().uuid().nullable(),
+  /** The task's own color; null = use its list's. */
+  color: z.string().nullable(),
   title: z.string().min(1),
   notes: z.string(),
   due_at: z.string().nullable(),
@@ -65,6 +69,8 @@ export const CalendarEvent = z.object({
   end: z.string(),
   all_day: z.boolean(),
   busy: z.boolean(),
+  /** The event's calendar color, if Google gave one. */
+  color: z.string().nullable(),
 });
 export type CalendarEvent = z.infer<typeof CalendarEvent>;
 
@@ -103,6 +109,7 @@ export const ListPatch = ListCreate.partial();
 
 export const TaskCreate = z.object({
   list_id: z.string().uuid().nullable().optional(),
+  color: HexColor.nullable().optional(),
   title: z.string().min(1),
   notes: z.string().optional(),
   due_at: z.string().datetime({ offset: true }).nullable().optional(),

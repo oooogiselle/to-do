@@ -20,8 +20,8 @@ import { TZDate } from "@date-fns/tz";
 import { api } from "@/lib/client/api";
 import { keys, useModel } from "@/lib/client/data";
 import { fmtDue } from "@/lib/client/time";
+import { PALETTE } from "@/components/color-picker";
 
-const LIST_COLORS = ["#2563eb", "#0d9488", "#7c3aed", "#db2777", "#ea580c", "#ca8a04", "#64748b"];
 const PRIORITIES: { value: Priority; label: string }[] = [
   { value: "none", label: "No priority" },
   { value: "low", label: "Low" },
@@ -150,7 +150,7 @@ export function ImportReview(props: {
         ? {
             new: {
               name: newListName.trim(),
-              color: LIST_COLORS[lists.length % LIST_COLORS.length]!,
+              color: PALETTE[lists.length % PALETTE.length]!,
             },
           }
         : target

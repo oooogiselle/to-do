@@ -10,7 +10,7 @@ import {
   type Step,
   type Task,
 } from "@tt/shared";
-import { useEvents, useModel } from "@/lib/client/data";
+import { taskColor, useEvents, useModel } from "@/lib/client/data";
 import { fmtDue, fmtWhen } from "@/lib/client/time";
 import { useOpenTask } from "@/components/app-shell";
 import type { DragItem } from "./dnd";
@@ -179,7 +179,7 @@ export function DueRail({ now }: { now: number }) {
     <RailTask
       key={item.task.id}
       item={item}
-      color={(item.task.list_id && listById.get(item.task.list_id)?.color) || "#64748b"}
+      color={taskColor(item.task, listById)}
       tz={tz}
       now={now}
       defaultMin={settings.default_block_min}

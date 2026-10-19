@@ -17,6 +17,7 @@ import {
 import { api } from "@/lib/client/api";
 import {
   isTemp,
+  taskColor,
   useDeleteBlock,
   useEvents,
   useModel,
@@ -129,10 +130,9 @@ function TimelineView() {
   const blockLabel = (b: TimeBlock) => {
     const task = taskById.get(b.task_id);
     const step = b.step_id ? stepsByTask.get(b.task_id)?.find((s) => s.id === b.step_id) : null;
-    const list = task?.list_id ? listById.get(task.list_id) : undefined;
     return {
       title: eventTitle(null, task?.title ?? "Task", step?.title),
-      color: list?.color ?? "#64748b",
+      color: taskColor(task, listById),
       done: step ? step.done : task?.status === "done",
     };
   };
@@ -362,7 +362,8 @@ function Grid(props: {
                 <div
                   key={e.gcal_event_id}
                   title={e.title}
-                  className={`mb-0.5 truncate rounded px-1.5 py-0.5 text-xs ${e.busy ? "bg-event text-event-ink" : "border border-line text-muted"}`}
+                  className={`mb-0.5 truncate rounded px-1.5 py-0.5 text-xs ${eventLook(e).className}`}
+                  style={eventLook(e).style}
                 >
                   {e.title}
                 </div>
@@ -491,8 +492,8 @@ function DayColumn(props: {
             <div
               key={it.key}
               title={`${e.title}\n${fmtTime(e.start, tz)}–${fmtTime(e.end, tz)}`}
-              className={`absolute overflow-hidden rounded px-1.5 py-0.5 text-xs leading-tight ${e.busy ? "bg-event text-event-ink" : "border border-dashed border-line-strong text-muted"}`}
-              style={style}
+              className={`absolute overflow-hidden rounded px-1.5 py-0.5 text-xs leading-tight ${eventLook(e).className}`}
+              style={{ ...style, ...eventLook(e).style }}
             >
               <div className="truncate font-medium">{e.title}</div>
               {!compact && (
@@ -546,6 +547,30 @@ function DayColumn(props: {
       )}
     </div>
   );
+}
+
+/**
+ * How a calendar event shows: a soft tint of its calendar's color, fainter than task blocks and
+ * without their left bar, so tasks stand out. Free events are a dashed outline.
+ */
+function eventLook(e: CalendarEvent): { className: string; style?: React.CSSProperties } {
+  if (!e.busy)
+    return {
+      className: "border border-dashed text-muted",
+      style: {
+        borderColor: e.color
+          ? `color-mix(in srgb, ${e.color} 45%, var(--line-strong))`
+          : "var(--line-strong)",
+      },
+    };
+  if (!e.color) return { className: "bg-event text-event-ink" };
+  return {
+    className: "border text-ink/80",
+    style: {
+      background: `color-mix(in srgb, ${e.color} 10%, var(--surface))`,
+      borderColor: `color-mix(in srgb, ${e.color} 30%, var(--surface))`,
+    },
+  };
 }
 
 /** How a time block shows: its title, its list's color, and whether its step or task is done. */

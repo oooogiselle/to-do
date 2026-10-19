@@ -12,11 +12,12 @@ export const GET = route(async (req, { supabase }) => {
   }
   if (to - from > MAX_RANGE_DAYS * 86_400_000) throw new HttpError(400, "Range too large");
 
-  const calendars = unwrap(await supabase.from("calendars").select("id").eq("selected", true)) as {
-    id: string;
-  }[];
+  const calendars = unwrap(
+    await supabase.from("calendars").select("id, color").eq("selected", true),
+  ) as { id: string; color: string | null }[];
   if (!calendars.length) return { events: [] };
 
+  const colorOf = new Map(calendars.map((c) => [c.id, c.color]));
   const events = unwrap(
     await supabase
       .from("calendar_events")
@@ -29,5 +30,5 @@ export const GET = route(async (req, { supabase }) => {
       .gt("end", new Date(from).toISOString())
       .order("start"),
   );
-  return { events };
+  return { events: events.map((e) => ({ ...e, color: colorOf.get(e.calendar_id) ?? null })) };
 });

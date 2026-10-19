@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import type { List, Settings, Step, SyncResponse, Task, TimeBlock } from "@tt/shared";
+import { NO_COLOR } from "@/components/color-picker";
 import { api } from "./api";
 
 export const keys = {
@@ -64,6 +65,12 @@ export function useModel() {
       settings: data?.settings ?? FALLBACK_SETTINGS,
     };
   }, [data, isLoading, error]);
+}
+
+/** The color a task shows in: its own, else its list's, else gray. */
+export function taskColor(task: Task | undefined, listById: Map<string, List>) {
+  if (task?.color) return task.color;
+  return (task?.list_id && listById.get(task.list_id)?.color) || NO_COLOR;
 }
 
 // ---------- Optimistic mutations on the sync snapshot ----------
@@ -147,6 +154,7 @@ export function useCreateTask() {
       upsertRow(s, "tasks", {
         ...tempRow({
           list_id: v.body.list_id ?? null,
+          color: v.body.color ?? null,
           title: v.body.title,
           notes: v.body.notes ?? "",
           due_at: v.body.due_at ?? null,

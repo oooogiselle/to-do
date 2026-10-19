@@ -12,6 +12,7 @@ import {
   useUpdateTask,
 } from "@/lib/client/data";
 import { DuePicker } from "./due-picker";
+import { ColorPicker, NO_COLOR } from "./color-picker";
 import { useCompletion } from "@/lib/client/completion";
 import { BreakdownPanel } from "./task-sheet/breakdown-panel";
 import { SchedulePanel } from "./task-sheet/schedule-panel";
@@ -64,7 +65,7 @@ export function TaskSheet({
   initialPanel?: "schedule" | null;
   onClose: () => void;
 }) {
-  const { taskById, stepsByTask, blocks, lists, settings } = useModel();
+  const { taskById, stepsByTask, blocks, lists, listById, settings } = useModel();
   const task = taskById.get(taskId);
   const steps = stepsByTask.get(taskId) ?? [];
   const taskBlocks = blocks.filter((b) => b.task_id === taskId);
@@ -136,6 +137,17 @@ export function TaskSheet({
               </option>
             ))}
           </select>
+
+          <span className="text-muted">Color</span>
+          <ColorPicker
+            label="Task color"
+            value={task.color}
+            onChange={(color) => update({ color })}
+            inherit={{
+              color: (task.list_id && listById.get(task.list_id)?.color) || NO_COLOR,
+              label: "Same as list",
+            }}
+          />
 
           <span className="text-muted">Due</span>
           <div>

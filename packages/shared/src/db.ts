@@ -175,14 +175,14 @@ isOneToOne: false
                   ]
                 },"tasks": {
                   Row: {
-                    "created_at": string,"deleted_at": string | null,"due_at": string | null,"estimate_min": number | null,"id": string,"import_id": string | null,"list_id": string | null,"notes": string,"priority": Database["public"]['Enums']["priority"],"source_quote": string | null,"status": Database["public"]['Enums']["task_status"],"title": string,"updated_at": string,"user_id": string
+                    "color": string | null,"created_at": string,"deleted_at": string | null,"due_at": string | null,"estimate_min": number | null,"id": string,"import_id": string | null,"list_id": string | null,"notes": string,"priority": Database["public"]['Enums']["priority"],"source_quote": string | null,"status": Database["public"]['Enums']["task_status"],"title": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"deleted_at"?: string | null,"due_at"?: string | null,"estimate_min"?: number | null,"id"?: string,"import_id"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"source_quote"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title": string,"updated_at"?: string,"user_id"?: string
+                    "color"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"due_at"?: string | null,"estimate_min"?: number | null,"id"?: string,"import_id"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"source_quote"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title": string,"updated_at"?: string,"user_id"?: string
                   }
                   Update: {
-                    "created_at"?: string,"deleted_at"?: string | null,"due_at"?: string | null,"estimate_min"?: number | null,"id"?: string,"import_id"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"source_quote"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title"?: string,"updated_at"?: string,"user_id"?: string
+                    "color"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"due_at"?: string | null,"estimate_min"?: number | null,"id"?: string,"import_id"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"source_quote"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
