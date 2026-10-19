@@ -27,23 +27,33 @@ export function fmtDay(day: string, tz: string, style: "short" | "long" = "short
 /** "Today 11pm", "Tomorrow", "Fri 11:59pm", "Oct 20", with "overdue" handled by callers. */
 export function fmtDue(dueAt: string, tz: string, now = Date.now()): string {
   const due = new Date(dueAt);
-  const today = localDate(new Date(now), tz);
-  const dueDay = localDate(due, tz);
   const z = new TZDate(due.getTime(), tz);
   const endOfDay = z.getHours() === 23 && z.getMinutes() === 59;
-  const time = endOfDay ? "" : ` ${fmtTime(due, tz)}`;
+  return relDay(due, tz, now) + (endOfDay ? "" : ` ${fmtTime(due, tz)}`);
+}
+
+/** Day and time of an instant: "Today 3:30 PM", "Thu 2:00 PM", "Oct 21 9:00 AM". */
+export function fmtWhen(instant: number | string | Date, tz: string, now = Date.now()): string {
+  const d = new Date(instant);
+  return `${relDay(d, tz, now)} ${fmtTime(d, tz)}`;
+}
+
+/** "Today", "Tomorrow", "Yesterday", a weekday within the coming week, else "Oct 21". */
+function relDay(d: Date, tz: string, now: number): string {
+  const today = localDate(new Date(now), tz);
+  const day = localDate(d, tz);
   const dayDiff = Math.round(
-    (zonedInstant(dueDay, "12:00", tz).getTime() - zonedInstant(today, "12:00", tz).getTime()) /
+    (zonedInstant(day, "12:00", tz).getTime() - zonedInstant(today, "12:00", tz).getTime()) /
       86_400_000,
   );
-  if (dayDiff === 0) return `Today${time}`;
-  if (dayDiff === 1) return `Tomorrow${time}`;
-  if (dayDiff === -1) return `Yesterday${time}`;
+  if (dayDiff === 0) return "Today";
+  if (dayDiff === 1) return "Tomorrow";
+  if (dayDiff === -1) return "Yesterday";
   const opts: Intl.DateTimeFormatOptions =
     dayDiff > 1 && dayDiff < 7
       ? { weekday: "short", timeZone: tz }
       : { month: "short", day: "numeric", timeZone: tz };
-  return new Intl.DateTimeFormat("en-US", opts).format(due) + time;
+  return new Intl.DateTimeFormat("en-US", opts).format(d);
 }
 
 /** "HH:mm" (24h) of `instant` as seen in `tz`, for <input type="time">. */

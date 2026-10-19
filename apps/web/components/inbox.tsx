@@ -3,9 +3,16 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { formatMinutes, type List, type Priority, type Task } from "@tt/shared";
-import { isTemp, useCreateList, useDeleteList, useModel, useUpdateList } from "@/lib/client/data";
+import {
+  isTemp,
+  tempId,
+  useCreateList,
+  useDeleteList,
+  useModel,
+  useUpdateList,
+} from "@/lib/client/data";
 import { useCompletion } from "@/lib/client/completion";
-import { fmtDue } from "@/lib/client/time";
+import { fmtDue, fmtWhen } from "@/lib/client/time";
 import { useOpenTask } from "@/components/app-shell";
 
 type Sort = "due" | "priority";
@@ -24,11 +31,18 @@ export function Inbox() {
   const [showDone, setShowDone] = useState(false);
   const now = Date.now();
 
-  const scheduled = useMemo(
-    () => new Set(blocks.filter((b) => Date.parse(b.end) > now).map((b) => b.task_id)),
+  // Start of each task's next upcoming (or in-progress) block.
+  const nextBlock = useMemo(() => {
+    const next = new Map<string, number>();
+    for (const b of blocks) {
+      if (Date.parse(b.end) <= now) continue;
+      const start = Date.parse(b.start);
+      const prev = next.get(b.task_id);
+      if (prev === undefined || start < prev) next.set(b.task_id, start);
+    }
+    return next;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [blocks],
-  );
+  }, [blocks]);
 
   const groups = useMemo(() => {
     const visible = tasks.filter((t) => t.status === "open" || (showDone && t.status === "done"));
@@ -99,7 +113,7 @@ export function Inbox() {
                         key={t.id}
                         task={t}
                         tz={settings.timezone}
-                        unscheduled={!scheduled.has(t.id)}
+                        nextAt={nextBlock.get(t.id)}
                       />
                     ))}
                   </ul>
@@ -119,7 +133,7 @@ export function Inbox() {
   );
 }
 
-function TaskRow({ task, tz, unscheduled }: { task: Task; tz: string; unscheduled: boolean }) {
+function TaskRow({ task, tz, nextAt }: { task: Task; tz: string; nextAt?: number }) {
   const openTask = useOpenTask();
   const { setTaskDone } = useCompletion();
   const done = task.status === "done";
@@ -148,7 +162,15 @@ function TaskRow({ task, tz, unscheduled }: { task: Task; tz: string; unschedule
           {PRIORITY_MARK[task.priority]}
         </span>
       )}
-      {unscheduled && !done && task.estimate_min && (
+      {!done && nextAt !== undefined && (
+        <span
+          className="rounded bg-paper px-1.5 py-0.5 text-xs text-muted"
+          title="Next scheduled block"
+        >
+          {fmtWhen(nextAt, tz)}
+        </span>
+      )}
+      {nextAt === undefined && !done && task.estimate_min && (
         <span
           className="rounded bg-paper px-1.5 py-0.5 text-xs text-muted"
           title="Estimate, not scheduled yet"
@@ -275,7 +297,7 @@ function NewListForm({ count }: { count: number }) {
     e.preventDefault();
     if (!name.trim()) return;
     createList.mutate({
-      tempId: `temp-${crypto.randomUUID()}`,
+      tempId: tempId(),
       body: { name: name.trim(), color, sort_order: count },
     });
     setName("");

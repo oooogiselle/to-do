@@ -1,35 +1,32 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
-import { useModel, useRemoveUpcomingBlocks, useUpdateStep, useUpdateTask } from "./data";
+import { useCallback } from "react";
+import {
+  useDeleteStep,
+  useModel,
+  useRemoveUpcomingBlocks,
+  useUpdateStep,
+  useUpdateTask,
+} from "./data";
+import { setNotice, type Notice } from "./notice";
 
-/** Pending "remove upcoming blocks?" offer shown after completing a task or step. */
-export type BlockRemovalOffer = { taskId: string; stepId?: string; count: number; label: string };
+type Completion = Extract<Notice, { kind: "completion" }>;
 
-let offer: BlockRemovalOffer | null = null;
-const listeners = new Set<() => void>();
-const setOffer = (next: BlockRemovalOffer | null) => {
-  offer = next;
-  listeners.forEach((l) => l());
-};
-
-export function useBlockRemovalOffer() {
-  const current = useSyncExternalStore(
-    (l) => (listeners.add(l), () => listeners.delete(l)),
-    () => offer,
-    () => null,
-  );
+/** Actions for a completion notice: remove the blocks, or undo the automatic status change. */
+export function useCompletionActions(n: Completion) {
   const remove = useRemoveUpcomingBlocks();
+  const updateTask = useUpdateTask();
   return {
-    offer: current,
-    dismiss: () => setOffer(null),
     accept: () => {
-      if (!current) return;
-      remove.mutate({
-        task_id: current.taskId,
-        ...(current.stepId && { step_id: current.stepId }),
-      });
-      setOffer(null);
+      remove.mutate({ task_id: n.taskId, ...(n.stepId && { step_id: n.stepId }) });
+      setNotice(null);
+    },
+    /** Reverts the automatic status change; the steps stay as they are. */
+    undo: () => {
+      if (!n.auto) return;
+      const status = n.auto === "done" ? "open" : "done";
+      updateTask.mutate({ id: n.taskId, patch: { status } });
+      setNotice(null);
     },
   };
 }
@@ -37,11 +34,13 @@ export function useBlockRemovalOffer() {
 /**
  * Completing a task or step: updates it, then offers to remove its upcoming time blocks
  * from the calendar (spec: "its future TimeBlocks are offered for removal").
+ * A task follows its steps: done once every step is, reopened when one is unchecked.
  */
 export function useCompletion() {
   const { blocks, taskById, stepsByTask } = useModel();
   const updateTask = useUpdateTask();
   const updateStep = useUpdateStep();
+  const deleteStep = useDeleteStep();
 
   const upcoming = useCallback(
     (taskId: string, stepId?: string) =>
@@ -54,17 +53,46 @@ export function useCompletion() {
     [blocks],
   );
 
+  const setTaskDone = (taskId: string, done: boolean, auto?: Completion["auto"]) => {
+    updateTask.mutate({ id: taskId, patch: { status: done ? "done" : "open" } });
+    const count = done ? upcoming(taskId) : 0;
+    const label = taskById.get(taskId)?.title ?? "this task";
+    if (count || auto) setNotice({ kind: "completion", taskId, count, label, auto });
+  };
+
+  // Completing the task offers to remove all its blocks, the step's included.
+  const completeIfAllDone = (taskId: string, steps: { done: boolean }[]) => {
+    const open = taskById.get(taskId)?.status !== "done";
+    if (open && steps.length && steps.every((s) => s.done)) {
+      setTaskDone(taskId, true, "done");
+      return true;
+    }
+    return false;
+  };
+
   return {
-    setTaskDone: (taskId: string, done: boolean) => {
-      updateTask.mutate({ id: taskId, patch: { status: done ? "done" : "open" } });
-      const count = done ? upcoming(taskId) : 0;
-      if (count) setOffer({ taskId, count, label: taskById.get(taskId)?.title ?? "this task" });
-    },
+    setTaskDone: (taskId: string, done: boolean) => setTaskDone(taskId, done),
     setStepDone: (taskId: string, stepId: string, done: boolean) => {
       updateStep.mutate({ id: stepId, patch: { done } });
+      const steps = (stepsByTask.get(taskId) ?? []).map((s) =>
+        s.id === stepId ? { ...s, done } : s,
+      );
+      if (completeIfAllDone(taskId, steps)) return;
+      if (!done && taskById.get(taskId)?.status === "done") {
+        return setTaskDone(taskId, false, "reopened");
+      }
       const count = done ? upcoming(taskId, stepId) : 0;
-      const step = stepsByTask.get(taskId)?.find((s) => s.id === stepId);
-      if (count) setOffer({ taskId, stepId, count, label: step?.title ?? "this step" });
+      const step = steps.find((s) => s.id === stepId);
+      if (count) {
+        setNotice({ kind: "completion", taskId, stepId, count, label: step?.title ?? "this step" });
+      }
+    },
+    deleteStep: (taskId: string, stepId: string) => {
+      deleteStep.mutate(stepId);
+      completeIfAllDone(
+        taskId,
+        (stepsByTask.get(taskId) ?? []).filter((s) => s.id !== stepId),
+      );
     },
   };
 }

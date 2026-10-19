@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ProposedTask } from "@tt/shared";
 import { api } from "@/lib/client/api";
+import { uuid } from "@/lib/client/data";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { ImportReview } from "./review";
 
@@ -69,7 +70,7 @@ export function ImportView() {
         } = await supabase.auth.getUser();
         if (!user) throw new Error("Your session expired. Sign in again.");
         const safe = file.name.replace(/[^\w.-]+/g, "_").slice(-80);
-        const path = `${user.id}/${crypto.randomUUID()}-${safe}`;
+        const path = `${user.id}/${uuid()}-${safe}`;
         const { error: upErr } = await supabase.storage.from("imports").upload(path, file, {
           contentType: file.type,
         });

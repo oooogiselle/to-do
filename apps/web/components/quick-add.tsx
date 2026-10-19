@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseQuickAdd, type Priority } from "@tt/shared";
-import { useCreateTask, useModel } from "@/lib/client/data";
+import { tempId, useCreateTask, useModel } from "@/lib/client/data";
+import { setNotice } from "@/lib/client/notice";
 import { PREFILL_KEY } from "@/components/import/import-view";
 import { DuePicker } from "@/components/due-picker";
+import { ListPicker } from "@/components/list-picker";
 
 const PRIORITY_LABEL: Record<Priority, string> = {
   none: "",
@@ -20,19 +22,27 @@ const LONG_TEXT = 200;
 const looksLikeSeveral = (t: string) =>
   t.includes("\n") || t.length > LONG_TEXT || (t.match(/[,;]/g)?.length ?? 0) >= 2;
 
+/** A picker's choice and the typed value it replaced. */
+type Picked = { value: string | null; over: string | null };
+const resolve = (picked: Picked | null, typed: string | null) =>
+  picked && picked.over === typed ? picked.value : typed;
+
 export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { lists, listById, settings } = useModel();
   const createTask = useCreateTask();
   const router = useRouter();
   const [text, setText] = useState("");
-  // A date chosen in the picker overrides one typed in the text; undefined means not chosen.
-  const [pickedDue, setPickedDue] = useState<string | null | undefined>(undefined);
+  // A date or list chosen in a picker overrides the one typed in the text, until the typed
+  // one changes: whichever was set last wins.
+  const [pickedDue, setPickedDue] = useState<Picked | null>(null);
+  const [pickedList, setPickedList] = useState<Picked | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (!open) return;
     setText("");
-    setPickedDue(undefined);
+    setPickedDue(null);
+    setPickedList(null);
     requestAnimationFrame(() => inputRef.current?.focus());
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
@@ -58,12 +68,13 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
 
   if (!open) return null;
 
-  const dueAt = pickedDue !== undefined ? pickedDue : (parsed?.due_at ?? null);
+  const typedDue = parsed?.due_at ?? null;
+  const dueAt = resolve(pickedDue, typedDue);
   const duePicker = (
     <DuePicker
       value={dueAt}
       onChange={(v) => {
-        setPickedDue(v);
+        setPickedDue({ value: v, over: typedDue });
         inputRef.current?.focus();
       }}
       tz={settings.timezone}
@@ -71,12 +82,30 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
     />
   );
 
+  const typedList = parsed?.list_id ?? null;
+  const listId = resolve(pickedList, typedList);
+  const listPicker = (
+    <ListPicker
+      value={listId && listById.has(listId) ? listId : null}
+      onChange={(v) => {
+        setPickedList({ value: v, over: typedList });
+        inputRef.current?.focus();
+      }}
+      lists={lists}
+      className="text-sm"
+    />
+  );
+
   const addInstantly = () => {
     if (!parsed) return;
-    createTask.mutate({
-      tempId: `temp-${crypto.randomUUID()}`,
-      body: { ...parsed, due_at: dueAt },
-    });
+    const listName = (listId && listById.get(listId)?.name) || undefined;
+    createTask.mutate(
+      { tempId: tempId(), body: { ...parsed, due_at: dueAt, list_id: listId } },
+      {
+        onSuccess: (task) =>
+          setNotice({ kind: "added", taskId: task.id, label: task.title, listName }),
+      },
+    );
     onClose();
   };
 
@@ -95,8 +124,6 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
     if (e.metaKey || e.ctrlKey || long) extractWithAi();
     else addInstantly();
   };
-
-  const list = parsed?.list_id ? listById.get(parsed.list_id) : null;
 
   return (
     <div
@@ -133,12 +160,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
           ) : parsed ? (
             <>
               <span className="font-medium text-ink">{parsed.title}</span>
-              {list && (
-                <span className="flex items-center gap-1.5">
-                  <span className="size-2 rounded-full" style={{ background: list.color }} />
-                  {list.name}
-                </span>
-              )}
+              {listPicker}
               {duePicker}
               {parsed.priority !== "none" && (
                 <span>{PRIORITY_LABEL[parsed.priority]} priority</span>
@@ -148,6 +170,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
           ) : (
             <>
               <span>Type a task. Add a list, a due date and a priority to set them.</span>
+              {listPicker}
               {duePicker}
             </>
           )}

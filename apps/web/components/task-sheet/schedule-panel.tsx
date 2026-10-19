@@ -8,7 +8,7 @@ import {
   type SlotSuggestion,
   type Task,
 } from "@tt/shared";
-import { useCreateBlock, useEvents, useModel } from "@/lib/client/data";
+import { tempId, useCreateBlock, useEvents, useModel } from "@/lib/client/data";
 import { fmtDay, fmtTime } from "@/lib/client/time";
 import { localDate } from "@tt/shared";
 
@@ -61,7 +61,7 @@ export function SchedulePanel({ task, onClose }: { task: Task; onClose: () => vo
   const choose = (s: SlotSuggestion) => {
     for (const b of s.blocks) {
       createBlock.mutate({
-        tempId: `temp-${crypto.randomUUID()}`,
+        tempId: tempId(),
         body: {
           task_id: task.id,
           step_id: b.step_id,

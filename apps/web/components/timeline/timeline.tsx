@@ -23,6 +23,7 @@ import {
   useMoveBlock,
   useSettings,
 } from "@/lib/client/data";
+import { useCompletion } from "@/lib/client/completion";
 import { fmtDay, fmtTime, minutesIntoDay } from "@/lib/client/time";
 import { useOpenTask } from "@/components/app-shell";
 import { assignLanes, DAY_MIN, daySegment, HOUR_PX, instantAt, snap, SNAP_MIN } from "./geometry";
@@ -127,13 +128,12 @@ function TimelineView() {
 
   const blockLabel = (b: TimeBlock) => {
     const task = taskById.get(b.task_id);
-    const stepTitle = b.step_id
-      ? stepsByTask.get(b.task_id)?.find((s) => s.id === b.step_id)?.title
-      : null;
+    const step = b.step_id ? stepsByTask.get(b.task_id)?.find((s) => s.id === b.step_id) : null;
     const list = task?.list_id ? listById.get(task.list_id) : undefined;
     return {
-      title: eventTitle(null, task?.title ?? "Task", stepTitle),
+      title: eventTitle(null, task?.title ?? "Task", step?.title),
       color: list?.color ?? "#64748b",
+      done: step ? step.done : task?.status === "done",
     };
   };
 
@@ -320,7 +320,7 @@ function Grid(props: {
   events: CalendarEvent[];
   blocks: TimeBlock[];
   freeSlots: { start: number; end: number }[];
-  blockLabel: (b: TimeBlock) => { title: string; color: string };
+  blockLabel: (b: TimeBlock) => BlockLabel;
   scrollToHour: number;
   loading: boolean;
   preview: DropPreview | null;
@@ -417,7 +417,7 @@ function DayColumn(props: {
   timed: CalendarEvent[];
   blocks: TimeBlock[];
   freeSlots: { start: number; end: number }[];
-  blockLabel: (b: TimeBlock) => { title: string; color: string };
+  blockLabel: (b: TimeBlock) => BlockLabel;
   onOpenTask: (id: string) => void;
   preview: DropPreview | null;
   dragging: DragItem | null;
@@ -548,6 +548,9 @@ function DayColumn(props: {
   );
 }
 
+/** How a time block shows: its title, its list's color, and whether its step or task is done. */
+type BlockLabel = { title: string; color: string; done: boolean };
+
 function BlockItem(props: {
   block: TimeBlock;
   day: string;
@@ -557,7 +560,7 @@ function BlockItem(props: {
   compact: boolean;
   tz: string;
   now: number;
-  label: { title: string; color: string };
+  label: BlockLabel;
   onOpen: (taskId: string) => void;
   hidden: boolean;
 }) {
@@ -578,6 +581,13 @@ function BlockItem(props: {
   });
   const removeBlock = useDeleteBlock();
   const moveBlock = useMoveBlock();
+  const { setTaskDone, setStepDone } = useCompletion();
+  const toggleDone = () =>
+    b.step_id
+      ? setStepDone(b.task_id, b.step_id, !label.done)
+      : setTaskDone(b.task_id, !label.done);
+  // Once a block has started, ask whether its work got done; upcoming ones show it on hover.
+  const started = Date.parse(b.start) <= props.now;
 
   // Dragging the bottom edge changes the end time; it's only on the day the block ends.
   const endsHere = localDate(new Date(Date.parse(b.end) - 1), tz) === day;
@@ -626,26 +636,47 @@ function BlockItem(props: {
   const past = !movable && !isTemp(b.id);
 
   return (
-    <div className={`group absolute ${props.hidden ? "opacity-30" : ""}`} style={style}>
+    <div
+      className={`group absolute ${props.hidden ? "opacity-30" : label.done ? "opacity-60" : ""}`}
+      style={style}
+    >
       <button
         ref={setNodeRef}
         {...listeners}
         {...attributes}
         onClick={() => !isDragging && props.onOpen(b.task_id)}
         title={`${label.title}\n${fmtTime(b.start, tz)}–${fmtTime(b.end, tz)}${movable ? "\nDrag to reschedule, drag the bottom edge to change length" : ""}`}
-        className={`absolute inset-0 overflow-hidden rounded border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-tight text-ink ${movable ? "cursor-grab touch-none" : ""} ${isTemp(b.id) ? "animate-pulse" : "pr-5"}`}
+        className={`absolute inset-0 overflow-hidden rounded border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-tight text-ink ${movable ? "cursor-grab touch-none" : ""} ${isTemp(b.id) ? "animate-pulse" : "pr-5 pl-5"}`}
         style={{
           borderColor: label.color,
           background: `color-mix(in srgb, ${label.color} 22%, var(--surface))`,
         }}
       >
-        <div className="truncate font-medium">{label.title}</div>
+        <div className={`truncate font-medium ${label.done ? "line-through" : ""}`}>
+          {label.title}
+        </div>
         {(!props.compact || resizeEnd !== null) && (
           <div className="truncate opacity-75">
             {fmtTime(b.start, tz)}–{fmtTime(shownEnd, tz)}
           </div>
         )}
       </button>
+      {!isTemp(b.id) && !isDragging && resizeEnd === null && (
+        <button
+          role="checkbox"
+          aria-checked={label.done}
+          onClick={toggleDone}
+          aria-label={label.done ? `Mark ${label.title} not done` : `Mark ${label.title} done`}
+          title={label.done ? "Done. Click to undo" : started ? "Done with this?" : "Mark done"}
+          className={`absolute top-0.5 left-1 flex size-4 items-center justify-center rounded-full border text-[10px] leading-none ${label.done || started ? "" : "opacity-0 group-hover:opacity-100 focus:opacity-100"} ${label.done ? "text-paper" : "bg-surface hover:bg-paper"}`}
+          style={{
+            borderColor: label.color,
+            ...(label.done && { background: label.color }),
+          }}
+        >
+          {label.done && "✓"}
+        </button>
+      )}
       {!isTemp(b.id) && !isDragging && resizeEnd === null && (
         <button
           onClick={() => removeBlock.mutate(b.id)}

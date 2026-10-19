@@ -10,7 +10,7 @@ import {
   type DragMoveEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { useCreateBlock, useMoveBlock } from "@/lib/client/data";
+import { tempId, useCreateBlock, useMoveBlock } from "@/lib/client/data";
 import type { DragItem, DropPreview } from "./dnd";
 import { DAY_MIN, HOUR_PX, instantAt, snap } from "./geometry";
 
@@ -84,7 +84,7 @@ export function useTimelineDnd(tz: string) {
         moveBlock.mutate({ id: item.blockId, start, end });
       } else {
         createBlock.mutate({
-          tempId: `temp-${crypto.randomUUID()}`,
+          tempId: tempId(),
           body: {
             task_id: item.taskId,
             step_id: item.kind === "step" ? item.stepId : null,

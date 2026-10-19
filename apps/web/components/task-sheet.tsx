@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { formatMinutes, type Priority, type Step, type Task } from "@tt/shared";
 import {
   isTemp,
+  tempId,
   useCreateStep,
-  useDeleteStep,
   useDeleteTask,
   useModel,
   useUpdateStep,
@@ -55,7 +55,15 @@ function CommitInput({
   );
 }
 
-export function TaskSheet({ taskId, onClose }: { taskId: string; onClose: () => void }) {
+export function TaskSheet({
+  taskId,
+  initialPanel = null,
+  onClose,
+}: {
+  taskId: string;
+  initialPanel?: "schedule" | null;
+  onClose: () => void;
+}) {
   const { taskById, stepsByTask, blocks, lists, settings } = useModel();
   const task = taskById.get(taskId);
   const steps = stepsByTask.get(taskId) ?? [];
@@ -63,7 +71,7 @@ export function TaskSheet({ taskId, onClose }: { taskId: string; onClose: () => 
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const { setTaskDone } = useCompletion();
-  const [panel, setPanel] = useState<"breakdown" | "schedule" | null>(null);
+  const [panel, setPanel] = useState<"breakdown" | "schedule" | null>(initialPanel);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -261,8 +269,7 @@ function StepsEditor({
 }) {
   const createStep = useCreateStep();
   const updateStep = useUpdateStep();
-  const deleteStep = useDeleteStep();
-  const { setStepDone } = useCompletion();
+  const { setStepDone, deleteStep } = useCompletion();
   const [title, setTitle] = useState("");
 
   const add = (e: React.FormEvent) => {
@@ -270,7 +277,7 @@ function StepsEditor({
     if (!title.trim() || disabled) return;
     const order = (steps.at(-1)?.order ?? -1) + 1;
     createStep.mutate({
-      tempId: `temp-${crypto.randomUUID()}`,
+      tempId: tempId(),
       body: { task_id: taskId, title: title.trim(), order },
     });
     setTitle("");
@@ -317,7 +324,7 @@ function StepsEditor({
             <button
               aria-label={`Delete step ${s.title}`}
               disabled={isTemp(s.id)}
-              onClick={() => deleteStep.mutate(s.id)}
+              onClick={() => deleteStep(taskId, s.id)}
               className="text-muted opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-risk"
             >
               ×
