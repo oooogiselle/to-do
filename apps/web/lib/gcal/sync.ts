@@ -6,6 +6,7 @@ import { adminClient } from "@/lib/supabase/admin";
 
 const FULL_SYNC_PAST_DAYS = 30;
 const FULL_SYNC_FUTURE_DAYS = 120;
+const DELETE_CHUNK = 100;
 
 type SyncState = { sync_token: string | null };
 type EventRow = {
@@ -140,13 +141,15 @@ async function applyEvents(
     const { error } = await db.from("calendar_events").upsert(upserts);
     if (error) throw new Error(error.message);
   }
-  if (cancelled.length) {
+  // The ids go in the URL; one request for a whole cancelled series overflows the gateway's
+  // URL limit and comes back as a bare 400.
+  for (let i = 0; i < cancelled.length; i += DELETE_CHUNK) {
     const { error } = await db
       .from("calendar_events")
       .delete()
       .eq("user_id", userId)
       .eq("calendar_id", calendarId)
-      .in("gcal_event_id", cancelled);
+      .in("gcal_event_id", cancelled.slice(i, i + DELETE_CHUNK));
     if (error) throw new Error(error.message);
   }
 }
