@@ -10,9 +10,16 @@ import {
   type DragMoveEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { tempId, useCreateBlock, useMoveBlock } from "@/lib/client/data";
+import {
+  DAY_MIN,
+  HOUR_PX,
+  instantAt,
+  snap,
+  tempId,
+  useCreateBlock,
+  useMoveBlock,
+} from "@tt/client";
 import type { DragItem, DropPreview } from "./dnd";
-import { DAY_MIN, HOUR_PX, instantAt, snap } from "./geometry";
 
 /**
  * Drag tasks/steps from the Due rail onto a day column to schedule them, or drag an existing

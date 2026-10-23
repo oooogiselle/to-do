@@ -2,17 +2,22 @@
 
 import { useState } from "react";
 import { formatMinutes, localDate, zonedInstant, type Step, type TimeBlock } from "@tt/shared";
-import { isTemp, useDeleteBlock, useMoveBlock } from "@/lib/client/data";
-import { fmtDay, fmtTime, localTime } from "@/lib/client/time";
+import { fmtDay, fmtTime, isTemp, localTime, useDeleteBlock, useMoveBlock } from "@tt/client";
 
 const field =
   "rounded-md border border-line bg-paper px-2 py-1 outline-none focus:border-line-strong";
 
 const DURATIONS = [15, 30, 45, 60, 75, 90, 120, 150, 180, 240];
 
+/** Durations to offer for a block: the presets plus its current length. */
+function lengthOptions(current: number) {
+  return DURATIONS.includes(current) ? DURATIONS : [...DURATIONS, current].sort((x, y) => x - y);
+}
+
 /**
- * The task's time blocks. Upcoming ones can be edited to an exact day, time and length;
- * any block can be removed (deletes the gcal event too, the task stays in your to-dos).
+ * The task's time blocks. Upcoming ones show their length as a dropdown that saves on change,
+ * and clicking the time opens an editor for the day and start; any block can be removed
+ * (deletes the gcal event too, the task stays in your to-dos).
  */
 export function ScheduledBlocks(props: { blocks: TimeBlock[]; steps: Step[]; tz: string }) {
   const remove = useDeleteBlock();
@@ -28,6 +33,8 @@ export function ScheduledBlocks(props: { blocks: TimeBlock[]; steps: Step[]; tz:
         {sorted.map((b) => {
           const past = Date.parse(b.end) <= now;
           const step = b.step_id ? props.steps.find((s) => s.id === b.step_id) : null;
+          const start = Date.parse(b.start);
+          const current = Math.round((Date.parse(b.end) - start) / 60_000);
           if (editing === b.id)
             return (
               <li key={b.id} className="px-2.5 py-2">
@@ -47,21 +54,49 @@ export function ScheduledBlocks(props: { blocks: TimeBlock[]; steps: Step[]; tz:
               key={b.id}
               className={`flex items-center gap-3 px-2.5 py-1.5 ${past ? "text-muted" : ""}`}
             >
-              <span className="w-44 shrink-0">
-                {fmtDay(localDate(new Date(b.start), props.tz), props.tz)},{" "}
-                {fmtTime(b.start, props.tz)}–{fmtTime(b.end, props.tz)}
-              </span>
-              <span className="min-w-0 flex-1 truncate text-muted">
-                {step?.title ?? "Whole task"}
-              </span>
+              <div className="min-w-0 flex-1">
+                {past ? (
+                  <div>
+                    {fmtDay(localDate(new Date(b.start), props.tz), props.tz)},{" "}
+                    {fmtTime(b.start, props.tz)}–{fmtTime(b.end, props.tz)}
+                  </div>
+                ) : (
+                  <button
+                    disabled={isTemp(b.id)}
+                    onClick={() => setEditing(b.id)}
+                    title="Change the day or time"
+                    className="text-left hover:underline"
+                  >
+                    {fmtDay(localDate(new Date(b.start), props.tz), props.tz)},{" "}
+                    {fmtTime(b.start, props.tz)}–{fmtTime(b.end, props.tz)}
+                  </button>
+                )}
+                <div className="truncate text-xs text-muted">{step?.title ?? "Whole task"}</div>
+              </div>
               {!past && (
-                <button
+                <select
+                  value={current}
                   disabled={isTemp(b.id)}
-                  onClick={() => setEditing(b.id)}
-                  className="text-xs text-muted hover:text-ink"
+                  onChange={(e) =>
+                    move.mutate({
+                      id: b.id,
+                      start: b.start,
+                      end: new Date(start + Number(e.target.value) * 60_000).toISOString(),
+                    })
+                  }
+                  className={`${field} text-xs`}
+                  aria-label="Length"
+                  title="Length"
                 >
-                  Edit
-                </button>
+                  {/* A block that's already started can't be cut short into the past. */}
+                  {lengthOptions(current)
+                    .filter((m) => m === current || start + m * 60_000 > now)
+                    .map((m) => (
+                      <option key={m} value={m}>
+                        {formatMinutes(m)}
+                      </option>
+                    ))}
+                </select>
               )}
               <button
                 disabled={isTemp(b.id)}
@@ -97,9 +132,7 @@ function BlockEditor(props: {
   const start = valid ? zonedInstant(date, time, tz).getTime() : NaN;
   const end = start + minutes * 60_000;
   const past = valid && end <= Date.now();
-  const options = DURATIONS.includes(current)
-    ? DURATIONS
-    : [...DURATIONS, current].sort((x, y) => x - y);
+  const options = lengthOptions(current);
 
   return (
     <form

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ProposedTask } from "@tt/shared";
 import { api } from "@/lib/client/api";
-import { uuid } from "@/lib/client/data";
+import { uuid } from "@tt/client";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { ImportReview } from "./review";
 

@@ -16,18 +16,26 @@ import {
 } from "@tt/shared";
 import { api } from "@/lib/client/api";
 import {
+  DAY_MIN,
+  daySegment,
+  fmtDay,
+  fmtTime,
+  HOUR_PX,
+  instantAt,
   isTemp,
+  layoutDay,
+  minutesIntoDay,
+  snap,
+  SNAP_MIN,
   taskColor,
+  useCompletion,
   useDeleteBlock,
   useEvents,
   useModel,
   useMoveBlock,
   useSettings,
-} from "@/lib/client/data";
-import { useCompletion } from "@/lib/client/completion";
-import { fmtDay, fmtTime, minutesIntoDay } from "@/lib/client/time";
+} from "@tt/client";
 import { useOpenTask } from "@/components/app-shell";
-import { assignLanes, DAY_MIN, daySegment, HOUR_PX, instantAt, snap, SNAP_MIN } from "./geometry";
 import type { DragItem, DropPreview } from "./dnd";
 import { useTimelineDnd } from "./use-timeline-dnd";
 import { DueRail } from "./due-rail";
@@ -426,24 +434,10 @@ function DayColumn(props: {
   const { day, tz } = props;
   const { setNodeRef, isOver } = useDroppable({ id: day });
 
-  const items = useMemo(() => {
-    const out = [];
-    for (const e of props.timed) {
-      const seg = daySegment(Date.parse(e.start), Date.parse(e.end), day, tz);
-      if (seg)
-        out.push({
-          ...seg,
-          kind: "event" as const,
-          key: `e-${e.calendar_id}-${e.gcal_event_id}`,
-          event: e,
-        });
-    }
-    for (const b of props.blocks) {
-      const seg = daySegment(Date.parse(b.start), Date.parse(b.end), day, tz);
-      if (seg) out.push({ ...seg, kind: "block" as const, key: `b-${b.id}`, block: b });
-    }
-    return assignLanes(out);
-  }, [props.timed, props.blocks, day, tz]);
+  const items = useMemo(
+    () => layoutDay(day, tz, props.timed, props.blocks),
+    [props.timed, props.blocks, day, tz],
+  );
 
   const free = props.freeSlots.flatMap((s) => {
     const seg = daySegment(s.start, s.end, day, tz);

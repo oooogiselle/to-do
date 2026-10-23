@@ -3,8 +3,21 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import type { List, Settings, Step, SyncResponse, Task, TimeBlock } from "@tt/shared";
-import { NO_COLOR } from "@/components/color-picker";
-import { api } from "./api";
+import { useApi, type ApiClient } from "./api-context";
+
+/** Colors lists and tasks can take. */
+export const PALETTE = [
+  "#2563eb",
+  "#0d9488",
+  "#7c3aed",
+  "#db2777",
+  "#ea580c",
+  "#ca8a04",
+  "#64748b",
+];
+
+/** What a task shows in when neither it nor its list has a color. */
+export const NO_COLOR = "#64748b";
 
 export const keys = {
   sync: ["sync"] as const,
@@ -15,10 +28,12 @@ export const keys = {
 
 /** Everything the app owns (lists, tasks, steps, blocks, settings) in one cached snapshot. */
 export function useSync() {
+  const api = useApi();
   return useQuery({ queryKey: keys.sync, queryFn: () => api.sync() });
 }
 
 export function useEvents(from: number, to: number) {
+  const api = useApi();
   return useQuery({
     queryKey: keys.events(from, to),
     queryFn: () => api.events(new Date(from), new Date(to)),
@@ -27,10 +42,12 @@ export function useEvents(from: number, to: number) {
 }
 
 export function useSettings() {
+  const api = useApi();
   return useQuery({ queryKey: keys.settings, queryFn: () => api.settings() });
 }
 
 export function useCalendars() {
+  const api = useApi();
   return useQuery({ queryKey: keys.calendars, queryFn: () => api.calendars() });
 }
 
@@ -147,8 +164,9 @@ function tempRow<T>(fields: T) {
 }
 
 export function useCreateTask() {
+  const api = useApi();
   return useOptimistic({
-    mutationFn: (v: { tempId: string; body: Parameters<typeof api.createTask>[0] }) =>
+    mutationFn: (v: { tempId: string; body: Parameters<ApiClient["createTask"]>[0] }) =>
       api.createTask(v.body),
     apply: (s, v) =>
       upsertRow(s, "tasks", {
@@ -171,8 +189,9 @@ export function useCreateTask() {
 }
 
 export function useUpdateTask() {
+  const api = useApi();
   return useOptimistic({
-    mutationFn: (v: { id: string; patch: Parameters<typeof api.updateTask>[1] }) =>
+    mutationFn: (v: { id: string; patch: Parameters<ApiClient["updateTask"]>[1] }) =>
       api.updateTask(v.id, v.patch),
     apply: (s, v) => updateRow(s, "tasks", v.id, v.patch as Partial<Task>),
     settle: (s, task) => upsertRow(s, "tasks", task),
@@ -180,6 +199,7 @@ export function useUpdateTask() {
 }
 
 export function useDeleteTask() {
+  const api = useApi();
   return useOptimistic({
     mutationFn: (id: string) => api.deleteTask(id),
     apply: (s, id) => updateRow(s, "tasks", id, { deleted_at: now() }),
@@ -187,8 +207,9 @@ export function useDeleteTask() {
 }
 
 export function useCreateStep() {
+  const api = useApi();
   return useOptimistic({
-    mutationFn: (v: { tempId: string; body: Parameters<typeof api.createStep>[0] }) =>
+    mutationFn: (v: { tempId: string; body: Parameters<ApiClient["createStep"]>[0] }) =>
       api.createStep(v.body),
     apply: (s, v) =>
       upsertRow(s, "steps", {
@@ -206,8 +227,9 @@ export function useCreateStep() {
 }
 
 export function useUpdateStep() {
+  const api = useApi();
   return useOptimistic({
-    mutationFn: (v: { id: string; patch: Parameters<typeof api.updateStep>[1] }) =>
+    mutationFn: (v: { id: string; patch: Parameters<ApiClient["updateStep"]>[1] }) =>
       api.updateStep(v.id, v.patch),
     apply: (s, v) => updateRow(s, "steps", v.id, v.patch as Partial<Step>),
     settle: (s, step) => upsertRow(s, "steps", step),
@@ -215,6 +237,7 @@ export function useUpdateStep() {
 }
 
 export function useDeleteStep() {
+  const api = useApi();
   return useOptimistic({
     mutationFn: (id: string) => api.deleteStep(id),
     apply: (s, id) => updateRow(s, "steps", id, { deleted_at: now() }),
@@ -222,8 +245,9 @@ export function useDeleteStep() {
 }
 
 export function useCreateList() {
+  const api = useApi();
   return useOptimistic({
-    mutationFn: (v: { tempId: string; body: Parameters<typeof api.createList>[0] }) =>
+    mutationFn: (v: { tempId: string; body: Parameters<ApiClient["createList"]>[0] }) =>
       api.createList(v.body),
     apply: (s, v) =>
       upsertRow(s, "lists", {
@@ -235,8 +259,9 @@ export function useCreateList() {
 }
 
 export function useUpdateList() {
+  const api = useApi();
   return useOptimistic({
-    mutationFn: (v: { id: string; patch: Parameters<typeof api.updateList>[1] }) =>
+    mutationFn: (v: { id: string; patch: Parameters<ApiClient["updateList"]>[1] }) =>
       api.updateList(v.id, v.patch),
     apply: (s, v) => updateRow(s, "lists", v.id, v.patch),
     settle: (s, list) => upsertRow(s, "lists", list),
@@ -245,6 +270,7 @@ export function useUpdateList() {
 
 /** Its tasks stay; with the list gone they show under "No list". */
 export function useDeleteList() {
+  const api = useApi();
   return useOptimistic({
     mutationFn: (id: string) => api.deleteList(id),
     apply: (s, id) => updateRow(s, "lists", id, { deleted_at: now() }),
@@ -252,6 +278,7 @@ export function useDeleteList() {
 }
 
 export function useUpdateSettings() {
+  const api = useApi();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: api.updateSettings,
@@ -287,9 +314,10 @@ function updateBlocks(s: SyncResponse, fn: (blocks: TimeBlock[]) => TimeBlock[])
 }
 
 export function useCreateBlock() {
+  const api = useApi();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (v: { tempId: string; body: Parameters<typeof api.createTimeBlock>[0] }) =>
+    mutationFn: (v: { tempId: string; body: Parameters<ApiClient["createTimeBlock"]>[0] }) =>
       api.createTimeBlock(v.body),
     onMutate: (v) => {
       const t = now();
@@ -326,6 +354,7 @@ export const blockMovesPending = (qc: QueryClient) =>
  * while a move was in flight may have brought back the old times.
  */
 export function useMoveBlock() {
+  const api = useApi();
   const qc = useQueryClient();
   return useMutation({
     mutationKey: MOVE_BLOCK,
@@ -350,6 +379,7 @@ export function useMoveBlock() {
 }
 
 export function useDeleteBlock() {
+  const api = useApi();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.deleteTimeBlock(id),
@@ -365,6 +395,7 @@ export function useDeleteBlock() {
 }
 
 export function useRemoveUpcomingBlocks() {
+  const api = useApi();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: api.removeUpcomingBlocks,
@@ -373,9 +404,10 @@ export function useRemoveUpcomingBlocks() {
 }
 
 export function useReplaceSteps() {
+  const api = useApi();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (v: { taskId: string; steps: Parameters<typeof api.replaceSteps>[1] }) =>
+    mutationFn: (v: { taskId: string; steps: Parameters<ApiClient["replaceSteps"]>[1] }) =>
       api.replaceSteps(v.taskId, v.steps),
     onSettled: () => qc.invalidateQueries({ queryKey: keys.sync }),
   });

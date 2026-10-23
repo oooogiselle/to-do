@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { formatMinutes, type ProposedStep, type Task } from "@tt/shared";
 import { api } from "@/lib/client/api";
-import { useReplaceSteps } from "@/lib/client/data";
+import { useReplaceSteps } from "@tt/client";
 
 type Mode = "default" | "more_detailed";
 

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { WorkingHours } from "@tt/shared";
 import { api } from "@/lib/client/api";
-import { keys, useCalendars, useSettings, useUpdateSettings } from "@/lib/client/data";
+import { keys, useCalendars, useSettings, useUpdateSettings } from "@tt/client";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 const GOOGLE_MESSAGES: Record<string, string> = {

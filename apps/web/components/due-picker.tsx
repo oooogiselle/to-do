@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { TZDate } from "@date-fns/tz";
 import { localDate, zonedInstant } from "@tt/shared";
-import { fmtDue } from "@/lib/client/time";
+import { fmtDue } from "@tt/client";
 
 // A due date without a time means the end of that day.
 const END_OF_DAY = "23:59";

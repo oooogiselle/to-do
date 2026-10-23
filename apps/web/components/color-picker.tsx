@@ -1,10 +1,6 @@
 "use client";
 
-/** Colors lists and tasks can take. */
-export const PALETTE = ["#2563eb", "#0d9488", "#7c3aed", "#db2777", "#ea580c", "#ca8a04", "#64748b"];
-
-/** What a task shows in when neither it nor its list has a color. */
-export const NO_COLOR = "#64748b";
+import { PALETTE } from "@tt/client";
 
 /**
  * A row of color swatches. With `inherit`, a leading swatch stands for "no color of its own"

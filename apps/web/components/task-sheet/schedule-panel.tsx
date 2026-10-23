@@ -1,75 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  findFreeSlots,
-  formatMinutes,
-  rankSlots,
-  type SlotSuggestion,
-  type Task,
-} from "@tt/shared";
-import { tempId, useCreateBlock, useEvents, useModel } from "@/lib/client/data";
-import { fmtDay, fmtTime } from "@/lib/client/time";
-import { localDate } from "@tt/shared";
-
-const HORIZON_DAYS = 14;
+import { formatMinutes, type SlotSuggestion, type Task } from "@tt/shared";
+import { fmtSlot, useModel, useSlotSuggestions } from "@tt/client";
 
 /** Rule-based top-3 open slots before the due date (spec: slot suggestions). */
 export function SchedulePanel({ task, onClose }: { task: Task; onClose: () => void }) {
-  const { blocks, stepsByTask, settings } = useModel();
-  const createBlock = useCreateBlock();
-  const tz = settings.timezone;
-  // Fixed for the panel's lifetime so the events query key stays stable.
-  const [now] = useState(() => Math.floor(Date.now() / 60_000) * 60_000);
-  const due = task.due_at ? Date.parse(task.due_at) : null;
-  const horizon = Math.min(due ?? Infinity, now + HORIZON_DAYS * 86_400_000);
-  const { data, isLoading } = useEvents(now, Math.max(horizon, now + 60_000));
-
-  const steps = stepsByTask.get(task.id) ?? [];
-  const taskBlocks = blocks.filter((b) => b.task_id === task.id && Date.parse(b.end) > now);
-  const scheduledMin = taskBlocks.reduce(
-    (sum, b) => sum + (Date.parse(b.end) - Math.max(Date.parse(b.start), now)) / 60_000,
-    0,
-  );
-  const scheduledSteps = new Set(taskBlocks.map((b) => b.step_id).filter(Boolean));
-  const openSteps = steps.filter((s) => !s.done && !scheduledSteps.has(s.id));
-  const remaining = steps.some((s) => s.estimate_min)
-    ? steps.filter((s) => !s.done).reduce((sum, s) => sum + (s.estimate_min ?? 0), 0)
-    : (task.estimate_min ?? settings.default_block_min);
-  const neededMin = Math.max(0, Math.round(remaining - scheduledMin));
-
-  const suggestions = useMemo(() => {
-    if (!data || horizon <= now) return [];
-    const free = findFreeSlots([...data.events, ...blocks], {
-      workingHours: settings.working_hours,
-      timezone: tz,
-      from: now,
-      to: horizon,
-    });
-    return rankSlots({ freeSlots: free, now, dueAt: due, neededMin, steps: openSteps });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, blocks, settings.working_hours, tz, now, horizon, due, neededMin]);
-
-  const stepTitle = (id: string | null) => (id ? steps.find((s) => s.id === id)?.title : null);
-  const fmtRange = (start: number, end: number) => {
-    const today = localDate(new Date(now), tz);
-    const day = localDate(new Date(start), tz);
-    const dayLabel = day === today ? "Today" : fmtDay(day, tz);
-    return `${dayLabel}, ${fmtTime(start, tz)}–${fmtTime(end, tz)}`;
-  };
+  const { settings } = useModel();
+  const {
+    now,
+    due,
+    neededMin,
+    suggestions,
+    isLoading,
+    stepTitle,
+    choose: create,
+  } = useSlotSuggestions(task);
+  const fmtRange = (start: number, end: number) => fmtSlot(start, end, settings.timezone, now);
 
   const choose = (s: SlotSuggestion) => {
-    for (const b of s.blocks) {
-      createBlock.mutate({
-        tempId: tempId(),
-        body: {
-          task_id: task.id,
-          step_id: b.step_id,
-          start: new Date(b.start).toISOString(),
-          end: new Date(b.end).toISOString(),
-        },
-      });
-    }
+    create(s);
     onClose();
   };
 

@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseQuickAdd, type Priority } from "@tt/shared";
-import { tempId, useCreateTask, useModel } from "@/lib/client/data";
-import { setNotice } from "@/lib/client/notice";
+import { setNotice, tempId, useCreateTask, useModel } from "@tt/client";
 import { PREFILL_KEY } from "@/components/import/import-view";
 import { DuePicker } from "@/components/due-picker";
 import { ListPicker } from "@/components/list-picker";

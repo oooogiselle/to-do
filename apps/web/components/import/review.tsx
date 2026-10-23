@@ -18,9 +18,7 @@ import {
 } from "@tt/shared";
 import { TZDate } from "@date-fns/tz";
 import { api } from "@/lib/client/api";
-import { keys, useModel } from "@/lib/client/data";
-import { fmtDue } from "@/lib/client/time";
-import { PALETTE } from "@/components/color-picker";
+import { fmtDue, keys, PALETTE, useModel } from "@tt/client";
 
 const PRIORITIES: { value: Priority; label: string }[] = [
   { value: "none", label: "No priority" },
@@ -201,8 +199,8 @@ export function ImportReview(props: {
           {listName ? ` in ${listName}` : ""}.
         </p>
         <div className="flex gap-2">
-          <Link href="/inbox" className="rounded-md bg-ink px-3 py-1.5 text-paper hover:opacity-90">
-            View in Inbox
+          <Link href="/to-dos" className="rounded-md bg-ink px-3 py-1.5 text-paper hover:opacity-90">
+            View in To-dos
           </Link>
           <button
             onClick={props.onCancel}

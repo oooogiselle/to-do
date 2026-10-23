@@ -1,4 +1,4 @@
-import { zonedInstant, addDays } from "@tt/shared";
+import { zonedInstant, addDays, type CalendarEvent, type TimeBlock } from "@tt/shared";
 
 export const HOUR_PX = 48;
 export const DAY_MIN = 24 * 60;
@@ -67,3 +67,27 @@ export function instantAt(day: string, minute: number, tz: string): number {
 
 export const SNAP_MIN = 15;
 export const snap = (min: number) => Math.round(min / SNAP_MIN) * SNAP_MIN;
+
+export type DayItem =
+  | { kind: "event"; key: string; startMin: number; endMin: number; event: CalendarEvent }
+  | { kind: "block"; key: string; startMin: number; endMin: number; block: TimeBlock };
+
+/** Timed events and blocks on local `day`, positioned in side-by-side lanes. */
+export function layoutDay(
+  day: string,
+  tz: string,
+  events: CalendarEvent[],
+  blocks: TimeBlock[],
+): Positioned<DayItem>[] {
+  const out: DayItem[] = [];
+  for (const e of events) {
+    const seg = daySegment(Date.parse(e.start), Date.parse(e.end), day, tz);
+    if (seg)
+      out.push({ ...seg, kind: "event", key: `e-${e.calendar_id}-${e.gcal_event_id}`, event: e });
+  }
+  for (const b of blocks) {
+    const seg = daySegment(Date.parse(b.start), Date.parse(b.end), day, tz);
+    if (seg) out.push({ ...seg, kind: "block", key: `b-${b.id}`, block: b });
+  }
+  return assignLanes(out);
+}

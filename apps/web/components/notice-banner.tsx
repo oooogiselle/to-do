@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useCompletionActions } from "@/lib/client/completion";
-import { setNotice, useNotice, type Notice } from "@/lib/client/notice";
+import { type Notice, setNotice, useCompletionActions, useNotice } from "@tt/client";
 import { useOpenTask } from "./app-shell";
 
 const AUTO_DISMISS_MS = 12_000;

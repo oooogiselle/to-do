@@ -4,16 +4,17 @@ import { useEffect, useState } from "react";
 import { formatMinutes, type Priority, type Step, type Task } from "@tt/shared";
 import {
   isTemp,
+  NO_COLOR,
   tempId,
+  useCompletion,
   useCreateStep,
   useDeleteTask,
   useModel,
   useUpdateStep,
   useUpdateTask,
-} from "@/lib/client/data";
+} from "@tt/client";
 import { DuePicker } from "./due-picker";
-import { ColorPicker, NO_COLOR } from "./color-picker";
-import { useCompletion } from "@/lib/client/completion";
+import { ColorPicker } from "./color-picker";
 import { BreakdownPanel } from "./task-sheet/breakdown-panel";
 import { SchedulePanel } from "./task-sheet/schedule-panel";
 import { ScheduledBlocks } from "./task-sheet/scheduled-blocks";

@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Timeline",
+    "slug": "timeline-todo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.oooogiselle.timelinetodo"
+    },
+    "scheme": "timelinetodo",
+    "plugins": [
+      "expo-router",
+      "expo-web-browser",
+      "expo-sqlite",
+      "@react-native-community/datetimepicker",
+      "expo-splash-screen"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

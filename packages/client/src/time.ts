@@ -38,6 +38,13 @@ export function fmtWhen(instant: number | string | Date, tz: string, now = Date.
   return `${relDay(d, tz, now)} ${fmtTime(d, tz)}`;
 }
 
+/** A slot's day and time range: "Today, 3–4:30pm", "Thu, Oct 22, 9–10am". */
+export function fmtSlot(start: number, end: number, tz: string, now = Date.now()): string {
+  const day = localDate(new Date(start), tz);
+  const dayLabel = day === localDate(new Date(now), tz) ? "Today" : fmtDay(day, tz);
+  return `${dayLabel}, ${fmtTime(start, tz)}–${fmtTime(end, tz)}`;
+}
+
 /** "Today", "Tomorrow", "Yesterday", a weekday within the coming week, else "Oct 21". */
 function relDay(d: Date, tz: string, now: number): string {
   const today = localDate(new Date(now), tz);
