@@ -8,6 +8,24 @@ const FULL_SYNC_PAST_DAYS = 30;
 const FULL_SYNC_FUTURE_DAYS = 120;
 const DELETE_CHUNK = 100;
 
+/**
+ * gcal's fixed event palette by colorId, as the Google Calendar UI shows it. colors.get returns
+ * older pastel values that don't match what the user sees.
+ */
+const EVENT_COLORS: Record<string, string> = {
+  "1": "#7986cb", // Lavender
+  "2": "#33b679", // Sage
+  "3": "#8e24aa", // Grape
+  "4": "#e67c73", // Flamingo
+  "5": "#f6bf26", // Banana
+  "6": "#f4511e", // Tangerine
+  "7": "#039be5", // Peacock
+  "8": "#616161", // Graphite
+  "9": "#3f51b5", // Blueberry
+  "10": "#0b8043", // Basil
+  "11": "#d50000", // Tomato
+};
+
 type SyncState = { sync_token: string | null };
 type EventRow = {
   user_id: string;
@@ -18,6 +36,7 @@ type EventRow = {
   end: string;
   all_day: boolean;
   busy: boolean;
+  color: string | null;
 };
 
 /**
@@ -178,6 +197,8 @@ function toEventRow(
     all_day: allDay,
     // gcal's "Show as: Free" sets transparency=transparent; all-day events default to it.
     busy: ev.transparency !== "transparent" && !declined,
+    // No colorId means the event uses its calendar's color.
+    color: (ev.colorId && EVENT_COLORS[ev.colorId]) || null,
   };
 }
 

@@ -21,7 +21,7 @@ export const GET = route(async (req, { supabase }) => {
   const events = unwrap(
     await supabase
       .from("calendar_events")
-      .select("calendar_id, gcal_event_id, title, start, end, all_day, busy")
+      .select("calendar_id, gcal_event_id, title, start, end, all_day, busy, color")
       .in(
         "calendar_id",
         calendars.map((c) => c.id),
@@ -30,5 +30,8 @@ export const GET = route(async (req, { supabase }) => {
       .gt("end", new Date(from).toISOString())
       .order("start"),
   );
-  return { events: events.map((e) => ({ ...e, color: colorOf.get(e.calendar_id) ?? null })) };
+  // An event's own color wins over its calendar's.
+  return {
+    events: events.map((e) => ({ ...e, color: e.color ?? colorOf.get(e.calendar_id) ?? null })),
+  };
 });

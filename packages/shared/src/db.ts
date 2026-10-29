@@ -39,14 +39,14 @@ export type Database = {
                   ]
                 },"calendar_events": {
                   Row: {
-                    "all_day": boolean,"busy": boolean,"calendar_id": string,"end": string,"gcal_event_id": string,"start": string,"title": string,"updated_at": string,"user_id": string
+                    "all_day": boolean,"busy": boolean,"calendar_id": string,"color": string | null,"end": string,"gcal_event_id": string,"start": string,"title": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "all_day"?: boolean,"busy"?: boolean,"calendar_id": string,"end": string,"gcal_event_id": string,"start": string,"title"?: string,"updated_at"?: string,"user_id": string
+                    "all_day"?: boolean,"busy"?: boolean,"calendar_id": string,"color"?: string | null,"end": string,"gcal_event_id": string,"start": string,"title"?: string,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "all_day"?: boolean,"busy"?: boolean,"calendar_id"?: string,"end"?: string,"gcal_event_id"?: string,"start"?: string,"title"?: string,"updated_at"?: string,"user_id"?: string
+                    "all_day"?: boolean,"busy"?: boolean,"calendar_id"?: string,"color"?: string | null,"end"?: string,"gcal_event_id"?: string,"start"?: string,"title"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {

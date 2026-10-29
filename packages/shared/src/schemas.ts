@@ -69,7 +69,7 @@ export const CalendarEvent = z.object({
   end: z.string(),
   all_day: z.boolean(),
   busy: z.boolean(),
-  /** The event's calendar color, if Google gave one. */
+  /** The event's own gcal color, else its calendar's; null if Google gave neither. */
   color: z.string().nullable(),
 });
 export type CalendarEvent = z.infer<typeof CalendarEvent>;

@@ -619,16 +619,18 @@ function DayColumn(props: {
           width: `calc(${100 / it.lanes}% - 4px)`,
         };
         const compact = it.height < 36;
+        // Too short for padding and a full line: shrink the text and center it so it still fits.
+        const tiny = it.height < 24;
         if (it.kind === "event") {
           const e = it.event;
           return (
             <div
               key={it.key}
               title={`${e.title}\n${fmtTime(e.start, tz)}–${fmtTime(e.end, tz)}`}
-              className={`absolute overflow-hidden rounded px-1.5 py-0.5 text-xs leading-tight ${eventLook(e).className}`}
+              className={`absolute overflow-hidden rounded px-1.5 ${tiny ? "flex items-center text-[11px] leading-none" : "py-0.5 text-xs leading-tight"} ${eventLook(e).className}`}
               style={{ ...style, ...eventLook(e).style }}
             >
-              <div className="truncate font-medium">{e.title}</div>
+              <div className="min-w-0 truncate font-medium">{e.title}</div>
               {!compact && (
                 <div className="truncate opacity-75">
                   {fmtTime(e.start, tz)}–{fmtTime(e.end, tz)}
@@ -702,17 +704,14 @@ function eventLook(e: CalendarEvent): { className: string; style?: React.CSSProp
       className: "border border-dashed text-muted",
       style: {
         borderColor: e.color
-          ? `color-mix(in srgb, ${e.color} 45%, var(--line-strong))`
+          ? `color-mix(in srgb, ${e.color} 55%, var(--line-strong))`
           : "var(--line-strong)",
       },
     };
   if (!e.color) return { className: "bg-event text-event-ink" };
   return {
-    className: "border text-ink/80",
-    style: {
-      background: `color-mix(in srgb, ${e.color} 10%, var(--surface))`,
-      borderColor: `color-mix(in srgb, ${e.color} 30%, var(--surface))`,
-    },
+    className: "text-ink",
+    style: { background: `color-mix(in srgb, ${e.color} 20%, var(--surface))` },
   };
 }
 

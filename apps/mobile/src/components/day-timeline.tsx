@@ -167,13 +167,22 @@ export function DayTimeline(props: {
                   width: laneW - 2,
                 };
                 const short = item.height < 36;
+                // Too short for padding and a full line: shrink the text and center it.
+                const tiny = item.height < 24;
                 if (item.kind === "event") {
                   const e = item.event;
                   return (
-                    <View key={item.key} style={[styles.item, box, eventLook(e, colors)]}>
+                    <View
+                      key={item.key}
+                      style={[styles.item, box, tiny && styles.itemTiny, eventLook(e, colors)]}
+                    >
                       <Text
                         numberOfLines={short ? 1 : 2}
-                        style={[styles.title, { color: colors.eventInk }]}
+                        style={[
+                          styles.title,
+                          tiny && styles.titleTiny,
+                          { color: colors.eventInk },
+                        ]}
                       >
                         {e.title || "(No title)"}
                         {short ? ` ${fmtTime(e.start, tz)}` : ""}
@@ -256,10 +265,10 @@ function eventLook(e: CalendarEvent, colors: Colors) {
     return {
       borderWidth: 1,
       borderStyle: "dashed" as const,
-      borderColor: e.color ? tint(e.color, 0.6) : colors.lineStrong,
+      borderColor: e.color ? tint(e.color, 0.7) : colors.lineStrong,
     };
   if (!e.color) return { backgroundColor: colors.event };
-  return { backgroundColor: tint(e.color, 0.14), borderWidth: 1, borderColor: tint(e.color, 0.3) };
+  return { backgroundColor: tint(e.color, 0.24) };
 }
 
 const styles = StyleSheet.create({
@@ -284,9 +293,11 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     overflow: "hidden",
   },
+  itemTiny: { paddingVertical: 0, justifyContent: "center" },
   block: { borderLeftWidth: 3 },
   blockRow: { flexDirection: "row", gap: 6, alignItems: "flex-start" },
   title: { fontSize: 13, fontWeight: "500" },
+  titleTiny: { fontSize: 11, lineHeight: 13 },
   struck: { textDecorationLine: "line-through" },
   small: { fontSize: 11 },
   now: { position: "absolute", left: -4, right: 0, height: 2 },
