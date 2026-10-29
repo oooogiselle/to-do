@@ -10,22 +10,14 @@ import {
   type DragMoveEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import {
-  DAY_MIN,
-  HOUR_PX,
-  instantAt,
-  snap,
-  tempId,
-  useCreateBlock,
-  useMoveBlock,
-} from "@tt/client";
+import { DAY_MIN, instantAt, snap, tempId, useCreateBlock, useMoveBlock } from "@tt/client";
 import type { DragItem, DropPreview } from "./dnd";
 
 /**
  * Drag tasks/steps from the Due rail onto a day column to schedule them, or drag an existing
  * block to reschedule it. Drops snap to 15 minutes; blocks keep the point where you grabbed them.
  */
-export function useTimelineDnd(tz: string) {
+export function useTimelineDnd(tz: string, hourPx: number) {
   const [active, setActive] = useState<DragItem | null>(null);
   const [preview, setPreview] = useState<DropPreview | null>(null);
   // Minutes between a dragged block's top and where the pointer grabbed it.
@@ -53,7 +45,7 @@ export function useTimelineDnd(tz: string) {
     if (!column) return null;
     const y = pointer.current - column.getBoundingClientRect().top;
     const grab = item.kind === "block" ? grabMin.current : 0;
-    const raw = snap((y / HOUR_PX) * 60 - grab);
+    const raw = snap((y / hourPx) * 60 - grab);
     const startMin = Math.min(Math.max(raw, 0), DAY_MIN - item.minutes);
     const end = instantAt(day, startMin + item.minutes, tz);
     return { day, startMin, minutes: item.minutes, past: end <= Date.now() };
@@ -70,7 +62,7 @@ export function useTimelineDnd(tz: string) {
       const top = e.active.rect.current.initial?.top;
       grabMin.current =
         item?.kind === "block" && top !== undefined
-          ? (((e.activatorEvent as PointerEvent).clientY - top) / HOUR_PX) * 60
+          ? (((e.activatorEvent as PointerEvent).clientY - top) / hourPx) * 60
           : 0;
       setActive(item);
     },

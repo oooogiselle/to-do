@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { DndContext, DragOverlay, useDraggable, useDroppable } from "@dnd-kit/core";
 import {
@@ -24,6 +24,8 @@ import {
   instantAt,
   isTemp,
   layoutDay,
+  MAX_HOUR_PX,
+  MIN_HOUR_PX,
   minutesIntoDay,
   snap,
   SNAP_MIN,
@@ -48,6 +50,101 @@ function weekStart(day: string, tz: string) {
   return addDays(day, -((wd + 6) % 7));
 }
 
+const clampZoom = (px: number) => Math.min(Math.max(px, MIN_HOUR_PX), MAX_HOUR_PX);
+
+/**
+ * How tall an hour is, zoomed with pinch, ⌘/Ctrl+scroll or the keyboard. Zooming keeps the time
+ * under the pointer (or the middle of the view) in place, and the level is remembered.
+ */
+function useZoom(scrollRef: React.RefObject<HTMLDivElement | null>) {
+  const [hourPx, setHourPx] = useState(() => {
+    try {
+      const saved = Number(localStorage.getItem("timeline.zoom"));
+      if (saved) return clampZoom(saved);
+    } catch {}
+    return HOUR_PX;
+  });
+  // The latest requested zoom; it runs ahead of `hourPx` while a frame is pending.
+  const target = useRef(hourPx);
+  const frame = useRef(0);
+  // The minute to keep `y` px down the view once the new zoom renders.
+  const anchor = useRef<{ minute: number; y: number } | null>(null);
+
+  const zoomTo = useCallback(
+    (next: number, clientY?: number) => {
+      const el = scrollRef.current;
+      const px = clampZoom(next);
+      if (!el || px === target.current) return;
+      // Measure once per frame, while the DOM still matches the rendered zoom.
+      if (!anchor.current) {
+        const y =
+          clientY === undefined ? el.clientHeight / 2 : clientY - el.getBoundingClientRect().top;
+        anchor.current = { minute: ((el.scrollTop + y) / target.current) * 60, y };
+      }
+      target.current = px;
+      // Coalesce bursts of wheel events into one render per frame.
+      frame.current ||= requestAnimationFrame(() => {
+        frame.current = 0;
+        setHourPx(target.current);
+      });
+    },
+    [scrollRef],
+  );
+
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (anchor.current && el)
+      el.scrollTop = (anchor.current.minute / 60) * hourPx - anchor.current.y;
+    anchor.current = null;
+    try {
+      localStorage.setItem("timeline.zoom", String(hourPx));
+    } catch {}
+  }, [hourPx, scrollRef]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    // Safari pinches with gesture events; everyone else sends ctrl+wheel.
+    let gestureStart: number | null = null;
+    const onWheel = (e: WheelEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      e.preventDefault();
+      if (gestureStart !== null) return;
+      // Trackpads send small deltas; cap mouse wheel notches so each is one gentle step.
+      const delta = Math.min(Math.max(e.deltaY, -20), 20);
+      zoomTo(target.current * Math.exp(-delta * 0.01), e.clientY);
+    };
+    const onGestureStart = (e: Event) => {
+      e.preventDefault();
+      gestureStart = target.current;
+    };
+    const onGestureChange = (e: Event) => {
+      e.preventDefault();
+      const g = e as Event & { scale: number; clientY: number };
+      if (gestureStart !== null) zoomTo(gestureStart * g.scale, g.clientY);
+    };
+    const onGestureEnd = () => (gestureStart = null);
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("gesturestart", onGestureStart);
+    el.addEventListener("gesturechange", onGestureChange);
+    el.addEventListener("gestureend", onGestureEnd);
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("gesturestart", onGestureStart);
+      el.removeEventListener("gesturechange", onGestureChange);
+      el.removeEventListener("gestureend", onGestureEnd);
+      cancelAnimationFrame(frame.current);
+      frame.current = 0;
+    };
+  }, [scrollRef, zoomTo]);
+
+  return {
+    hourPx,
+    zoomBy: (factor: number) => zoomTo(target.current * factor),
+    reset: () => zoomTo(HOUR_PX),
+  };
+}
+
 function useNow(intervalMs = 60_000) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -70,7 +167,9 @@ function TimelineView() {
   const tz = settings.timezone;
   const now = useNow();
   const today = localDate(new Date(now), tz);
-  const dnd = useTimelineDnd(tz);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const zoom = useZoom(scrollRef);
+  const dnd = useTimelineDnd(tz, zoom.hourPx);
 
   const [view, setView] = useState<View>("week");
   const [anchor, setAnchor] = useState<string | null>(null);
@@ -113,6 +212,9 @@ function TimelineView() {
       else if (e.key === "t") setAnchor(null);
       else if (e.key === "d") changeView("day");
       else if (e.key === "w") changeView("week");
+      else if (e.key === "=" || e.key === "+") zoom.zoomBy(1.25);
+      else if (e.key === "-") zoom.zoomBy(0.8);
+      else if (e.key === "0") zoom.reset();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -169,9 +271,14 @@ function TimelineView() {
             onPrev={() => step(-1)}
             onNext={() => step(1)}
             onToday={() => setAnchor(null)}
+            hourPx={zoom.hourPx}
+            onZoom={zoom.zoomBy}
+            onZoomReset={zoom.reset}
           />
           <ConnectBanner />
           <Grid
+            scrollRef={scrollRef}
+            hourPx={zoom.hourPx}
             days={days}
             today={today}
             now={now}
@@ -233,6 +340,9 @@ function Header(props: {
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
+  hourPx: number;
+  onZoom: (factor: number) => void;
+  onZoomReset: () => void;
 }) {
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -273,6 +383,33 @@ function Header(props: {
         >
           {refreshing ? "Refreshing…" : "Refresh"}
         </button>
+        <div className="flex items-center rounded-md border border-line p-0.5">
+          <button
+            onClick={() => props.onZoom(0.8)}
+            disabled={props.hourPx <= MIN_HOUR_PX}
+            aria-label="Zoom out"
+            title="Zoom out (−, or pinch / ⌘-scroll on the grid)"
+            className="rounded px-2 py-0.5 text-muted hover:text-ink disabled:opacity-40"
+          >
+            −
+          </button>
+          <button
+            onClick={props.onZoomReset}
+            title="Reset zoom (0)"
+            className="min-w-12 rounded px-1 py-0.5 text-xs text-muted tabular-nums hover:text-ink"
+          >
+            {Math.round((props.hourPx / HOUR_PX) * 100)}%
+          </button>
+          <button
+            onClick={() => props.onZoom(1.25)}
+            disabled={props.hourPx >= MAX_HOUR_PX}
+            aria-label="Zoom in"
+            title="Zoom in (+, or pinch / ⌘-scroll on the grid)"
+            className="rounded px-2 py-0.5 text-muted hover:text-ink disabled:opacity-40"
+          >
+            +
+          </button>
+        </div>
         <div
           role="radiogroup"
           aria-label="View"
@@ -321,6 +458,8 @@ function ConnectBanner() {
 }
 
 function Grid(props: {
+  scrollRef: React.RefObject<HTMLDivElement | null>;
+  hourPx: number;
   days: string[];
   today: string;
   now: number;
@@ -334,12 +473,11 @@ function Grid(props: {
   preview: DropPreview | null;
   dragging: DragItem | null;
 }) {
-  const { days, tz } = props;
+  const { days, tz, hourPx, scrollRef } = props;
   const openTask = useOpenTask();
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: props.scrollToHour * HOUR_PX });
+    scrollRef.current?.scrollTo({ top: props.scrollToHour * hourPx });
     // Only on first render: keep the user's scroll position afterwards.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -385,13 +523,13 @@ function Grid(props: {
         ref={scrollRef}
         className="relative min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]"
       >
-        <div className="grid" style={{ gridTemplateColumns: cols, height: 24 * HOUR_PX }}>
+        <div className="grid" style={{ gridTemplateColumns: cols, height: 24 * hourPx }}>
           <div className="relative">
             {Array.from({ length: 23 }, (_, i) => i + 1).map((h) => (
               <span
                 key={h}
                 className="absolute right-2 -translate-y-1/2 text-[11px] text-muted"
-                style={{ top: h * HOUR_PX }}
+                style={{ top: h * hourPx }}
               >
                 {fmtTime(zonedInstant(days[0]!, `${String(h).padStart(2, "0")}:00`, tz), tz)}
               </span>
@@ -419,6 +557,7 @@ function Grid(props: {
 }
 
 function DayColumn(props: {
+  hourPx: number;
   day: string;
   isToday: boolean;
   now: number;
@@ -431,12 +570,12 @@ function DayColumn(props: {
   preview: DropPreview | null;
   dragging: DragItem | null;
 }) {
-  const { day, tz } = props;
+  const { day, tz, hourPx } = props;
   const { setNodeRef, isOver } = useDroppable({ id: day });
 
   const items = useMemo(
-    () => layoutDay(day, tz, props.timed, props.blocks),
-    [props.timed, props.blocks, day, tz],
+    () => layoutDay(day, tz, props.timed, props.blocks, hourPx),
+    [props.timed, props.blocks, day, tz, hourPx],
   );
 
   const free = props.freeSlots.flatMap((s) => {
@@ -452,16 +591,16 @@ function DayColumn(props: {
       data-day={day}
       className={`relative border-l border-line ${isOver ? "bg-now/[0.03]" : ""}`}
       style={{
-        backgroundImage: `repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px ${HOUR_PX}px)`,
+        backgroundImage: gridLines(hourPx),
       }}
     >
       {free.map((f) => {
-        const height = ((f.endMin - f.startMin) / 60) * HOUR_PX;
+        const height = ((f.endMin - f.startMin) / 60) * hourPx;
         return (
           <div
             key={f.startMin}
             className="open-hatch absolute inset-x-0 border-y border-open-ink/10"
-            style={{ top: (f.startMin / 60) * HOUR_PX, height }}
+            style={{ top: (f.startMin / 60) * hourPx, height }}
           >
             {height >= 22 && (
               <span className="absolute top-1 right-1.5 text-[11px] font-medium text-open-ink">
@@ -504,6 +643,7 @@ function DayColumn(props: {
             block={it.block}
             day={day}
             segStartMin={it.startMin}
+            hourPx={hourPx}
             style={style}
             compact={compact}
             tz={tz}
@@ -519,8 +659,8 @@ function DayColumn(props: {
         <div
           className={`pointer-events-none absolute inset-x-1 z-20 rounded border-2 border-dashed px-1.5 py-0.5 text-xs font-medium ${props.preview.past ? "border-risk text-risk" : "border-now text-now"}`}
           style={{
-            top: (props.preview.startMin / 60) * HOUR_PX,
-            height: (props.preview.minutes / 60) * HOUR_PX,
+            top: (props.preview.startMin / 60) * hourPx,
+            height: (props.preview.minutes / 60) * hourPx,
             background: "color-mix(in srgb, var(--surface) 70%, transparent)",
           }}
         >
@@ -533,7 +673,7 @@ function DayColumn(props: {
       {nowMin !== null && (
         <div
           className="pointer-events-none absolute inset-x-0 z-10"
-          style={{ top: (nowMin / 60) * HOUR_PX }}
+          style={{ top: (nowMin / 60) * hourPx }}
         >
           <div className="h-[2px] bg-now" />
           <div className="absolute -top-[3px] -left-[4px] size-2 rounded-full bg-now" />
@@ -541,6 +681,15 @@ function DayColumn(props: {
       )}
     </div>
   );
+}
+
+/** Hour lines, plus fainter half-hour lines once zoomed in far enough to want them. */
+function gridLines(hourPx: number) {
+  const hours = `repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px ${hourPx}px)`;
+  if (hourPx < 96) return hours;
+  const half = hourPx / 2;
+  const faint = "color-mix(in srgb, var(--line) 50%, transparent)";
+  return `${hours}, repeating-linear-gradient(to bottom, transparent 0 ${half}px, ${faint} ${half}px ${half + 1}px, transparent ${half + 1}px ${hourPx}px)`;
 }
 
 /**
@@ -575,6 +724,7 @@ function BlockItem(props: {
   day: string;
   /** Where this block's segment starts in `day`, in minutes from midnight. */
   segStartMin: number;
+  hourPx: number;
   style: React.CSSProperties;
   compact: boolean;
   tz: string;
@@ -619,7 +769,7 @@ function BlockItem(props: {
     const startMs = Date.parse(b.start);
     const endAt = (clientY: number) => {
       const y = clientY - column.getBoundingClientRect().top;
-      const min = Math.min(snap((y / HOUR_PX) * 60), DAY_MIN);
+      const min = Math.min(snap((y / props.hourPx) * 60), DAY_MIN);
       const end = instantAt(day, min, tz);
       // At least one snap step long, and never ending in the past.
       const floor = Math.max(startMs + SNAP_MIN * 60_000, Date.now());
@@ -647,7 +797,7 @@ function BlockItem(props: {
       : {
           ...props.style,
           height: Math.max(
-            ((minutesIntoDay(resizeEnd, day, tz) - props.segStartMin) / 60) * HOUR_PX - 2,
+            ((minutesIntoDay(resizeEnd, day, tz) - props.segStartMin) / 60) * props.hourPx - 2,
             12,
           ),
           zIndex: 20,

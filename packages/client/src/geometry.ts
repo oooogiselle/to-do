@@ -1,6 +1,9 @@
 import { zonedInstant, addDays, type CalendarEvent, type TimeBlock } from "@tt/shared";
 
 export const HOUR_PX = 48;
+/** Zoom range for the web timeline: the whole day on screen, down to 15 minutes ≈ 48px. */
+export const MIN_HOUR_PX = 24;
+export const MAX_HOUR_PX = 192;
 export const DAY_MIN = 24 * 60;
 
 export type Positioned<T> = T & { top: number; height: number; lane: number; lanes: number };
@@ -25,6 +28,7 @@ export function daySegment(
 /** Side-by-side lanes for overlapping items: each cluster of overlaps shares its width. */
 export function assignLanes<T extends { startMin: number; endMin: number }>(
   items: T[],
+  hourPx = HOUR_PX,
 ): Positioned<T>[] {
   const sorted = [...items].sort((a, b) => a.startMin - b.startMin || b.endMin - a.endMin);
   const out: Positioned<T>[] = [];
@@ -49,8 +53,8 @@ export function assignLanes<T extends { startMin: number; endMin: number }>(
       ...item,
       lane,
       lanes: 1,
-      top: (item.startMin / 60) * HOUR_PX,
-      height: Math.max(((item.endMin - item.startMin) / 60) * HOUR_PX, 14),
+      top: (item.startMin / 60) * hourPx,
+      height: Math.max(((item.endMin - item.startMin) / 60) * hourPx, 14),
     });
   }
   flush();
@@ -78,6 +82,7 @@ export function layoutDay(
   tz: string,
   events: CalendarEvent[],
   blocks: TimeBlock[],
+  hourPx = HOUR_PX,
 ): Positioned<DayItem>[] {
   const out: DayItem[] = [];
   for (const e of events) {
@@ -89,5 +94,5 @@ export function layoutDay(
     const seg = daySegment(Date.parse(b.start), Date.parse(b.end), day, tz);
     if (seg) out.push({ ...seg, kind: "block", key: `b-${b.id}`, block: b });
   }
-  return assignLanes(out);
+  return assignLanes(out, hourPx);
 }
