@@ -1,11 +1,19 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
-import { addDays, eventTitle, findFreeSlots, localDate, zonedInstant, type TimeBlock } from "@tt/shared";
+import {
+  addDays,
+  eventTitle,
+  findFreeSlots,
+  localDate,
+  zonedInstant,
+  type TimeBlock,
+} from "@tt/shared";
 import { fmtDay, HOUR_PX, taskColor, useEvents, useModel } from "@tt/client";
 import { Grid } from "@/components/timeline/grid";
 import { useZoom } from "@/components/timeline/zoom";
+import { useCalendarAnchor } from "./calendar-dates";
 import { useCalendarKeys } from "./calendar-keys";
 import { earliestStart, weekStart } from "./time";
 
@@ -22,7 +30,7 @@ export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: numbe
   const headerRef = useRef<HTMLDivElement>(null);
   const headerPx = useCallback(() => headerRef.current?.offsetHeight ?? 0, []);
   const zoom = useZoom(scrollRef, `timeline.zoom.${pane}`, headerPx);
-  const [anchor, setAnchor] = useState<string | null>(null);
+  const [anchor, setAnchor] = useCalendarAnchor(pane);
   const current = anchor ?? today;
 
   const days = useMemo(() => {
@@ -78,11 +86,7 @@ export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: numbe
     : fmtDay(current, tz, "long");
 
   return (
-    <div
-      className="flex h-full min-h-0 flex-col"
-      onPointerEnter={onFocus}
-      onFocusCapture={onFocus}
-    >
+    <div className="flex h-full min-h-0 flex-col" onPointerEnter={onFocus} onFocusCapture={onFocus}>
       <div className="flex flex-wrap items-center gap-2 px-3 py-2">
         <h2 className="mr-auto text-[14px] font-extrabold tracking-tight text-ink">{title}</h2>
         <button
@@ -96,7 +100,10 @@ export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: numbe
         <button
           type="button"
           onClick={() => setAnchor(null)}
-          className="h-7 rounded-lg border border-line bg-white px-2.5 text-[12px] font-bold text-ink hover:bg-[#f0f1f7]"
+          title="Jump to today (t)"
+          className={`h-7 rounded-lg border border-line bg-white px-2.5 text-[12px] font-bold hover:bg-[#f0f1f7] ${
+            days.includes(today) ? "text-faint" : "text-ink"
+          }`}
         >
           Today
         </button>
@@ -169,7 +176,9 @@ export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: numbe
         <span className="flex items-center gap-1.5">
           <span className="open-slot h-2.5 w-2.5 rounded-[3px]" /> Open time
         </span>
-        <span className="ml-auto hidden text-faint sm:inline">Drag tasks or blocks onto the grid</span>
+        <span className="ml-auto hidden text-faint sm:inline">
+          Drag tasks or blocks onto the grid
+        </span>
       </div>
     </div>
   );

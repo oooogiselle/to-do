@@ -1,9 +1,9 @@
 import { TZDate } from "@date-fns/tz";
-import { localDate, zonedInstant } from "@tt/shared";
+import { localDate, minuteOfDay, zonedInstant } from "@tt/shared";
 
-/** Minutes since local midnight of `day` in tz (may be negative or >1440 across midnights). */
+/** Wall-clock minutes since local midnight of `day` in tz (may be negative or >1440 across midnights). */
 export function minutesIntoDay(instant: number, day: string, tz: string): number {
-  return (instant - zonedInstant(day, "00:00", tz).getTime()) / 60_000;
+  return minuteOfDay(instant, day, tz);
 }
 
 export function fmtTime(instant: number | string | Date, tz: string): string {
@@ -84,4 +84,3 @@ export function dueTone(dueAt: string, tz: string, now = Date.now()): DueTone {
   if (dayDiff === 1) return "soon";
   return "later";
 }
-
