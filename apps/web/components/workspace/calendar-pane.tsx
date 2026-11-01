@@ -108,7 +108,7 @@ export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: numbe
         >
           <ChevronRight className="h-3.5 w-3.5" />
         </button>
-        <span className="mx-1 h-4 w-px bg-line" />
+        <span className="mx-1 hidden h-4 w-px bg-line sm:block" />
         <button
           type="button"
           className={btn}
@@ -123,7 +123,7 @@ export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: numbe
           type="button"
           onClick={zoom.reset}
           title="Reset zoom (0)"
-          className="min-w-10 text-[11px] font-bold text-muted tabular-nums hover:text-ink"
+          className="hidden min-w-10 text-[11px] font-bold text-muted tabular-nums hover:text-ink sm:inline"
         >
           {Math.round((zoom.hourPx / HOUR_PX) * 100)}%
         </button>

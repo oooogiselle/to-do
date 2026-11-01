@@ -84,7 +84,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
         inputRef.current?.focus();
       }}
       tz={settings.timezone}
-      className="text-sm"
+      className="!py-0.5 text-[12px]"
     />
   );
 
@@ -98,7 +98,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
         inputRef.current?.focus();
       }}
       lists={lists}
-      className="text-sm"
+      className="!py-0.5 text-[12px]"
     />
   );
 
@@ -165,7 +165,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
             onKeyDown={onKeyDown}
             placeholder="cs61 lab report fri 11pm high"
             autoComplete="off"
-            className="block w-full resize-none bg-transparent text-xl font-bold text-ink outline-none placeholder:font-semibold placeholder:text-[#b5b9cb]"
+            className="block w-full resize-none bg-transparent text-xl font-bold text-ink outline-none placeholder:font-semibold placeholder:text-[#b5b9cb] focus-visible:outline-none"
           />
           <div className="mt-3 flex min-h-[30px] flex-wrap items-center gap-1.5 text-[13px]">
             {long ? (
