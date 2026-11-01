@@ -59,7 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="flex h-dvh flex-col md:flex-row">
+    <div className="flex h-dvh flex-col bg-paper md:flex-row">
       <Nav onQuickAdd={() => setQuickAdd(true)} />
       <main className="min-h-0 min-w-0 flex-1">{children}</main>
       <QuickAdd open={quickAdd} onClose={closeQuickAdd} />

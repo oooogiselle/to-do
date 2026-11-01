@@ -68,3 +68,20 @@ export function localTime(instant: number | string | Date, tz: string): string {
   const z = new TZDate(new Date(instant).getTime(), tz);
   return `${String(z.getHours()).padStart(2, "0")}:${String(z.getMinutes()).padStart(2, "0")}`;
 }
+
+export type DueTone = "overdue" | "today" | "soon" | "later";
+
+/** How urgent a due date reads: past due, due today, due tomorrow, or later. */
+export function dueTone(dueAt: string, tz: string, now = Date.now()): DueTone {
+  const due = new Date(dueAt).getTime();
+  if (due < now) return "overdue";
+  const dayDiff = Math.round(
+    (zonedInstant(localDate(new Date(due), tz), "12:00", tz).getTime() -
+      zonedInstant(localDate(new Date(now), tz), "12:00", tz).getTime()) /
+      86_400_000,
+  );
+  if (dayDiff === 0) return "today";
+  if (dayDiff === 1) return "soon";
+  return "later";
+}
+

@@ -9,7 +9,7 @@ import { fmtDue } from "@tt/client";
 const END_OF_DAY = "23:59";
 
 const field =
-  "rounded-md border border-line bg-paper px-2 py-1 outline-none focus:border-line-strong";
+  "rounded-lg border border-line bg-white px-2 py-1 font-medium outline-none focus:border-sky focus:ring-2 focus:ring-sky/20";
 
 /** Wall date and time of `dueAt` in tz; time is "" when it's the end-of-day default. */
 function split(dueAt: string | null, tz: string): { date: string; time: string } {
@@ -75,7 +75,7 @@ export function DuePicker({
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className={`rounded-md border px-2 py-1 ${value ? "border-line-strong text-ink" : "border-dashed border-line-strong text-muted"} hover:border-ink ${className}`}
+        className={`rounded-lg border px-2 py-1 font-semibold ${value ? "border-line bg-white text-ink" : "border-dashed border-line-strong text-muted"} hover:border-ink ${className}`}
       >
         {value ? `Due ${fmtDue(value, tz)}` : "Add due date"}
       </button>
@@ -83,7 +83,7 @@ export function DuePicker({
         <div
           role="dialog"
           aria-label="Due date"
-          className="absolute top-full left-0 z-50 mt-1 w-64 space-y-3 rounded-lg border border-line-strong bg-surface p-3 text-ink shadow-xl"
+          className="animate-pop-in absolute top-full left-0 z-50 mt-1 w-64 space-y-3 rounded-[13px] border border-line-soft bg-surface p-3 text-ink shadow-[0_18px_34px_rgba(21,23,43,0.2)]"
         >
           <div className="flex flex-wrap gap-1.5">
             {shortcuts.map((s) => (
@@ -91,14 +91,14 @@ export function DuePicker({
                 key={s.label}
                 type="button"
                 onClick={() => set(s.day, time)}
-                className={`rounded-md border px-2 py-1 ${date === s.day ? "border-ink bg-ink text-paper" : "border-line hover:border-ink"}`}
+                className={`rounded-lg px-2 py-1 font-bold ${date === s.day ? "bg-ink text-white" : "bg-chip text-chip-ink hover:bg-line"}`}
               >
                 {s.label}
               </button>
             ))}
           </div>
           <label className="flex items-center gap-2">
-            <span className="w-10 text-muted">Date</span>
+            <span className="w-10 font-semibold text-muted">Date</span>
             <input
               type="date"
               value={date}
@@ -107,7 +107,7 @@ export function DuePicker({
             />
           </label>
           <label className="flex items-center gap-2">
-            <span className="w-10 text-muted">Time</span>
+            <span className="w-10 font-semibold text-muted">Time</span>
             <input
               type="time"
               step={900}
@@ -123,14 +123,14 @@ export function DuePicker({
               type="button"
               disabled={!value}
               onClick={() => onChange(null)}
-              className="text-muted hover:text-risk disabled:opacity-40"
+              className="font-semibold text-muted hover:text-risk disabled:opacity-40"
             >
               No due date
             </button>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="rounded-md bg-ink px-2.5 py-1 text-paper hover:opacity-90"
+              className="rounded-lg bg-ink px-2.5 py-1 font-bold text-white hover:opacity-90"
             >
               Done
             </button>

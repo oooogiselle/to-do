@@ -1,60 +1,39 @@
 @import "tailwindcss";
 
 /* Tokens: cool paper, ink, sage for open time, indigo now-line, red for at-risk. */
+/* Tokens: cool canvas, deep ink, six list hues. Light only. */
 :root {
-  --paper: #f5f7fa;
+  --paper: #f3f4f9;
   --surface: #ffffff;
-  --ink: #18212d;
-  --muted: #667085;
-  --line: #e2e7ee;
-  --line-strong: #cfd6e0;
-  --event: #dfe4eb;
-  --event-ink: #334155;
-  --open: #dcefe4;
-  --open-ink: #2f6b4a;
-  --now: #4058d6;
-  --risk: #c8382f;
-  --warn: #b26a00;
-  --warn-bg: #fff4dc;
-  --focus: #4058d6;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #12161c;
-    --surface: #181d25;
-    --ink: #e6eaf0;
-    --muted: #8b95a5;
-    --line: #262d38;
-    --line-strong: #343d4b;
-    --event: #2a323e;
-    --event-ink: #cbd3de;
-    --open: #1c3428;
-    --open-ink: #8fd0aa;
-    --now: #8195ff;
-    --risk: #ff7a70;
-    --warn: #f0b44c;
-    --warn-bg: #3a2c12;
-    --focus: #8195ff;
-  }
-}
-
-:root[data-theme="dark"] {
-  --paper: #12161c;
-  --surface: #181d25;
-  --ink: #e6eaf0;
-  --muted: #8b95a5;
-  --line: #262d38;
-  --line-strong: #343d4b;
-  --event: #2a323e;
-  --event-ink: #cbd3de;
-  --open: #1c3428;
-  --open-ink: #8fd0aa;
-  --now: #8195ff;
-  --risk: #ff7a70;
-  --warn: #f0b44c;
-  --warn-bg: #3a2c12;
-  --focus: #8195ff;
+  --ink: #15172b;
+  --muted: #6b7088;
+  --faint: #9a9eb3;
+  --line: #e3e5ee;
+  --line-soft: #ecedf4;
+  --line-strong: #c9cbdb;
+  --row: #f8f8fc;
+  --row-hover: #f0f1f8;
+  --chip: #eef0f6;
+  --chip-ink: #4d5370;
+  --event: #eef0f6;
+  --event-ink: #4d5370;
+  --open: #f1f8f4;
+  --open-line: #b5d8c7;
+  --open-ink: #3f8466;
+  --now: #d9775e;
+  --risk: #a04b35;
+  --risk-bg: #f9ece7;
+  --warn: #7a5e1e;
+  --warn-bg: #faf3df;
+  --focus: #5c88c7;
+  --grape-bg: #f6f3fc;
+  --grape-ink: #5b4b97;
+  --tt-coral: #d9775e;
+  --tt-sun: #e3ba55;
+  --tt-mint: #5aa585;
+  --tt-sky: #5c88c7;
+  --tt-grape: #8775c9;
+  --tt-pink: #c97a9f;
 }
 
 @theme inline {
@@ -72,7 +51,24 @@
   --color-risk: var(--risk);
   --color-warn: var(--warn);
   --color-warn-bg: var(--warn-bg);
-  --font-sans: var(--font-plex), ui-sans-serif, system-ui, sans-serif;
+  --color-faint: var(--faint);
+  --color-line-soft: var(--line-soft);
+  --color-row: var(--row);
+  --color-row-hover: var(--row-hover);
+  --color-chip: var(--chip);
+  --color-chip-ink: var(--chip-ink);
+  --color-open-line: var(--open-line);
+  --color-risk-bg: var(--risk-bg);
+  --color-focus: var(--focus);
+  --color-grape-bg: var(--grape-bg);
+  --color-grape-ink: var(--grape-ink);
+  --color-coral: var(--tt-coral);
+  --color-sun: var(--tt-sun);
+  --color-mint: var(--tt-mint);
+  --color-sky: var(--tt-sky);
+  --color-grape: var(--tt-grape);
+  --color-pink: var(--tt-pink);
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
 }
 
 html,
@@ -83,7 +79,8 @@ body {
 
 body {
   font-feature-settings: "tnum" 1;
-  accent-color: var(--now);
+  accent-color: var(--tt-grape);
+  -webkit-font-smoothing: antialiased;
 }
 
 :focus-visible {
@@ -91,14 +88,79 @@ body {
   outline-offset: 2px;
 }
 
-/* Open time: soft diagonal hatching so free gaps read as "room to work". */
-.open-hatch {
-  background-color: color-mix(in srgb, var(--open) 55%, transparent);
-  background-image: repeating-linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--open-ink) 14%, transparent) 0 1px,
-    transparent 1px 7px
-  );
+/* Open time: a dashed mint slot that reads as "room to work". */
+.open-slot {
+  background: var(--open);
+  border: 1px dashed var(--open-line);
+}
+.open-slot[data-active="true"] {
+  background: #e9f5ef;
+  border-color: #8cc5ab;
+}
+
+/* Drop target ghost on the grid. */
+@keyframes slot-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(135, 117, 201, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(135, 117, 201, 0.18);
+  }
+}
+.animate-slot-glow {
+  animation: slot-glow 1.8s ease-in-out infinite;
+}
+
+/* "Synced" dot in the workspace header. */
+@keyframes sync-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(90, 165, 133, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(90, 165, 133, 0);
+  }
+}
+.animate-sync-pulse {
+  animation: sync-pulse 2s ease-in-out infinite;
+}
+
+/* Sheets and dialogs. */
+@keyframes sheet-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-sheet-in {
+  animation: sheet-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.animate-fade-in {
+  animation: fade-in 0.18s ease-out;
+}
+.animate-pop-in {
+  animation: pop-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
