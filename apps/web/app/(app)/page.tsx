@@ -1,5 +1,5 @@
-import { Timeline } from "@/components/timeline/timeline";
+import { Workspace } from "@/components/workspace/workspace";
 
-export default function TimelinePage() {
-  return <Timeline />;
+export default function WorkspacePage() {
+  return <Workspace />;
 }
