@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { formatMinutes, type List, type Task } from "@tt/shared";
+import { ClipboardPaste, Pencil, Plus, X } from "lucide-react";
+import { formatMinutes, swatch, type List, type Task } from "@tt/shared";
 import {
-  fmtDue,
   fmtWhen,
   isTemp,
+  NO_COLOR,
   PALETTE,
-  PRIORITY_MARK,
   tempId,
   useCompletion,
   useCreateList,
@@ -20,82 +20,86 @@ import {
 } from "@tt/client";
 import { useOpenTask } from "@/components/app-shell";
 import { ColorPicker } from "@/components/color-picker";
+import { DueChip } from "@/components/ui/due-chip";
+import { InlineAdd } from "@/components/ui/inline-add";
+import { PriorityMark } from "@/components/ui/priority-mark";
+import { Segmented } from "@/components/ui/segmented";
+import { Switch } from "@/components/ui/switch";
+import { TaskCheck } from "@/components/ui/task-check";
 
 export function Inbox() {
   const { lists, tasks, settings, isLoading } = useModel();
   const [sort, setSort] = useState<InboxSort>("due");
   const [showDone, setShowDone] = useState(false);
+  const [creating, setCreating] = useState(false);
   const { groups, nextBlock } = useInbox(sort, showDone);
+  const openTotal = tasks.filter((t) => t.status === "open").length;
+  const doneTotal = tasks.filter((t) => t.status === "done").length;
+  const openIn = (list: List | null) =>
+    tasks.filter(
+      (t) =>
+        t.status === "open" &&
+        (list ? t.list_id === list.id : !t.list_id || !lists.some((l) => l.id === t.list_id)),
+    ).length;
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-3xl px-4 py-5">
-        <div className="mb-5 flex flex-wrap items-center gap-3">
-          <h1 className="text-xl font-semibold tracking-tight">To-dos</h1>
+      <div className="mx-auto max-w-6xl p-4 md:p-8">
+        <header className="mb-6 flex flex-wrap items-end gap-4">
+          <div className="mr-auto">
+            <p className="text-[12px] font-bold tracking-wider text-grape uppercase">
+              {openTotal} open · {doneTotal} done
+            </p>
+            <h1 className="text-[28px] font-extrabold tracking-tight text-ink">To-dos</h1>
+          </div>
+          <Segmented
+            label="Sort"
+            value={sort}
+            onChange={setSort}
+            options={[
+              { value: "due", label: "Due date" },
+              { value: "priority", label: "Priority" },
+            ]}
+          />
+          <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-chip-ink">
+            <Switch checked={showDone} onChange={setShowDone} label="Show done" />
+            Show done
+          </label>
           <Link
             href="/import"
-            className="rounded-md border border-line px-2.5 py-1 text-muted hover:border-line-strong hover:text-ink"
+            className="flex items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2 text-sm font-bold text-ink hover:bg-[#f0f1f7]"
           >
-            Import tasks
+            <ClipboardPaste className="h-4 w-4 text-sun" strokeWidth={2.5} />
+            Import
           </Link>
-          <div className="ml-auto flex items-center gap-3 text-muted">
-            <label className="flex items-center gap-1.5">
-              <input
-                type="checkbox"
-                checked={showDone}
-                onChange={(e) => setShowDone(e.target.checked)}
-              />
-              Show done
-            </label>
-            <label className="flex items-center gap-1.5">
-              Sort by
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value as InboxSort)}
-                className="rounded-md border border-line bg-surface px-2 py-1 text-ink"
-              >
-                <option value="due">Due date</option>
-                <option value="priority">Priority</option>
-              </select>
-            </label>
-          </div>
-        </div>
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="flex items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2 text-sm font-bold text-ink hover:bg-[#f0f1f7]"
+          >
+            <Plus className="h-4 w-4" strokeWidth={3} />
+            New list
+          </button>
+        </header>
+
+        {creating && <NewListForm count={lists.length} onDone={() => setCreating(false)} />}
 
         {isLoading ? (
-          <p className="text-muted">Loading…</p>
+          <p className="font-semibold text-muted">Loading…</p>
+        ) : !tasks.length && !lists.length ? (
+          <EmptyState />
         ) : (
-          <div className="space-y-6">
+          <div className="grid items-start gap-5 lg:grid-cols-2">
             {groups.map((g) => (
-              <section key={g.list?.id ?? "none"}>
-                {g.list ? (
-                  <ListHeading list={g.list} count={g.tasks.length} />
-                ) : (
-                  <h2 className="mb-1.5 flex items-center gap-2 font-semibold">
-                    <span className="size-2.5 rounded-full bg-line-strong" aria-hidden />
-                    No list
-                    <span className="font-normal text-muted">{g.tasks.length}</span>
-                  </h2>
-                )}
-                {g.tasks.length ? (
-                  <ul className="divide-y divide-line rounded-lg border border-line bg-surface">
-                    {g.tasks.map((t) => (
-                      <TaskRow
-                        key={t.id}
-                        task={t}
-                        tz={settings.timezone}
-                        nextAt={nextBlock.get(t.id)}
-                      />
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="px-1 text-muted">No open tasks.</p>
-                )}
-              </section>
+              <ListCard
+                key={g.list?.id ?? "none"}
+                list={g.list}
+                tasks={g.tasks}
+                openCount={openIn(g.list)}
+                tz={settings.timezone}
+                nextBlock={nextBlock}
+              />
             ))}
-            {!tasks.length && (
-              <p className="text-muted">No tasks yet. Press ⌘K to add your first one.</p>
-            )}
-            <NewListForm count={lists.length} />
           </div>
         )}
       </div>
@@ -103,112 +107,168 @@ export function Inbox() {
   );
 }
 
-function TaskRow({ task, tz, nextAt }: { task: Task; tz: string; nextAt?: number }) {
+function EmptyState() {
+  return (
+    <div className="rounded-2xl border-2 border-dashed border-line bg-white px-6 py-14 text-center">
+      <p className="text-base font-bold text-ink">No tasks yet.</p>
+      <p className="mt-1 text-sm font-semibold text-coral">Press ⌘K to add your first one.</p>
+    </div>
+  );
+}
+
+function ListCard({
+  list,
+  tasks,
+  openCount,
+  tz,
+  nextBlock,
+}: {
+  list: List | null;
+  tasks: Task[];
+  openCount: number;
+  tz: string;
+  nextBlock: Map<string, number>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const color = list?.color ?? NO_COLOR;
+  const c = swatch(color);
+  const name = list?.name ?? "No list";
+
+  return (
+    <section
+      aria-label={name}
+      className="overflow-hidden rounded-2xl border border-line bg-white"
+    >
+      {editing && list ? (
+        <ListEditor list={list} openCount={openCount} onDone={() => setEditing(false)} />
+      ) : (
+        <header
+          className="group flex items-center gap-3 px-4 py-3"
+          style={{ background: c.solid, color: c.onSolid }}
+        >
+          <h2 className="truncate text-base font-extrabold tracking-tight">{name}</h2>
+          <span className="shrink-0 rounded-full bg-black/15 px-2 py-0.5 text-[12px] font-bold">
+            {openCount} open
+          </span>
+          {list && !isTemp(list.id) && (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              aria-label={`Edit list ${list.name}`}
+              title="Rename, recolor or delete"
+              className="ml-auto grid h-7 w-7 place-items-center rounded-lg opacity-60 group-hover:opacity-100 hover:bg-black/10 focus:opacity-100"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </header>
+      )}
+
+      {tasks.length === 0 ? (
+        <p className="px-4 py-5 text-sm text-[#7a7f96]">No open tasks.</p>
+      ) : (
+        <ul className="divide-y divide-[#eef0f5]">
+          {tasks.map((t) => (
+            <TaskRow key={t.id} task={t} color={c.solid} tz={tz} nextAt={nextBlock.get(t.id)} />
+          ))}
+        </ul>
+      )}
+
+      <InlineAdd listId={list?.id ?? null} listName={name} color={c.solid} size="md" />
+    </section>
+  );
+}
+
+function TaskRow({
+  task,
+  color,
+  tz,
+  nextAt,
+}: {
+  task: Task;
+  color: string;
+  tz: string;
+  nextAt?: number;
+}) {
   const openTask = useOpenTask();
   const { setTaskDone } = useCompletion();
   const done = task.status === "done";
-  const overdue = !done && task.due_at && Date.parse(task.due_at) < Date.now();
+  const rowColor = task.color ?? color;
   return (
-    <li className="flex items-center gap-3 px-3 py-2">
-      <input
-        type="checkbox"
-        aria-label={done ? `Mark ${task.title} as not done` : `Mark ${task.title} as done`}
-        checked={done}
+    <li className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-[#f8f9fc]">
+      <TaskCheck
+        done={done}
+        color={rowColor}
+        onToggle={() => setTaskDone(task.id, !done)}
+        label={task.title}
         disabled={isTemp(task.id)}
-        onChange={(e) => setTaskDone(task.id, e.target.checked)}
-        className="size-4 accent-[var(--now)]"
       />
       <button
+        type="button"
         onClick={() => !isTemp(task.id) && openTask(task.id)}
-        className={`min-w-0 flex-1 truncate text-left ${done ? "text-muted line-through" : "hover:underline"}`}
+        className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-left"
       >
-        {task.title}
+        <span
+          className={`mr-1 text-sm font-semibold ${done ? "text-faint line-through" : "text-ink"}`}
+        >
+          {task.title}
+        </span>
+        {!done && <DueChip dueAt={task.due_at} tz={tz} />}
+        {!done && nextAt !== undefined && (
+          <span
+            className="rounded-md bg-[#e6f2ec] px-1.5 py-0.5 text-[11px] font-semibold text-[#2f6b52]"
+            title="Next scheduled block"
+          >
+            {fmtWhen(nextAt, tz)}
+          </span>
+        )}
       </button>
       {task.color && (
         <span
           className="size-2 shrink-0 rounded-full"
           style={{ background: task.color }}
+          title="Own color"
           aria-hidden
         />
       )}
-      {task.priority !== "none" && (
-        <span
-          className={`text-xs font-semibold ${task.priority === "high" ? "text-risk" : "text-muted"}`}
-          title={`${task.priority} priority`}
-        >
-          {PRIORITY_MARK[task.priority]}
-        </span>
-      )}
-      {!done && nextAt !== undefined && (
-        <span
-          className="rounded bg-paper px-1.5 py-0.5 text-xs text-muted"
-          title="Next scheduled block"
-        >
-          {fmtWhen(nextAt, tz)}
-        </span>
-      )}
-      {nextAt === undefined && !done && task.estimate_min && (
-        <span
-          className="rounded bg-paper px-1.5 py-0.5 text-xs text-muted"
-          title="Estimate, not scheduled yet"
-        >
+      {task.estimate_min && (
+        <span className="hidden text-[12px] font-semibold text-faint tabular-nums sm:inline">
           {formatMinutes(task.estimate_min)}
         </span>
       )}
-      {task.due_at && (
-        <span
-          className={`w-28 shrink-0 text-right text-xs ${overdue ? "text-risk" : "text-muted"}`}
-        >
-          {fmtDue(task.due_at, tz)}
-        </span>
-      )}
+      <span className="flex w-4 justify-center">
+        <PriorityMark priority={task.priority} />
+      </span>
     </li>
   );
 }
 
-function ListHeading({ list, count }: { list: List; count: number }) {
+function ListEditor({
+  list,
+  openCount,
+  onDone,
+}: {
+  list: List;
+  openCount: number;
+  onDone: () => void;
+}) {
   const updateList = useUpdateList();
   const deleteList = useDeleteList();
-  const [editing, setEditing] = useState(false);
   const [name, setName] = useState(list.name);
   const [color, setColor] = useState(list.color);
-
-  const startEditing = () => {
-    setName(list.name);
-    setColor(list.color);
-    setEditing(true);
-  };
-  const save = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    updateList.mutate({ id: list.id, patch: { name: name.trim(), color } });
-    setEditing(false);
-  };
-
-  if (!editing) {
-    return (
-      <h2 className="group mb-1.5 flex items-center gap-2 font-semibold">
-        <span className="size-2.5 rounded-full" style={{ background: list.color }} aria-hidden />
-        {list.name}
-        <span className="font-normal text-muted">{count}</span>
-        {!isTemp(list.id) && (
-          <button
-            onClick={startEditing}
-            aria-label={`Edit list ${list.name}`}
-            className="text-xs font-normal text-muted opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-ink"
-          >
-            Edit
-          </button>
-        )}
-      </h2>
-    );
-  }
+  const c = swatch(color);
 
   return (
     <form
-      onSubmit={save}
-      onKeyDown={(e) => e.key === "Escape" && setEditing(false)}
-      className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border border-line-strong bg-surface p-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        updateList.mutate({ id: list.id, patch: { name: name.trim(), color } });
+        onDone();
+      }}
+      onKeyDown={(e) => e.key === "Escape" && onDone()}
+      className="flex flex-wrap items-center gap-2 border-b-2 p-3"
+      style={{ borderColor: c.solid, background: c.tint }}
     >
       <label htmlFor={`list-name-${list.id}`} className="sr-only">
         List name
@@ -218,67 +278,77 @@ function ListHeading({ list, count }: { list: List; count: number }) {
         autoFocus
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="rounded-md border border-line bg-paper px-2.5 py-1.5 font-semibold outline-none focus:border-line-strong"
+        className="min-w-[140px] flex-1 rounded-xl border border-line bg-white px-3 py-1.5 text-sm font-semibold text-ink outline-none focus:ring-2 focus:ring-sky/30"
       />
-      <ColorPicker value={color} onChange={(c) => c && setColor(c)} label="List color" />
-      <button type="submit" className="rounded-md bg-ink px-3 py-1.5 text-paper hover:opacity-90">
-        Save
-      </button>
-      <button
-        type="button"
-        onClick={() => setEditing(false)}
-        className="px-1 text-muted hover:text-ink"
-      >
-        Cancel
-      </button>
-      <button
-        type="button"
-        onClick={() => {
-          const note = count
-            ? ` Its ${count} open task${count === 1 ? "" : "s"} will move to No list.`
-            : "";
-          if (confirm(`Delete the list “${list.name}”?${note}`)) deleteList.mutate(list.id);
-        }}
-        className="ml-auto px-1 text-risk hover:underline"
-      >
-        Delete list
-      </button>
+      <ColorPicker value={color} onChange={(v) => v && setColor(v)} label="List color" size={22} />
+      <div className="flex w-full items-center gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            const note = openCount
+              ? ` Its ${openCount} open task${openCount === 1 ? "" : "s"} will move to No list.`
+              : "";
+            if (confirm(`Delete the list “${list.name}”?${note}`)) deleteList.mutate(list.id);
+          }}
+          className="rounded-lg px-2 py-1 text-[13px] font-bold text-risk hover:bg-white/60"
+        >
+          Delete list
+        </button>
+        <button
+          type="button"
+          onClick={onDone}
+          className="ml-auto rounded-lg px-2 py-1 text-[13px] font-bold text-muted hover:text-ink"
+        >
+          Cancel
+        </button>
+        <button type="submit" className="rounded-xl bg-ink px-3 py-1.5 text-[13px] font-bold text-white">
+          Save
+        </button>
+      </div>
     </form>
   );
 }
 
-function NewListForm({ count }: { count: number }) {
+function NewListForm({ count, onDone }: { count: number; onDone: () => void }) {
   const createList = useCreateList();
   const [name, setName] = useState("");
   const [color, setColor] = useState(PALETTE[count % PALETTE.length]!);
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    createList.mutate({
-      tempId: tempId(),
-      body: { name: name.trim(), color, sort_order: count },
-    });
-    setName("");
-    setColor(PALETTE[(count + 1) % PALETTE.length]!);
-  };
+  const c = swatch(color);
   return (
-    <form onSubmit={submit} className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
-      <label htmlFor="new-list" className="sr-only">
-        New list name
-      </label>
+    <form
+      className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border-2 p-3"
+      style={{ borderColor: c.solid, background: c.tint }}
+      onKeyDown={(e) => e.key === "Escape" && onDone()}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        createList.mutate({
+          tempId: tempId(),
+          body: { name: name.trim(), color, sort_order: count },
+        });
+        setName("");
+        onDone();
+      }}
+    >
       <input
-        id="new-list"
+        autoFocus
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="New list, e.g. CS61"
-        className="rounded-md border border-line bg-surface px-2.5 py-1.5 outline-none focus:border-line-strong"
+        placeholder="List name, e.g. CS61"
+        aria-label="List name"
+        className="min-w-[180px] flex-1 rounded-xl border border-line bg-white px-3 py-2 text-sm font-semibold text-ink outline-none focus:ring-2 focus:ring-sky/30"
       />
-      <ColorPicker value={color} onChange={(c) => c && setColor(c)} label="List color" />
+      <ColorPicker value={color} onChange={(v) => v && setColor(v)} label="List color" size={28} />
+      <button type="submit" className="rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white">
+        Create
+      </button>
       <button
-        type="submit"
-        className="rounded-md border border-line-strong px-3 py-1.5 hover:border-ink"
+        type="button"
+        onClick={onDone}
+        aria-label="Cancel"
+        className="grid h-9 w-9 place-items-center rounded-xl text-ink hover:bg-white/60"
       >
-        Add list
+        <X className="h-4 w-4" />
       </button>
     </form>
   );

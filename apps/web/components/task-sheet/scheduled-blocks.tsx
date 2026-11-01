@@ -5,7 +5,7 @@ import { formatMinutes, localDate, zonedInstant, type Step, type TimeBlock } fro
 import { fmtDay, fmtTime, isTemp, localTime, useDeleteBlock, useMoveBlock } from "@tt/client";
 
 const field =
-  "rounded-md border border-line bg-paper px-2 py-1 outline-none focus:border-line-strong";
+  "rounded-lg border border-line bg-white px-2 py-1 font-semibold outline-none focus:border-sky";
 
 const DURATIONS = [15, 30, 45, 60, 75, 90, 120, 150, 180, 240];
 
@@ -19,7 +19,12 @@ function lengthOptions(current: number) {
  * and clicking the time opens an editor for the day and start; any block can be removed
  * (deletes the gcal event too, the task stays in your to-dos).
  */
-export function ScheduledBlocks(props: { blocks: TimeBlock[]; steps: Step[]; tz: string }) {
+export function ScheduledBlocks(props: {
+  blocks: TimeBlock[];
+  steps: Step[];
+  tz: string;
+  color: string;
+}) {
   const remove = useDeleteBlock();
   const move = useMoveBlock();
   const [editing, setEditing] = useState<string | null>(null);
@@ -28,8 +33,7 @@ export function ScheduledBlocks(props: { blocks: TimeBlock[]; steps: Step[]; tz:
   const sorted = [...props.blocks].sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
   return (
     <div className="space-y-1.5">
-      <span className="text-muted">On your calendar</span>
-      <ul className="divide-y divide-line rounded-md border border-line">
+      <ul className="space-y-1.5">
         {sorted.map((b) => {
           const past = Date.parse(b.end) <= now;
           const step = b.step_id ? props.steps.find((s) => s.id === b.step_id) : null;
@@ -37,7 +41,7 @@ export function ScheduledBlocks(props: { blocks: TimeBlock[]; steps: Step[]; tz:
           const current = Math.round((Date.parse(b.end) - start) / 60_000);
           if (editing === b.id)
             return (
-              <li key={b.id} className="px-2.5 py-2">
+              <li key={b.id} className="rounded-xl bg-white px-3 py-2 text-[13px]">
                 <BlockEditor
                   block={b}
                   tz={props.tz}
@@ -52,8 +56,13 @@ export function ScheduledBlocks(props: { blocks: TimeBlock[]; steps: Step[]; tz:
           return (
             <li
               key={b.id}
-              className={`flex items-center gap-3 px-2.5 py-1.5 ${past ? "text-muted" : ""}`}
+              className={`flex items-center gap-2.5 rounded-xl bg-white px-3 py-2 text-[13px] font-semibold ${past ? "text-muted" : "text-ink"}`}
             >
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ background: props.color, opacity: past ? 0.4 : 1 }}
+                aria-hidden
+              />
               <div className="min-w-0 flex-1">
                 {past ? (
                   <div>
@@ -71,7 +80,9 @@ export function ScheduledBlocks(props: { blocks: TimeBlock[]; steps: Step[]; tz:
                     {fmtTime(b.start, props.tz)}–{fmtTime(b.end, props.tz)}
                   </button>
                 )}
-                <div className="truncate text-xs text-muted">{step?.title ?? "Whole task"}</div>
+                <div className="truncate text-[11px] font-medium text-muted">
+                  {step?.title ?? "Whole task"}
+                </div>
               </div>
               {!past && (
                 <select
@@ -102,7 +113,7 @@ export function ScheduledBlocks(props: { blocks: TimeBlock[]; steps: Step[]; tz:
                 disabled={isTemp(b.id)}
                 onClick={() => remove.mutate(b.id)}
                 title={past ? "Didn't get to it? The task stays in your to-dos" : undefined}
-                className="text-xs text-muted hover:text-risk"
+                className="rounded-md px-1.5 py-1 text-[12px] font-bold text-muted hover:bg-risk-bg hover:text-risk"
               >
                 {past ? "Didn't do it" : "Remove"}
               </button>
@@ -110,8 +121,8 @@ export function ScheduledBlocks(props: { blocks: TimeBlock[]; steps: Step[]; tz:
           );
         })}
       </ul>
-      {remove.isError && <p className="text-risk">{remove.error.message}</p>}
-      {move.isError && <p className="text-risk">{move.error.message}</p>}
+      {remove.isError && <p className="text-[13px] text-risk">{remove.error.message}</p>}
+      {move.isError && <p className="text-[13px] text-risk">{move.error.message}</p>}
     </div>
   );
 }
@@ -173,13 +184,17 @@ function BlockEditor(props: {
       {valid && !past && <span className="text-xs text-muted">until {fmtTime(end, tz)}</span>}
       {past && <span className="text-xs text-risk">That time has passed</span>}
       <div className="ml-auto flex gap-2">
-        <button type="button" onClick={props.onCancel} className="text-xs text-muted">
+        <button
+          type="button"
+          onClick={props.onCancel}
+          className="text-[12px] font-bold text-muted hover:text-ink"
+        >
           Cancel
         </button>
         <button
           type="submit"
           disabled={!valid || past}
-          className="rounded-md bg-ink px-2 py-1 text-xs text-paper disabled:opacity-40"
+          className="rounded-lg bg-ink px-2.5 py-1 text-[12px] font-bold text-white disabled:opacity-40"
         >
           Save
         </button>

@@ -7,6 +7,7 @@ import {
   localDate,
   matchImport,
   normalize,
+  swatch,
   zonedInstant,
   type ImportCommit,
   type ImportCommitResult,
@@ -18,7 +19,9 @@ import {
 } from "@tt/shared";
 import { TZDate } from "@date-fns/tz";
 import { api } from "@/lib/client/api";
-import { fmtDue, keys, PALETTE, useModel } from "@tt/client";
+import { fmtDue, keys, NO_COLOR, PALETTE, useModel } from "@tt/client";
+import { Check, CheckCircle2 } from "lucide-react";
+
 
 const PRIORITIES: { value: Priority; label: string }[] = [
   { value: "none", label: "No priority" },
@@ -192,19 +195,23 @@ export function ImportReview(props: {
         ? newListName
         : lists.find((l) => l.id === (result.list_id ?? target))?.name;
     return (
-      <div className="space-y-4 rounded-lg border border-line bg-surface p-5">
-        <p className="text-[15px]">
+      <div className="animate-pop-in space-y-4 rounded-2xl border border-line bg-white p-6">
+        <p className="flex items-center gap-2 text-base font-bold text-ink">
+          <CheckCircle2 className="h-5 w-5 text-mint" />
           Added {result.created.length} {result.created.length === 1 ? "task" : "tasks"}
           {result.updated.length ? ` and updated ${result.updated.length}` : ""}
           {listName ? ` in ${listName}` : ""}.
         </p>
         <div className="flex gap-2">
-          <Link href="/to-dos" className="rounded-md bg-ink px-3 py-1.5 text-paper hover:opacity-90">
+          <Link
+            href="/to-dos"
+            className="rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white hover:bg-[#2a2d4a]"
+          >
             View in To-dos
           </Link>
           <button
             onClick={props.onCancel}
-            className="rounded-md border border-line px-3 py-1.5 hover:border-line-strong"
+            className="rounded-xl border border-line px-4 py-2 text-sm font-bold text-ink hover:bg-paper"
           >
             Import more
           </button>
@@ -216,15 +223,15 @@ export function ImportReview(props: {
   const uncertainCount = effective.filter((e) => e.include && !e.row.proposed.date_certain).length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 rounded-2xl bg-[#e9ebf3] p-4">
       <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
         <div>
-          <h2 className="text-[15px] font-semibold tracking-tight">
+          <h2 className="text-base font-extrabold tracking-tight text-ink">
             {props.tasks.length
               ? `Found ${props.tasks.length} ${props.tasks.length === 1 ? "task" : "tasks"}`
               : "No tasks found"}
           </h2>
-          <p className="text-muted">
+          <p className="text-sm text-[#5b6078]">
             {props.tasks.length
               ? "Fix anything that's off, uncheck what to skip, then add them."
               : "Nothing in there looked like something to do. Try pasting more of the text."}
@@ -232,11 +239,11 @@ export function ImportReview(props: {
         </div>
         {isSyllabus ? (
           <label className="flex flex-wrap items-center gap-2">
-            <span className="text-muted">Add to</span>
+            <span className="text-[12px] font-bold text-[#7a7f96]">Add to</span>
             <select
               value={target}
               onChange={(e) => setTarget(e.target.value)}
-              className="rounded-md border border-line bg-surface px-2 py-1.5"
+              className="rounded-lg border border-line bg-white px-2 py-1.5 text-sm font-semibold text-ink"
             >
               <option value={NO_LIST}>No list</option>
               {lists.map((l) => (
@@ -252,7 +259,7 @@ export function ImportReview(props: {
                 value={newListName}
                 onChange={(e) => setNewListName(e.target.value)}
                 placeholder="List name"
-                className="w-36 rounded-md border border-line bg-surface px-2 py-1.5"
+                className="w-36 rounded-lg border border-line bg-white px-2 py-1.5 text-sm font-semibold text-ink"
               />
             )}
           </label>
@@ -260,14 +267,14 @@ export function ImportReview(props: {
       </div>
 
       {uncertainCount > 0 && (
-        <p className="rounded-md border border-warn/40 bg-warn-bg px-3 py-2 text-warn">
+        <p className="rounded-xl bg-warn-bg px-3 py-2 text-sm font-semibold text-warn">
           {uncertainCount === 1 ? "1 date needs" : `${uncertainCount} dates need`} a check.
           They&apos;re highlighted below.
         </p>
       )}
 
       {props.tasks.length > 0 && (
-        <ul className="divide-y divide-line rounded-lg border border-line bg-surface">
+        <ul className="space-y-2">
           {effective.map(({ row, match, past, include }) => (
             <ReviewRow
               key={row.key}
@@ -276,6 +283,11 @@ export function ImportReview(props: {
               past={past}
               include={include}
               lists={lists}
+              color={
+                (isSyllabus
+                  ? lists.find((l) => l.id === target)?.color
+                  : lists.find((l) => l.id === row.listId)?.color) ?? NO_COLOR
+              }
               perRowList={!isSyllabus}
               tz={tz}
               onChange={(patch) => update(row.key, patch)}
@@ -285,8 +297,8 @@ export function ImportReview(props: {
       )}
 
       {isSyllabus && missing.length > 0 && (
-        <details className="rounded-md border border-line px-3 py-2">
-          <summary className="cursor-pointer text-muted">
+        <details className="rounded-xl bg-white px-3 py-2 text-sm">
+          <summary className="cursor-pointer font-bold text-muted">
             Not in the new syllabus ({missing.length})
           </summary>
           <p className="mt-2 text-muted">
@@ -304,19 +316,22 @@ export function ImportReview(props: {
         </details>
       )}
 
-      <div className="sticky bottom-0 flex flex-wrap items-center gap-3 border-t border-line bg-paper py-3">
+      <div className="sticky bottom-0 -mx-4 -mb-4 flex flex-wrap items-center gap-3 rounded-b-2xl bg-[#e9ebf3]/95 px-4 py-3 backdrop-blur">
         <button
           disabled={!canSave || saving}
           onClick={save}
-          className="rounded-md bg-ink px-4 py-2 text-paper hover:opacity-90 disabled:opacity-40"
+          className="rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white hover:bg-[#2a2d4a] disabled:opacity-40"
         >
           {saving ? "Adding…" : addLabel(creates.length, updates.length)}
         </button>
-        <button onClick={props.onCancel} className="rounded-md px-3 py-2 text-muted hover:text-ink">
+        <button
+          onClick={props.onCancel}
+          className="rounded-xl px-3 py-2 text-sm font-bold text-muted hover:text-ink"
+        >
           Cancel
         </button>
-        {needsTarget && <span className="text-warn">Pick a list to add these to.</span>}
-        {error && <span className="text-risk">{error}</span>}
+        {needsTarget && <span className="text-sm font-semibold text-warn">Pick a list to add these to.</span>}
+        {error && <span className="text-sm font-semibold text-risk">{error}</span>}
       </div>
     </div>
   );
@@ -335,6 +350,7 @@ function ReviewRow(props: {
   past: boolean;
   include: boolean;
   lists: List[];
+  color: string;
   perRowList: boolean;
   tz: string;
   onChange: (patch: Partial<Row>) => void;
@@ -342,28 +358,34 @@ function ReviewRow(props: {
   const { row, match, tz } = props;
   const [showSource, setShowSource] = useState(false);
   const uncertain = !row.proposed.date_certain;
-  const input = "rounded-md border bg-paper px-2 py-1 outline-none focus:border-line-strong";
+  const input =
+    "rounded-lg border bg-white px-2 py-1 text-[13px] font-semibold text-ink outline-none focus:border-sky";
+  const sw = swatch(props.color);
   const dateInput = uncertain ? `${input} border-warn bg-warn-bg` : `${input} border-line`;
 
   return (
-    <li className={`space-y-1.5 px-3 py-2.5 ${props.include ? "" : "opacity-55"}`}>
+    <li className="space-y-1.5 rounded-xl bg-white p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="checkbox"
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={props.include}
           aria-label={`Include ${row.title}`}
-          checked={props.include}
-          onChange={(e) => props.onChange({ include: e.target.checked, touched: true })}
-          className="size-4"
-        />
+          onClick={() => props.onChange({ include: !props.include, touched: true })}
+          className="grid h-5 w-5 shrink-0 place-items-center rounded-md border-2"
+          style={{ borderColor: sw.solid, background: props.include ? sw.solid : "transparent" }}
+        >
+          {props.include && <Check className="h-3 w-3" strokeWidth={4} style={{ color: sw.onSolid }} />}
+        </button>
         <input
           aria-label="Title"
           value={row.title}
           onChange={(e) => props.onChange({ title: e.target.value })}
-          className={`min-w-48 flex-1 ${input} border-transparent font-medium hover:border-line`}
+          className={`min-w-48 flex-1 ${input} border-transparent !text-sm !font-bold hover:border-line ${props.include ? "" : "opacity-50"}`}
         />
         <StatusBadge match={match} past={props.past} tz={tz} />
       </div>
-      <div className="flex flex-wrap items-center gap-2 pl-6">
+      <div className={`flex flex-wrap items-center gap-2 pl-7 ${props.include ? "" : "opacity-50"}`}>
         <input
           type="date"
           aria-label="Due date"
@@ -409,14 +431,14 @@ function ReviewRow(props: {
         )}
       </div>
       {uncertain && (
-        <p className="pl-6 text-xs text-warn">
+        <p className="pl-7 text-[12px] font-semibold text-warn">
           Check this date{row.proposed.date_note ? `: ${row.proposed.date_note}` : "."}
         </p>
       )}
       {row.proposed.source_quote && (
         <button
           onClick={() => setShowSource((s) => !s)}
-          className={`block max-w-full pl-6 text-left text-xs text-muted hover:text-ink ${showSource ? "" : "truncate"}`}
+          className={`block max-w-full pl-7 text-left text-[12px] text-muted hover:text-ink ${showSource ? "" : "truncate"}`}
           title={showSource ? undefined : row.proposed.source_quote}
         >
           From: “{row.proposed.source_quote}”
@@ -428,9 +450,9 @@ function ReviewRow(props: {
 }
 
 function StatusBadge({ match, past, tz }: { match: ImportMatch; past: boolean; tz: string }) {
-  const base = "rounded px-1.5 py-0.5 text-xs";
+  const base = "rounded-md px-1.5 py-0.5 text-[11px] font-bold";
   if (match.status === "same")
-    return <span className={`${base} bg-paper text-muted`}>Already added</span>;
+    return <span className={`${base} bg-chip text-muted`}>Already added</span>;
   if (match.status === "changed") {
     const c = match.changes;
     const what = [
@@ -441,11 +463,11 @@ function StatusBadge({ match, past, tz }: { match: ImportMatch; past: boolean; t
       .filter(Boolean)
       .join(", ");
     return (
-      <span className={`${base} bg-now/10 text-now`} title={what}>
+      <span className={`${base} bg-grape-bg text-grape-ink`} title={what}>
         Update: {what}
       </span>
     );
   }
-  if (past) return <span className={`${base} bg-paper text-muted`}>Already past</span>;
-  return <span className={`${base} bg-open text-open-ink`}>New</span>;
+  if (past) return <span className={`${base} bg-chip text-muted`}>Already past</span>;
+  return <span className={`${base} bg-[#e6f2ec] text-[#2f6b52]`}>New</span>;
 }

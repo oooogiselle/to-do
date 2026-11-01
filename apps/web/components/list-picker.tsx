@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Check } from "lucide-react";
 import type { List } from "@tt/shared";
 
 /** Button showing the list that opens a small menu of lists, styled to match DuePicker. */
@@ -39,15 +40,15 @@ export function ListPicker({
         role="menuitemradio"
         aria-checked={value === id}
         onClick={() => pick(id)}
-        className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-paper ${value === id ? "font-medium" : ""}`}
+        className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] font-bold hover:bg-paper ${value === id ? "text-ink" : "text-[#4b4e63]"}`}
       >
         <span
-          className={`size-2 shrink-0 rounded-full ${color ? "" : "border border-line-strong"}`}
+          className={`size-2 shrink-0 rounded-[3px] ${color ? "" : "border border-line-strong"}`}
           style={color ? { background: color } : undefined}
           aria-hidden
         />
         <span className="min-w-0 flex-1 truncate">{name}</span>
-        {value === id && <span aria-hidden>✓</span>}
+        {value === id && <Check className="h-3.5 w-3.5 text-grape-ink" strokeWidth={3} aria-hidden />}
       </button>
     </li>
   );
@@ -68,10 +69,10 @@ export function ListPicker({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-1.5 rounded-md border px-2 py-1 ${current ? "border-line-strong text-ink" : "border-dashed border-line-strong text-muted"} hover:border-ink ${className}`}
+        className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 font-semibold ${current ? "border-line bg-white text-ink" : "border-dashed border-line-strong text-muted"} hover:border-ink ${className}`}
       >
         {current && (
-          <span className="size-2 rounded-full" style={{ background: current.color }} aria-hidden />
+          <span className="size-2 rounded-[3px]" style={{ background: current.color }} aria-hidden />
         )}
         {current ? current.name : "Add list"}
       </button>
@@ -79,7 +80,7 @@ export function ListPicker({
         <ul
           role="menu"
           aria-label="List"
-          className="absolute top-full left-0 z-50 mt-1 max-h-64 w-48 overflow-y-auto rounded-lg border border-line-strong bg-surface p-1 text-ink shadow-xl"
+          className="animate-pop-in absolute top-full left-0 z-50 mt-1 max-h-64 w-48 overflow-y-auto rounded-[13px] border border-line-soft bg-surface p-1.5 text-ink shadow-[0_18px_34px_rgba(21,23,43,0.2)]"
         >
           {lists.map((l) => option(l.id, l.name, l.color))}
           {option(null, "No list")}

@@ -2,22 +2,22 @@
 
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import type { List, Settings, Step, SyncResponse, Task, TimeBlock } from "@tt/shared";
+import { HUES, type List, type Settings, type Step, type SyncResponse, type Task, type TimeBlock } from "@tt/shared";
 import { useApi, type ApiClient } from "./api-context";
 
 /** Colors lists and tasks can take. */
-export const PALETTE = [
-  "#2563eb",
-  "#0d9488",
-  "#7c3aed",
-  "#db2777",
-  "#ea580c",
-  "#ca8a04",
-  "#64748b",
+export const PALETTE: string[] = [
+  HUES.coral,
+  HUES.sun,
+  HUES.mint,
+  HUES.sky,
+  HUES.grape,
+  HUES.pink,
+  HUES.slate,
 ];
 
 /** What a task shows in when neither it nor its list has a color. */
-export const NO_COLOR = "#64748b";
+export const NO_COLOR: string = HUES.slate;
 
 export const keys = {
   sync: ["sync"] as const,
