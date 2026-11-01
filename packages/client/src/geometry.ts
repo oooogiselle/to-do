@@ -1,4 +1,11 @@
-import { zonedInstant, addDays, type CalendarEvent, type TimeBlock } from "@tt/shared";
+import {
+  addDays,
+  atMinuteOfDay,
+  minuteOfDay,
+  zonedInstant,
+  type CalendarEvent,
+  type TimeBlock,
+} from "@tt/shared";
 
 export const HOUR_PX = 48;
 /** Zoom range for the web timeline: the whole day on screen, down to 15 minutes ≈ 48px. */
@@ -20,9 +27,11 @@ export function daySegment(
   const s = Math.max(start, dayStart);
   const e = Math.min(end, dayEnd);
   if (e <= s) return null;
-  // Scale by the real day length so 23h/25h DST days still fill the column.
-  const scale = DAY_MIN / ((dayEnd - dayStart) / 60_000);
-  return { startMin: ((s - dayStart) / 60_000) * scale, endMin: ((e - dayStart) / 60_000) * scale };
+  // Wall-clock minutes, so 9:00 sits on the 9am row even on 23h/25h DST days.
+  const startMin = minuteOfDay(s, day, tz);
+  const endMin = e === dayEnd ? DAY_MIN : minuteOfDay(e, day, tz);
+  // Ending in the repeated fall-back hour can read earlier than the start.
+  return { startMin, endMin: Math.max(endMin, startMin) };
 }
 
 /** Side-by-side lanes for overlapping items: each cluster of overlaps shares its width. */
@@ -61,12 +70,9 @@ export function assignLanes<T extends { startMin: number; endMin: number }>(
   return out;
 }
 
-/** Instant for `minute` minutes into local `day` (inverse of daySegment, DST-aware). */
+/** Instant for `minute` minutes into local `day` (inverse of daySegment, by wall clock). */
 export function instantAt(day: string, minute: number, tz: string): number {
-  const dayStart = zonedInstant(day, "00:00", tz).getTime();
-  const dayEnd = zonedInstant(addDays(day, 1), "00:00", tz).getTime();
-  const scale = (dayEnd - dayStart) / 60_000 / DAY_MIN;
-  return dayStart + minute * scale * 60_000;
+  return atMinuteOfDay(day, minute, tz);
 }
 
 export const SNAP_MIN = 15;
