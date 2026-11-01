@@ -13,7 +13,7 @@ import {
 import { fmtDay, HOUR_PX, taskColor, useEvents, useModel } from "@tt/client";
 import { Grid } from "@/components/timeline/grid";
 import { useZoom } from "@/components/timeline/zoom";
-import { useCalendarAnchor } from "./calendar-dates";
+import { dayLabel, useCalendarAnchor } from "./calendar-dates";
 import { useCalendarKeys } from "./calendar-keys";
 import { earliestStart, weekStart } from "./time";
 
@@ -100,12 +100,13 @@ export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: numbe
         <button
           type="button"
           onClick={() => setAnchor(null)}
-          title="Jump to today (t)"
+          title={days.includes(today) ? "Showing today" : "Back to today (t)"}
+          aria-label={days.includes(today) ? undefined : "Back to today"}
           className={`h-7 rounded-lg border border-line bg-white px-2.5 text-[12px] font-bold hover:bg-[#f0f1f7] ${
             days.includes(today) ? "text-faint" : "text-ink"
           }`}
         >
-          Today
+          {isWeek ? "Today" : dayLabel(current, today, tz)}
         </button>
         <button
           type="button"
