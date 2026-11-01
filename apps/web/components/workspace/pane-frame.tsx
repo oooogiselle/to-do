@@ -4,13 +4,22 @@ import { useDraggable } from "@dnd-kit/core";
 import { GripVertical, X } from "lucide-react";
 import { useModel } from "@tt/client";
 import { PaneContent } from "./pane-content";
-import { listIdOf, paneColor, paneLabel, type PaneId } from "./layout";
+import { usePaneLabel } from "./calendar-dates";
+import { listIdOf, paneColor, type PaneId } from "./layout";
 import type { DragItem } from "./dnd";
 
 /** A pane in a side column: a header with a drag handle and close button, then its content. */
-export function PaneFrame({ pane, now, onClose }: { pane: PaneId; now: number; onClose: () => void }) {
+export function PaneFrame({
+  pane,
+  now,
+  onClose,
+}: {
+  pane: PaneId;
+  now: number;
+  onClose: () => void;
+}) {
   const { lists, tasks, listById } = useModel();
-  const label = paneLabel(pane, lists);
+  const label = usePaneLabel(now)(pane);
   const listId = listIdOf(pane);
   const count =
     listId === undefined
@@ -45,7 +54,9 @@ export function PaneFrame({ pane, now, onClose }: { pane: PaneId; now: number; o
         </button>
         <span className="h-2 w-2 rounded-[3px]" style={{ background: paneColor(pane, lists) }} />
         <h2 className="flex-1 truncate text-[12px] font-extrabold text-ink">{label}</h2>
-        {count !== null && <span className="text-[10px] font-extrabold text-[#a0a3b5]">{count}</span>}
+        {count !== null && (
+          <span className="text-[10px] font-extrabold text-[#a0a3b5]">{count}</span>
+        )}
         <button
           type="button"
           onClick={onClose}

@@ -45,7 +45,7 @@ export function allPaneIds(lists: List[]): PaneId[] {
 
 export function paneLabel(pane: PaneId, lists: List[]): string {
   if (pane === "week") return "Week";
-  if (pane === "today") return "Today";
+  if (pane === "today") return "Day";
   if (pane === "due") return "Due soon";
   const id = listIdOf(pane);
   if (id === null) return "No list";
@@ -180,7 +180,7 @@ export function buildPresets(lists: List[]): LayoutPreset[] {
     {
       id: "focus-day",
       name: "Focus day",
-      description: "Today front and center with what's due beside it",
+      description: "One day front and center with what's due beside it",
       layout: {
         left: ["due"],
         center: ["today", "week"],

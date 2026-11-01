@@ -5,7 +5,8 @@ import { GripVertical, X } from "lucide-react";
 import { useModel } from "@tt/client";
 import { AddPaneMenu } from "./add-pane-menu";
 import { PaneContent } from "./pane-content";
-import { paneColor, paneLabel, type PaneId } from "./layout";
+import { usePaneLabel } from "./calendar-dates";
+import { paneColor, type PaneId } from "./layout";
 import { useDragState } from "./workspace-dnd";
 import type { DragItem, ZoneDropData } from "./dnd";
 
@@ -21,6 +22,7 @@ export function CenterTabs(props: {
 }) {
   const { panes, active, hidden } = props;
   const { lists } = useModel();
+  const label = usePaneLabel(props.now);
   const drag = useDragState();
   const { setNodeRef, isOver } = useDroppable({
     id: "zone-center",
@@ -46,7 +48,7 @@ export function CenterTabs(props: {
           <DraggableTab
             key={p}
             pane={p}
-            label={paneLabel(p, lists)}
+            label={label(p)}
             color={paneColor(p, lists)}
             active={p === current}
             onSelect={() => props.onSelect(p)}

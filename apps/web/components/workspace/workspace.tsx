@@ -6,6 +6,7 @@ import { RefreshCw } from "lucide-react";
 import { addDays, localDate } from "@tt/shared";
 import { fmtDay, fmtTime, useModel, useSettings, useSync } from "@tt/client";
 import { api } from "@/lib/client/api";
+import { CalendarDatesProvider } from "./calendar-dates";
 import { CalendarKeys } from "./calendar-keys";
 import { CenterTabs } from "./center-tabs";
 import { LayoutMenu } from "./layout-menu";
@@ -63,55 +64,57 @@ function WorkspaceView() {
 
   return (
     <WorkspaceDnd tz={settings.timezone} onPaneDrop={ws.movePane}>
-      <CalendarKeys layout={layout} onShow={show}>
-        <div className="flex h-full flex-col">
-          <Header now={now} tz={settings.timezone} ws={ws} />
-          <ConnectBanner />
-          <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-2.5 lg:flex-row lg:gap-0 lg:overflow-hidden">
-            <PaneColumn
-              zone="left"
-              panes={layout.left}
-              width={layout.leftWidth}
-              weights={layout.weights}
-              now={now}
-              onResizeStack={(i, d, total) => ws.resizeStack("left", i, d, total)}
-              onClose={ws.closePane}
-            />
-            {layout.left.length > 0 && (
-              <Splitter
-                orientation="vertical"
-                label="Resize left column"
-                onResize={(d) => ws.resizeSide("left", d)}
+      <CalendarDatesProvider>
+        <CalendarKeys layout={layout} onShow={show}>
+          <div className="flex h-full flex-col">
+            <Header now={now} tz={settings.timezone} ws={ws} />
+            <ConnectBanner />
+            <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-2.5 lg:flex-row lg:gap-0 lg:overflow-hidden">
+              <PaneColumn
+                zone="left"
+                panes={layout.left}
+                width={layout.leftWidth}
+                weights={layout.weights}
+                now={now}
+                onResizeStack={(i, d, total) => ws.resizeStack("left", i, d, total)}
+                onClose={ws.closePane}
               />
-            )}
-            <CenterTabs
-              panes={layout.center}
-              active={layout.activeCenter}
-              hidden={hidden}
-              now={now}
-              onSelect={ws.setActiveCenter}
-              onClose={ws.closePane}
-              onOpen={(p) => ws.movePane(p, "center")}
-            />
-            {layout.right.length > 0 && (
-              <Splitter
-                orientation="vertical"
-                label="Resize right column"
-                onResize={(d) => ws.resizeSide("right", -d)}
+              {layout.left.length > 0 && (
+                <Splitter
+                  orientation="vertical"
+                  label="Resize left column"
+                  onResize={(d) => ws.resizeSide("left", d)}
+                />
+              )}
+              <CenterTabs
+                panes={layout.center}
+                active={layout.activeCenter}
+                hidden={hidden}
+                now={now}
+                onSelect={ws.setActiveCenter}
+                onClose={ws.closePane}
+                onOpen={(p) => ws.movePane(p, "center")}
               />
-            )}
-            <PaneColumn
-              zone="right"
-              panes={layout.right}
-              width={layout.rightWidth}
-              weights={layout.weights}
-              now={now}
-              onResizeStack={(i, d, total) => ws.resizeStack("right", i, d, total)}
-              onClose={ws.closePane}
-            />
+              {layout.right.length > 0 && (
+                <Splitter
+                  orientation="vertical"
+                  label="Resize right column"
+                  onResize={(d) => ws.resizeSide("right", -d)}
+                />
+              )}
+              <PaneColumn
+                zone="right"
+                panes={layout.right}
+                width={layout.rightWidth}
+                weights={layout.weights}
+                now={now}
+                onResizeStack={(i, d, total) => ws.resizeStack("right", i, d, total)}
+                onClose={ws.closePane}
+              />
+            </div>
           </div>
-        </div>
-      </CalendarKeys>
+        </CalendarKeys>
+      </CalendarDatesProvider>
     </WorkspaceDnd>
   );
 }
