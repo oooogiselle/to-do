@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { formatMinutes, type Priority, type Step, type Task } from "@tt/shared";
+import { useEffect, useRef, useState } from "react";
+import { CalendarPlus, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { formatMinutes, swatch, type Priority, type Step, type Task } from "@tt/shared";
 import {
   isTemp,
   NO_COLOR,
+  taskColor,
   tempId,
   useCompletion,
   useCreateStep,
@@ -15,19 +17,22 @@ import {
 } from "@tt/client";
 import { DuePicker } from "./due-picker";
 import { ColorPicker } from "./color-picker";
+import { TaskCheck } from "./ui/task-check";
 import { BreakdownPanel } from "./task-sheet/breakdown-panel";
 import { SchedulePanel } from "./task-sheet/schedule-panel";
 import { ScheduledBlocks } from "./task-sheet/scheduled-blocks";
 
-const PRIORITIES: { value: Priority; label: string }[] = [
-  { value: "none", label: "None" },
-  { value: "low", label: "Low" },
-  { value: "med", label: "Medium" },
-  { value: "high", label: "High" },
+const PRIORITIES: { value: Priority; label: string; color: string }[] = [
+  { value: "none", label: "None", color: "#8a8fa6" },
+  { value: "low", label: "Low", color: "var(--tt-sky)" },
+  { value: "med", label: "Med", color: "#c99a35" },
+  { value: "high", label: "High", color: "var(--tt-coral)" },
 ];
+const ESTIMATES = [15, 30, 60, 90, 120, 180];
 
+const label = "mb-1.5 block text-[11px] font-bold tracking-wider text-[#8a8fa6] uppercase";
 const field =
-  "w-full rounded-md border border-line bg-paper px-2.5 py-1.5 outline-none focus:border-line-strong";
+  "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm font-medium text-ink outline-none focus:border-sky focus:ring-2 focus:ring-sky/20";
 
 /** Text input that saves on blur or Enter, and resyncs when the stored value changes. */
 function CommitInput({
@@ -53,6 +58,48 @@ function CommitInput({
         if (e.key === "Escape") setDraft(value);
       }}
       className={className}
+    />
+  );
+}
+
+/** The big title: wraps onto more lines, saves on blur or Enter. */
+function TitleField({
+  value,
+  onCommit,
+  done,
+  disabled,
+}: {
+  value: string;
+  onCommit: (v: string) => void;
+  done: boolean;
+  disabled: boolean;
+}) {
+  const [draft, setDraft] = useState(value);
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => setDraft(value), [value]);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [draft]);
+  return (
+    <textarea
+      ref={ref}
+      aria-label="Title"
+      rows={1}
+      value={draft}
+      disabled={disabled}
+      onChange={(e) => setDraft(e.target.value.replace(/\n/g, " "))}
+      onBlur={() => draft !== value && draft.trim() && onCommit(draft.trim())}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          e.currentTarget.blur();
+        }
+        if (e.key === "Escape") setDraft(value);
+      }}
+      className={`w-full resize-none bg-transparent text-[22px] leading-tight font-extrabold tracking-tight outline-none placeholder:opacity-50 ${done ? "line-through opacity-70" : ""}`}
     />
   );
 }
@@ -83,8 +130,17 @@ export function TaskSheet({
 
   if (!task) {
     return (
-      <Sheet onClose={onClose}>
-        <p className="p-6 text-muted">This task was deleted or hasn&apos;t loaded yet.</p>
+      <Sheet onClose={onClose} label="Task">
+        <div className="flex justify-end p-3">
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-paper hover:text-ink"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <p className="px-6 text-muted">This task was deleted or hasn&apos;t loaded yet.</p>
       </Sheet>
     );
   }
@@ -93,158 +149,248 @@ export function TaskSheet({
   const update = (patch: Partial<Task>) =>
     !saving && updateTask.mutate({ id: task.id, patch: patch as never });
   const stepTotal = steps.reduce((sum, s) => sum + (s.estimate_min ?? 0), 0);
+  const list = task.list_id ? listById.get(task.list_id) : undefined;
+  const c = swatch(taskColor(task, listById));
+  const done = task.status === "done";
 
   return (
-    <Sheet onClose={onClose}>
-      <div className="flex items-start gap-3 border-b border-line p-4">
-        <input
-          type="checkbox"
-          aria-label={task.status === "done" ? "Mark as not done" : "Mark as done"}
-          checked={task.status === "done"}
-          disabled={saving}
-          onChange={(e) => setTaskDone(task.id, e.target.checked)}
-          className="mt-1.5 size-4 accent-[var(--now)]"
-        />
-        <CommitInput
-          aria-label="Title"
-          value={task.title}
-          onCommit={(title) => title.trim() && update({ title: title.trim() })}
-          className={`flex-1 bg-transparent text-lg font-medium outline-none ${task.status === "done" ? "text-muted line-through" : ""}`}
-        />
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className="rounded px-2 text-lg text-muted hover:text-ink"
-        >
-          ×
-        </button>
+    <Sheet onClose={onClose} label={`Task: ${task.title}`}>
+      <div className="px-5 pt-4 pb-5" style={{ background: c.solid, color: c.onSolid }}>
+        <div className="mb-4 flex items-center justify-between">
+          <span className="rounded-lg bg-black/15 px-2 py-1 text-[12px] font-bold">
+            {list?.name ?? "No list"}
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="grid h-8 w-8 place-items-center rounded-lg hover:bg-black/10"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="flex items-start gap-3">
+          <div className="pt-1">
+            <TaskCheck
+              done={done}
+              color={c.onSolid}
+              checkColor={c.solid}
+              onToggle={() => setTaskDone(task.id, !done)}
+              label={task.title}
+              size={24}
+              disabled={saving}
+            />
+          </div>
+          <TitleField
+            value={task.title}
+            onCommit={(title) => update({ title })}
+            done={done}
+            disabled={saving}
+          />
+        </div>
       </div>
 
-      <div className="flex-1 space-y-5 overflow-y-auto p-4">
-        <div className="grid grid-cols-[6rem_1fr] items-center gap-x-3 gap-y-3">
-          <label htmlFor="task-list" className="text-muted">
-            List
-          </label>
-          <select
-            id="task-list"
-            value={task.list_id && lists.some((l) => l.id === task.list_id) ? task.list_id : ""}
-            onChange={(e) => update({ list_id: e.target.value || null })}
-            className={field}
-          >
-            <option value="">No list</option>
-            {lists.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
-
-          <span className="text-muted">Color</span>
-          <ColorPicker
-            label="Task color"
-            value={task.color}
-            onChange={(color) => update({ color })}
-            inherit={{
-              color: (task.list_id && listById.get(task.list_id)?.color) || NO_COLOR,
-              label: "Same as list",
-            }}
-          />
-
-          <span className="text-muted">Due</span>
+      <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
+        <div className="grid grid-cols-2 gap-3">
           <div>
+            <label htmlFor="task-list" className={label}>
+              List
+            </label>
+            <select
+              id="task-list"
+              value={task.list_id && lists.some((l) => l.id === task.list_id) ? task.list_id : ""}
+              onChange={(e) => update({ list_id: e.target.value || null })}
+              className={field}
+            >
+              <option value="">No list</option>
+              {lists.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <span className={label}>Due</span>
             <DuePicker
               value={task.due_at}
               onChange={(due_at) => update({ due_at })}
               tz={settings.timezone}
+              className="w-full rounded-xl px-3 py-2 text-left text-sm"
             />
-          </div>
-
-          <span className="text-muted">Priority</span>
-          <div role="radiogroup" aria-label="Priority" className="flex gap-1">
-            {PRIORITIES.map((p) => (
-              <button
-                key={p.value}
-                role="radio"
-                aria-checked={task.priority === p.value}
-                onClick={() => update({ priority: p.value })}
-                className={`rounded-md border px-2.5 py-1 ${task.priority === p.value ? "border-ink bg-ink text-paper" : "border-line text-muted hover:text-ink"}`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-
-          <label htmlFor="task-estimate" className="text-muted">
-            Estimate
-          </label>
-          <div className="flex items-center gap-2">
-            <CommitInput
-              id="task-estimate"
-              inputMode="numeric"
-              value={task.estimate_min?.toString() ?? ""}
-              onCommit={(v) => {
-                const n = parseInt(v, 10);
-                update({ estimate_min: Number.isFinite(n) && n > 0 ? n : null });
-              }}
-              placeholder="—"
-              className={`${field} w-20`}
-            />
-            <span className="text-muted">min</span>
-            {stepTotal > 0 && stepTotal !== task.estimate_min && (
-              <button
-                onClick={() => update({ estimate_min: stepTotal })}
-                className="text-xs text-muted underline hover:text-ink"
-              >
-                Use step total ({formatMinutes(stepTotal)})
-              </button>
-            )}
           </div>
         </div>
 
-        <ScheduledBlocks blocks={taskBlocks} steps={steps} tz={settings.timezone} />
+        <fieldset>
+          <legend className={label}>Priority</legend>
+          <div className="grid grid-cols-4 gap-1.5">
+            {PRIORITIES.map((p) => {
+              const active = task.priority === p.value;
+              return (
+                <button
+                  key={p.value}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => update({ priority: p.value })}
+                  className="rounded-xl border-2 py-1.5 text-sm font-bold transition-colors"
+                  style={{
+                    borderColor: active ? p.color : "var(--line)",
+                    background: active ? p.color : "#fff",
+                    color: active ? "#fff" : "var(--chip-ink)",
+                  }}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend className={label}>Time estimate</legend>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {ESTIMATES.map((m) => {
+              const active = task.estimate_min === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => update({ estimate_min: active ? null : m })}
+                  className={`rounded-lg px-2.5 py-1 text-[13px] font-bold transition-colors ${
+                    active ? "bg-ink text-white" : "bg-chip text-chip-ink hover:bg-line"
+                  }`}
+                >
+                  {formatMinutes(m)}
+                </button>
+              );
+            })}
+            <label className="flex items-center gap-1 text-[13px] font-semibold text-muted">
+              <CommitInput
+                aria-label="Estimate in minutes"
+                inputMode="numeric"
+                value={
+                  task.estimate_min && !ESTIMATES.includes(task.estimate_min)
+                    ? String(task.estimate_min)
+                    : ""
+                }
+                onCommit={(v) => {
+                  const n = parseInt(v, 10);
+                  update({ estimate_min: Number.isFinite(n) && n > 0 ? n : null });
+                }}
+                placeholder="Other"
+                className="w-16 rounded-lg border border-line bg-white px-2 py-1 text-[13px] font-bold text-ink outline-none focus:border-sky"
+              />
+              min
+            </label>
+          </div>
+          {stepTotal > 0 && stepTotal !== task.estimate_min && (
+            <button
+              type="button"
+              onClick={() => update({ estimate_min: stepTotal })}
+              className="mt-1.5 text-[12px] font-semibold text-muted underline hover:text-ink"
+            >
+              Use step total ({formatMinutes(stepTotal)})
+            </button>
+          )}
+        </fieldset>
+
+        <fieldset>
+          <legend className={label}>Color</legend>
+          <ColorPicker
+            label="Task color"
+            value={task.color}
+            onChange={(color) => update({ color })}
+            inherit={{ color: list?.color || NO_COLOR, label: "Same as list" }}
+            size={22}
+          />
+        </fieldset>
+
+        <section className="rounded-2xl p-3.5" style={{ background: c.tint }}>
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-[13px] font-extrabold" style={{ color: c.ink }}>
+              On your calendar
+            </h3>
+            {panel !== "schedule" && (
+              <button
+                type="button"
+                disabled={saving || task.status !== "open"}
+                onClick={() => setPanel("schedule")}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-bold disabled:opacity-50"
+                style={{ background: c.solid, color: c.onSolid }}
+              >
+                <CalendarPlus className="h-3.5 w-3.5" />
+                Find time
+              </button>
+            )}
+          </div>
+          {panel === "schedule" ? (
+            <SchedulePanel task={task} onClose={() => setPanel(null)} />
+          ) : taskBlocks.length ? (
+            <ScheduledBlocks
+              blocks={taskBlocks}
+              steps={steps}
+              tz={settings.timezone}
+              color={c.solid}
+            />
+          ) : (
+            <p className="text-[13px]" style={{ color: c.ink }}>
+              No time blocked yet. &ldquo;Find time&rdquo; suggests open slots before it&apos;s
+              due, or drag it onto a calendar.
+            </p>
+          )}
+        </section>
+
+        <section>
+          <div className="mb-1.5 flex items-center justify-between">
+            <h3 className={`${label} mb-0`}>Steps</h3>
+            {panel !== "breakdown" && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => setPanel("breakdown")}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-bold text-grape-ink hover:bg-grape-bg disabled:opacity-50"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Break down
+              </button>
+            )}
+          </div>
+          {panel === "breakdown" ? (
+            <BreakdownPanel task={task} onClose={() => setPanel(null)} />
+          ) : (
+            <StepsEditor taskId={task.id} steps={steps} disabled={saving} color={c.solid} />
+          )}
+        </section>
 
         <NotesField task={task} onCommit={(notes) => update({ notes })} />
         {task.source_quote && (
-          <p className="text-xs text-muted">From your import: “{task.source_quote}”</p>
-        )}
-
-        <StepsEditor taskId={task.id} steps={steps} disabled={saving} />
-
-        {panel === "breakdown" ? (
-          <BreakdownPanel task={task} onClose={() => setPanel(null)} />
-        ) : panel === "schedule" ? (
-          <SchedulePanel task={task} onClose={() => setPanel(null)} />
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            <button
-              disabled={saving}
-              onClick={() => setPanel("breakdown")}
-              className="rounded-md border border-line-strong px-3 py-1.5 hover:border-ink disabled:opacity-50"
-            >
-              Break down
-            </button>
-            <button
-              disabled={saving || task.status !== "open"}
-              onClick={() => setPanel("schedule")}
-              className="rounded-md border border-line-strong px-3 py-1.5 hover:border-ink disabled:opacity-50"
-            >
-              Schedule
-            </button>
-          </div>
+          <p className="rounded-xl bg-paper px-3 py-2 text-[12px] text-muted">
+            From your import: &ldquo;{task.source_quote}&rdquo;
+          </p>
         )}
       </div>
 
-      <div className="border-t border-line p-4">
+      <div className="flex items-center justify-between border-t border-line px-5 py-3">
         <button
+          type="button"
           onClick={() => {
             if (confirm(`Delete “${task.title}”?`)) {
               deleteTask.mutate(task.id);
               onClose();
             }
           }}
-          className="text-risk hover:underline"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-bold text-risk hover:bg-risk-bg"
         >
-          Delete task
+          <Trash2 className="h-4 w-4" />
+          Delete
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white hover:bg-[#2a2d4a]"
+        >
+          Done
         </button>
       </div>
     </Sheet>
@@ -255,14 +401,15 @@ function NotesField({ task, onCommit }: { task: Task; onCommit: (v: string) => v
   const [draft, setDraft] = useState(task.notes);
   useEffect(() => setDraft(task.notes), [task.notes]);
   return (
-    <div className="space-y-1.5">
-      <label htmlFor="task-notes" className="text-muted">
+    <div>
+      <label htmlFor="task-notes" className={label}>
         Notes
       </label>
       <textarea
         id="task-notes"
-        rows={3}
+        rows={4}
         value={draft}
+        placeholder="Links, details, anything…"
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => draft !== task.notes && onCommit(draft)}
         className={`${field} resize-y`}
@@ -275,10 +422,12 @@ function StepsEditor({
   taskId,
   steps,
   disabled,
+  color,
 }: {
   taskId: string;
   steps: Step[];
   disabled: boolean;
+  color: string;
 }) {
   const createStep = useCreateStep();
   const updateStep = useUpdateStep();
@@ -297,18 +446,17 @@ function StepsEditor({
   };
 
   return (
-    <div className="space-y-1.5">
-      <span className="text-muted">Steps</span>
-      <ul className="divide-y divide-line rounded-md border border-line">
+    <div>
+      <ul className="space-y-0.5">
         {steps.map((s) => (
-          <li key={s.id} className="group flex items-center gap-2 px-2.5 py-1.5">
-            <input
-              type="checkbox"
-              aria-label={`Done: ${s.title}`}
-              checked={s.done}
+          <li key={s.id} className="group flex items-center gap-2.5 rounded-lg px-1 py-1 hover:bg-paper">
+            <TaskCheck
+              done={s.done}
+              color={color}
+              size={18}
+              label={s.title}
               disabled={isTemp(s.id)}
-              onChange={(e) => setStepDone(taskId, s.id, e.target.checked)}
-              className="size-4 accent-[var(--now)]"
+              onToggle={() => setStepDone(taskId, s.id, !s.done)}
             />
             <CommitInput
               aria-label="Step title"
@@ -317,7 +465,7 @@ function StepsEditor({
               onCommit={(v) =>
                 v.trim() && updateStep.mutate({ id: s.id, patch: { title: v.trim() } })
               }
-              className={`min-w-0 flex-1 bg-transparent outline-none ${s.done ? "text-muted line-through" : ""}`}
+              className={`min-w-0 flex-1 bg-transparent text-sm font-medium outline-none ${s.done ? "text-faint line-through" : "text-ink"}`}
             />
             <CommitInput
               aria-label="Step estimate in minutes"
@@ -332,44 +480,53 @@ function StepsEditor({
                   patch: { estimate_min: Number.isFinite(n) && n > 0 ? n : null },
                 });
               }}
-              className="w-12 bg-transparent text-right text-muted outline-none"
+              className="w-12 bg-transparent text-right text-[13px] font-semibold text-faint outline-none"
             />
             <button
+              type="button"
               aria-label={`Delete step ${s.title}`}
               disabled={isTemp(s.id)}
               onClick={() => deleteStep(taskId, s.id)}
-              className="text-muted opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-risk"
+              className="grid h-6 w-6 place-items-center rounded-md text-faint opacity-0 group-hover:opacity-100 hover:bg-white hover:text-risk focus:opacity-100"
             >
-              ×
+              <X className="h-3.5 w-3.5" />
             </button>
           </li>
         ))}
-        <li>
-          <form onSubmit={add}>
-            <input
-              aria-label="New step"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Add a step"
-              className="w-full bg-transparent px-2.5 py-1.5 outline-none placeholder:text-muted/70"
-            />
-          </form>
-        </li>
       </ul>
+      <form onSubmit={add} className="mt-1 flex items-center gap-2">
+        <Plus className="ml-1 h-4 w-4 text-faint" />
+        <input
+          aria-label="New step"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Add a step"
+          className="flex-1 bg-transparent py-1.5 text-sm font-medium text-ink outline-none placeholder:text-faint"
+        />
+      </form>
     </div>
   );
 }
 
-function Sheet({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+function Sheet({
+  children,
+  onClose,
+  label,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+  label: string;
+}) {
   return (
     <div
-      className="fixed inset-0 z-40 flex justify-end bg-ink/10"
+      className="animate-fade-in fixed inset-0 z-50 flex justify-end bg-ink/30"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <aside
         role="dialog"
-        aria-label="Task details"
-        className="flex h-full w-full max-w-md flex-col border-l border-line-strong bg-surface shadow-xl"
+        aria-modal="true"
+        aria-label={label}
+        className="animate-sheet-in flex h-full w-full max-w-[460px] flex-col bg-surface shadow-[-12px_0_40px_rgba(21,23,43,0.18)]"
       >
         {children}
       </aside>
