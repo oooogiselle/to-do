@@ -1,6 +1,8 @@
 # Timeline To-Do
 
 Personal app that puts Google Calendar events and to-dos on one timeline.
+
+![Timeline To-Do workspace: course to-do panes, a week of calendar events with open time blocks, and a Due soon rail (demo data)](docs/screenshot.jpg)
 Plan: phases 1–5 (backend → web timeline → AI + scheduling → iOS → offline/push).
 
 ## Layout
