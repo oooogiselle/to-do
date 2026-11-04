@@ -26,7 +26,7 @@ export function useRealtimeInvalidation(supabase: SupabaseClient) {
       timer = setTimeout(flush, 400);
     };
     const channel = supabase.channel("app-changes");
-    for (const table of ["lists", "tasks", "steps", "time_blocks"]) {
+    for (const table of ["lists", "tasks", "steps", "time_blocks", "day_plan_items"]) {
       channel.on("postgres_changes", { event: "*", schema: "public", table }, () => queue("sync"));
     }
     channel.on("postgres_changes", { event: "*", schema: "public", table: "calendar_events" }, () =>

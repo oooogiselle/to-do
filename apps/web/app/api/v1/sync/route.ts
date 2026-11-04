@@ -1,6 +1,6 @@
 import { route, unwrap, HttpError } from "@/lib/api";
 
-const TABLES = ["lists", "tasks", "steps", "time_blocks"] as const;
+const TABLES = ["lists", "tasks", "steps", "time_blocks", "day_plan_items"] as const;
 
 /**
  * Changes since `since` (an updated_at cursor), including soft-deleted rows so clients can
@@ -29,6 +29,6 @@ export const GET = route(async (req, { supabase }) => {
   for (const row of [...results.flat(), ...(settings ? [settings] : [])]) {
     if (row.updated_at > cursor) cursor = row.updated_at;
   }
-  const [lists, tasks, steps, time_blocks] = results;
-  return { cursor, lists, tasks, steps, time_blocks, settings: settings ?? null };
+  const [lists, tasks, steps, time_blocks, day_plan_items] = results;
+  return { cursor, lists, tasks, steps, time_blocks, day_plan_items, settings: settings ?? null };
 });

@@ -17,6 +17,8 @@ describe("parseQuickAdd", () => {
       list_id: "cs61",
       priority: "high",
       due_at: "2026-10-17T03:00:00.000Z", // Fri 16th 11pm EDT
+      repeat: "none",
+      repeat_days: [],
     });
   });
 
@@ -53,6 +55,61 @@ describe("parseQuickAdd", () => {
       due_at: null,
       priority: "none",
       list_id: null,
+      repeat: "none",
+      repeat_days: [],
+    });
+  });
+});
+
+describe("parseQuickAdd repeats", () => {
+  it("reads daily and every day", () => {
+    expect(parseQuickAdd("take vitamins daily", opts)).toMatchObject({
+      title: "take vitamins",
+      repeat: "daily",
+      due_at: null,
+    });
+    expect(parseQuickAdd("journal every day", opts)).toMatchObject({
+      title: "journal",
+      repeat: "daily",
+    });
+  });
+
+  it("reads weekdays", () => {
+    expect(parseQuickAdd("standup notes every weekday", opts)).toMatchObject({
+      title: "standup notes",
+      repeat: "weekdays",
+    });
+    expect(parseQuickAdd("inbox zero weekdays", opts)).toMatchObject({ repeat: "weekdays" });
+  });
+
+  it("reads named days, and doesn't mistake them for a due date", () => {
+    const r = parseQuickAdd("gym every mon, wed and fri", opts);
+    expect(r).toMatchObject({ title: "gym", repeat: "custom", repeat_days: [1, 3, 5], due_at: null });
+    expect(parseQuickAdd("laundry every sunday", opts)).toMatchObject({
+      title: "laundry",
+      repeat: "custom",
+      repeat_days: [0],
+    });
+  });
+
+  it("still reads a list, priority and the title around a repeat", () => {
+    expect(parseQuickAdd("personal stretch every day high", opts)).toMatchObject({
+      title: "stretch",
+      list_id: "personal",
+      priority: "high",
+      repeat: "daily",
+    });
+  });
+
+  it("doesn't treat words that merely start like a day as one", () => {
+    const r = parseQuickAdd("check monitor every monitor", opts);
+    expect(r.repeat).toBe("none");
+  });
+
+  it("leaves a plain 'every' phrase that isn't a schedule alone", () => {
+    expect(parseQuickAdd("call every client", opts)).toMatchObject({
+      title: "call every client",
+      repeat: "none",
     });
   });
 });

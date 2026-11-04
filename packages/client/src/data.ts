@@ -2,8 +2,9 @@
 
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { HUES, type List, type Settings, type Step, type SyncResponse, type Task, type TimeBlock } from "@tt/shared";
+import { HUES, toggleDoneDate, type DayPlanItem, type List, type Settings, type Step, type SyncResponse, type Task, type TimeBlock } from "@tt/shared";
 import { useApi, type ApiClient } from "./api-context";
+import { usePendingDeletes } from "./pending-deletes";
 
 /** Colors lists and tasks can take. */
 export const PALETTE: string[] = [
@@ -61,13 +62,22 @@ const FALLBACK_SETTINGS: Settings = {
 /** Indexed, non-deleted views over the sync snapshot. */
 export function useModel() {
   const { data, isLoading, error } = useSync();
+  const pendingDeletes = usePendingDeletes();
   return useMemo(() => {
     const live = <T extends { deleted_at: string | null }>(rows: T[] = []) =>
       rows.filter((r) => !r.deleted_at);
+    // Tasks deleted in the UI but not yet sent to the server stay hidden, with their steps and blocks.
+    const kept = <T extends { task_id: string }>(rows: T[]) =>
+      pendingDeletes.size ? rows.filter((r) => !pendingDeletes.has(r.task_id)) : rows;
     const lists = live(data?.lists).sort((a, b) => a.sort_order - b.sort_order);
-    const tasks = live(data?.tasks);
-    const steps = live(data?.steps).sort((a, b) => a.order - b.order);
-    const blocks = live(data?.time_blocks);
+    const tasks = live(data?.tasks).filter((t) => !pendingDeletes.has(t.id));
+    const steps = kept(live(data?.steps)).sort((a, b) => a.order - b.order);
+    const blocks = kept(live(data?.time_blocks));
+    const taskIds = new Set(tasks.map((t) => t.id));
+    const dayPlanItems = live(data?.day_plan_items).filter((i) => taskIds.has(i.task_id));
+    const planByDate = new Map<string, DayPlanItem[]>();
+    for (const i of [...dayPlanItems].sort((a, b) => a.position - b.position))
+      planByDate.set(i.plan_date, [...(planByDate.get(i.plan_date) ?? []), i]);
     const stepsByTask = new Map<string, Step[]>();
     for (const s of steps) stepsByTask.set(s.task_id, [...(stepsByTask.get(s.task_id) ?? []), s]);
     return {
@@ -79,9 +89,11 @@ export function useModel() {
       taskById: new Map(tasks.map((t) => [t.id, t])),
       stepsByTask,
       blocks,
+      /** My day: planned tasks per local date, in order. */
+      planByDate,
       settings: data?.settings ?? FALLBACK_SETTINGS,
     };
-  }, [data, isLoading, error]);
+  }, [data, isLoading, error, pendingDeletes]);
 }
 
 /** The color a task shows in: its own, else its list's, else gray. */
@@ -92,8 +104,14 @@ export function taskColor(task: Task | undefined, listById: Map<string, List>) {
 
 // ---------- Optimistic mutations on the sync snapshot ----------
 
-type Collection = "lists" | "tasks" | "steps";
-type RowOf<C extends Collection> = C extends "lists" ? List : C extends "tasks" ? Task : Step;
+type Collection = "lists" | "tasks" | "steps" | "day_plan_items";
+type RowOf<C extends Collection> = C extends "lists"
+  ? List
+  : C extends "tasks"
+    ? Task
+    : C extends "steps"
+      ? Step
+      : DayPlanItem;
 
 function patchSnapshot(
   qc: QueryClient,
@@ -179,6 +197,9 @@ export function useCreateTask() {
           priority: v.body.priority ?? "none",
           estimate_min: v.body.estimate_min ?? null,
           status: "open" as const,
+          repeat: v.body.repeat ?? "none",
+          repeat_days: v.body.repeat_days ?? [],
+          done_dates: [],
           import_id: null,
           source_quote: null,
         }),
@@ -411,4 +432,63 @@ export function useReplaceSteps() {
       api.replaceSteps(v.taskId, v.steps),
     onSettled: () => qc.invalidateQueries({ queryKey: keys.sync }),
   });
+}
+
+// ---------- My day (daily plan) ----------
+
+/** The position that puts an item after everything already on a day. */
+export const endPosition = (items: DayPlanItem[] = []) =>
+  items.reduce((max, i) => Math.max(max, i.position), 0) + 1;
+
+/** The position between two neighbors; pass undefined for the start or end of the list. */
+export const positionBetween = (before?: number, after?: number) =>
+  before === undefined ? (after === undefined ? 1 : after - 1) : after === undefined ? before + 1 : (before + after) / 2;
+
+export function useAddToPlan() {
+  const api = useApi();
+  return useOptimistic({
+    mutationFn: (v: {
+      tempId: string;
+      body: Parameters<ApiClient["createDayPlanItem"]>[0];
+    }) => api.createDayPlanItem(v.body),
+    apply: (s, v) =>
+      upsertRow(s, "day_plan_items", {
+        ...tempRow({
+          task_id: v.body.task_id,
+          plan_date: v.body.plan_date,
+          position: v.body.position ?? 0,
+        }),
+        id: v.tempId,
+      }),
+    settle: (s, item, v) => ({
+      ...s,
+      day_plan_items: s.day_plan_items.map((i) => (i.id === v.tempId ? item : i)),
+    }),
+  });
+}
+
+/** Reorders within a day or moves an item to another day. */
+export function useMovePlanItem() {
+  const api = useApi();
+  return useOptimistic({
+    mutationFn: (v: { id: string; patch: Parameters<ApiClient["updateDayPlanItem"]>[1] }) =>
+      api.updateDayPlanItem(v.id, v.patch),
+    apply: (s, v) => updateRow(s, "day_plan_items", v.id, v.patch as Partial<DayPlanItem>),
+    settle: (s, item) => upsertRow(s, "day_plan_items", item),
+  });
+}
+
+export function useRemoveFromPlan() {
+  const api = useApi();
+  return useOptimistic({
+    mutationFn: (id: string) => api.deleteDayPlanItem(id),
+    apply: (s, id) => updateRow(s, "day_plan_items", id, { deleted_at: now() }),
+  });
+}
+
+/** Checks a repeating task off (or back on) for one local date. */
+export function useToggleRoutine() {
+  const update = useUpdateTask();
+  return (task: Pick<Task, "id" | "done_dates">, date: string, done: boolean) =>
+    update.mutate({ id: task.id, patch: { done_dates: toggleDoneDate(task.done_dates, date, done) } });
 }

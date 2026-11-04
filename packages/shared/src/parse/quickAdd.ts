@@ -1,6 +1,6 @@
 import * as chrono from "chrono-node";
 import { TZDate } from "@date-fns/tz";
-import type { Priority } from "../schemas";
+import type { Priority, Repeat } from "../schemas";
 import { zonedInstant } from "../time";
 
 export type QuickAddResult = {
@@ -8,6 +8,10 @@ export type QuickAddResult = {
   due_at: string | null;
   priority: Priority;
   list_id: string | null;
+  /** From "daily", "every day", "weekdays" or "every mon wed fri"; "none" otherwise. */
+  repeat: Repeat;
+  /** Days of the week (0 = Sunday) for a custom repeat. */
+  repeat_days: number[];
 };
 
 type ListRef = { id: string; name: string };
@@ -20,6 +24,10 @@ const PRIORITY_WORDS: Record<string, Priority> = {
 
 const DEFAULT_DUE_TIME = "23:59";
 
+const DAY_NAME = "mon(?:day)?|tue(?:s(?:day)?)?|wed(?:nesday)?|thu(?:r(?:s(?:day)?)?)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?";
+const EVERY_DAYS = new RegExp(`\\severy\\s+((?:(?:${DAY_NAME})\\b\\.?(?:\\s*(?:,|and|&)\\s*|\\s+)?)+)`, "i");
+const DAY_NUMBER: Record<string, number> = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -27,6 +35,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * Parses quick-add text like "cs61 lab report fri 11pm high".
  * - list: "#name" anywhere, or a leading word(s) matching a list name ("cs61" → "CS61")
  * - priority: a trailing word (high/med/low, !!!, p1–p3)
+ * - repeat: "daily" / "every day", "weekdays" / "every weekday", or "every mon wed fri"
  * - due: first date phrase chrono finds; dates without a time are due 11:59pm
  * All dates are read in `timezone`, whatever the device's zone is.
  */
@@ -55,6 +64,25 @@ export function parseQuickAdd(
     if (!m || !p) break;
     if (priority === "none") priority = p;
     text = text.slice(0, m.index) + " ";
+  }
+
+  // Repeat phrase, taken out before the date parse so "every monday" isn't read as a due date.
+  let repeat: Repeat = "none";
+  let repeat_days: number[] = [];
+  const days = text.match(EVERY_DAYS);
+  if (days) {
+    const picked = new Set(
+      (days[1]!.match(new RegExp(DAY_NAME, "gi")) ?? []).map((d) => DAY_NUMBER[d.slice(0, 3).toLowerCase()]!),
+    );
+    repeat = "custom";
+    repeat_days = [...picked].sort((a, b) => a - b);
+    text = text.replace(days[0], " ");
+  } else {
+    const every = text.match(/\s(?:every\s*day|daily|every\s+weekday|weekdays?)(?=\s)/i);
+    if (every) {
+      repeat = /weekday/i.test(every[0]) ? "weekdays" : "daily";
+      text = text.replace(every[0], " ");
+    }
   }
 
   // Date phrase, parsed against a reference whose device-local fields equal `now` in timezone.
@@ -89,5 +117,5 @@ export function parseQuickAdd(
   }
 
   const title = words.join(" ").replace(/\s+([,.;])/g, "$1").trim() || input.trim();
-  return { title, due_at, priority, list_id };
+  return { title, due_at, priority, list_id, repeat, repeat_days };
 }

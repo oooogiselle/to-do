@@ -7,6 +7,9 @@ import type {
 } from "./import";
 import type {
   Calendar,
+  DayPlanItem,
+  DayPlanItemCreate,
+  DayPlanItemPatch,
   EventsResponse,
   List,
   ListCreate,
@@ -84,6 +87,12 @@ export function createApiClient({ baseUrl, getToken, fetch: f = fetch }: Opts) {
     updateStep: (id: string, body: z.infer<typeof StepPatch>) =>
       call<Step>("PATCH", `/steps/${id}`, body),
     deleteStep: (id: string) => call<void>("DELETE", `/steps/${id}`),
+
+    createDayPlanItem: (body: z.infer<typeof DayPlanItemCreate>) =>
+      call<DayPlanItem>("POST", "/day-plan", body),
+    updateDayPlanItem: (id: string, body: z.infer<typeof DayPlanItemPatch>) =>
+      call<DayPlanItem>("PATCH", `/day-plan/${id}`, body),
+    deleteDayPlanItem: (id: string) => call<void>("DELETE", `/day-plan/${id}`),
 
     settings: () => call<SettingsResponse>("GET", "/settings"),
     updateSettings: (body: z.infer<typeof SettingsPatch>) =>

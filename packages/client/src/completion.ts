@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { isRecurring, localDate, toggleDoneDate } from "@tt/shared";
 import {
   useDeleteStep,
   useModel,
@@ -37,7 +38,7 @@ export function useCompletionActions(n: Completion) {
  * A task follows its steps: done once every step is, reopened when one is unchecked.
  */
 export function useCompletion() {
-  const { blocks, taskById, stepsByTask } = useModel();
+  const { blocks, taskById, stepsByTask, settings } = useModel();
   const updateTask = useUpdateTask();
   const updateStep = useUpdateStep();
   const deleteStep = useDeleteStep();
@@ -54,6 +55,16 @@ export function useCompletion() {
   );
 
   const setTaskDone = (taskId: string, done: boolean, auto?: Completion["auto"]) => {
+    // A repeating task is done for today, not for good.
+    const routine = taskById.get(taskId);
+    if (routine && isRecurring(routine)) {
+      const today = localDate(new Date(), settings.timezone);
+      updateTask.mutate({
+        id: taskId,
+        patch: { done_dates: toggleDoneDate(routine.done_dates, today, done) },
+      });
+      return;
+    }
     updateTask.mutate({ id: taskId, patch: { status: done ? "done" : "open" } });
     const count = done ? upcoming(taskId) : 0;
     const label = taskById.get(taskId)?.title ?? "this task";

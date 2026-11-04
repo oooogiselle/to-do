@@ -8,3 +8,5 @@ export * from "./realtime";
 export * from "./due-rail";
 export * from "./slot-suggestions";
 export * from "./inbox";
+export * from "./pending-deletes";
+export * from "./delete-undo";
