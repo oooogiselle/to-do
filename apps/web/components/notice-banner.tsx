@@ -1,14 +1,21 @@
 "use client";
 
 import { useEffect } from "react";
-import { type Notice, setNotice, useCompletionActions, useNotice } from "@tt/client";
+import {
+  type Notice,
+  setNotice,
+  undoDeleteTask,
+  useRestoreBlock,
+  useCompletionActions,
+  useNotice,
+} from "@tt/client";
 import { X } from "lucide-react";
 import { useOpenTask } from "./app-shell";
 
 const AUTO_DISMISS_MS = 12_000;
 
 const quiet = "rounded-lg px-3 py-1.5 font-bold text-white/70 hover:bg-white/10 hover:text-white";
-const primary = "rounded-lg bg-white px-3 py-1.5 font-bold text-ink hover:bg-white/90";
+const primary = "rounded-lg bg-surface px-3 py-1.5 font-bold text-ink hover:bg-white/90";
 const dismiss = () => setNotice(null);
 
 export function NoticeBanner() {
@@ -22,9 +29,17 @@ export function NoticeBanner() {
   return (
     <div
       role="status"
-      className="animate-pop-in fixed bottom-4 left-1/2 z-[60] flex w-[min(32rem,calc(100%-2rem))] -translate-x-1/2 flex-wrap items-center gap-x-4 gap-y-2 rounded-[14px] bg-ink px-4 py-3 text-[13px] font-semibold text-white shadow-[0_18px_40px_rgba(21,23,43,0.3)]"
+      className="animate-pop-in fixed bottom-4 left-1/2 z-[60] flex w-[min(32rem,calc(100%-2rem))] -translate-x-1/2 flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-ink px-4 py-3 text-[13px] font-semibold text-white shadow-sheet"
     >
-      {notice.kind === "added" ? <Added notice={notice} /> : <Completion notice={notice} />}
+      {notice.kind === "added" ? (
+        <Added notice={notice} />
+      ) : notice.kind === "deleted" ? (
+        <Deleted notice={notice} />
+      ) : notice.kind === "blockRemoved" ? (
+        <BlockRemoved notice={notice} />
+      ) : (
+        <Completion notice={notice} />
+      )}
     </div>
   );
 }
@@ -48,6 +63,29 @@ function Added({ notice }: { notice: Extract<Notice, { kind: "added" }> }) {
           Schedule
         </button>
       </div>
+    </>
+  );
+}
+
+function Deleted({ notice }: { notice: Extract<Notice, { kind: "deleted" }> }) {
+  return (
+    <>
+      <span className="min-w-0 flex-1">Deleted “{notice.label}”.</span>
+      <button onClick={() => undoDeleteTask(notice.taskId)} className={primary}>
+        Undo
+      </button>
+    </>
+  );
+}
+
+function BlockRemoved({ notice }: { notice: Extract<Notice, { kind: "blockRemoved" }> }) {
+  const restore = useRestoreBlock();
+  return (
+    <>
+      <span className="min-w-0 flex-1">Removed “{notice.label}” from your calendar.</span>
+      <button onClick={() => restore(notice.block)} className={primary}>
+        Undo
+      </button>
     </>
   );
 }

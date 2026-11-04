@@ -22,7 +22,7 @@ import {
   snap,
   SNAP_MIN,
   useCompletion,
-  useDeleteBlock,
+  useRemoveBlockWithUndo,
   useMoveBlock,
 } from "@tt/client";
 import { X } from "lucide-react";
@@ -104,7 +104,7 @@ export function Grid(props: GridProps) {
               <div key={day} className="min-w-0 border-l border-line px-1.5 py-2">
                 <div className="flex items-center justify-center gap-1.5">
                   <span
-                    className={`text-[10px] font-bold tracking-wider uppercase ${isToday ? "text-coral" : "text-[#8a8fa6]"}`}
+                    className={`text-[10px] font-bold tracking-wider uppercase ${isToday ? "text-coral" : "text-muted"}`}
                   >
                     {weekdayShort(day, tz)}
                   </span>
@@ -323,7 +323,7 @@ function EventItem({
   return (
     <div
       title={`${e.title}\n${time} (Google Calendar${e.busy ? "" : ", free"})`}
-      className={`absolute z-[5] overflow-hidden rounded-lg border pr-2 pl-2.5 ${e.busy ? "bg-white" : "border-dashed bg-white/60"}`}
+      className={`absolute z-[5] overflow-hidden rounded-lg border pr-2 pl-2.5 ${e.busy ? "bg-surface" : "border-dashed bg-white/60"}`}
       style={{ ...style, borderColor: e.busy ? c.tint : c.solid }}
     >
       <span
@@ -337,7 +337,7 @@ function EventItem({
         >
           {e.title}
         </p>
-        <p className="shrink-0 truncate text-[11px] leading-tight text-[#7a7f96]">
+        <p className="shrink-0 truncate text-[11px] leading-tight text-muted">
           {compact ? fmtTime(e.start, tz) : time}
         </p>
       </div>
@@ -378,7 +378,7 @@ function BlockItem(props: {
       sourceHourPx: props.hourPx,
     } satisfies DragItem,
   });
-  const removeBlock = useDeleteBlock();
+  const removeBlock = useRemoveBlockWithUndo();
   const moveBlock = useMoveBlock();
   const { setTaskDone, setStepDone } = useCompletion();
   const toggleDone = () =>
@@ -431,10 +431,33 @@ function BlockItem(props: {
   const fg = label.done ? c.ink : c.onSolid;
   const controls = !isTemp(b.id) && !isDragging && resizeEnd === null;
 
+  // Backspace / Delete removes the block under the pointer or the focused one (the task stays),
+  // unless you're typing or a dialog (the task sheet, quick add) is open.
+  const [armed, setArmed] = useState(false);
+  const canRemove = armed && controls;
+  useEffect(() => {
+    if (!canRemove) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Backspace" && e.key !== "Delete") return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
+      const t = e.target as HTMLElement | null;
+      if (t?.closest("input, textarea, select, [contenteditable='true']")) return;
+      if (document.querySelector("[aria-modal='true']")) return;
+      e.preventDefault();
+      removeBlock(b, label.title);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [canRemove, removeBlock, b, label.title]);
+
   return (
     <div
       className={`group absolute z-10 transition-opacity ${props.dimmed ? "opacity-30" : ""}`}
       style={style}
+      onMouseEnter={() => setArmed(true)}
+      onMouseLeave={() => setArmed(false)}
+      onFocus={() => setArmed(true)}
+      onBlur={() => setArmed(false)}
     >
       <button
         ref={setNodeRef}
@@ -442,9 +465,9 @@ function BlockItem(props: {
         {...attributes}
         onClick={() => !isDragging && props.onOpen(b.task_id)}
         title={`${label.title}\n${fmtTime(b.start, tz)}–${fmtTime(b.end, tz)}${movable ? "\nDrag to reschedule, drag the bottom edge to change length" : ""}`}
-        className={`absolute inset-0 flex overflow-hidden rounded-lg pr-5 pl-[26px] text-left shadow-[0_3px_8px_rgba(21,23,43,0.12)] ${
+        className={`absolute inset-0 flex overflow-hidden rounded-lg pr-5 pl-[26px] text-left shadow-[0_3px_8px_rgb(24_24_27/0.12)] ${
           compact ? "items-center" : "flex-col pt-1.5"
-        } ${movable ? "cursor-grab touch-none active:cursor-grabbing" : ""} ${isTemp(b.id) ? "animate-pulse" : ""}`}
+        } ${movable ? "cursor-grab select-none [-webkit-touch-callout:none] active:cursor-grabbing" : ""} ${isTemp(b.id) ? "animate-pulse" : ""}`}
         style={{ background: label.done ? c.tint : c.solid, color: fg }}
       >
         <span
@@ -474,14 +497,14 @@ function BlockItem(props: {
       )}
       {controls && (
         <button
-          onClick={() => removeBlock.mutate(b.id)}
+          onClick={() => removeBlock(b, label.title)}
           aria-label={`Remove ${label.title} from your calendar`}
           title={
             past
-              ? "Didn't get to it? Remove from calendar (the task stays in your to-dos)"
-              : "Remove from calendar (the task stays)"
+              ? "Didn't get to it? Remove from calendar (or press Backspace; the task stays in your to-dos)"
+              : "Remove from calendar (or press Backspace; the task stays)"
           }
-          className={`absolute right-0.5 grid size-4 place-items-center rounded opacity-0 group-hover:opacity-100 hover:bg-black/10 focus:opacity-100 ${compact ? "top-1/2 -translate-y-1/2" : "top-1"}`}
+          className={`absolute right-0.5 grid size-4 place-items-center rounded opacity-0 group-hover:opacity-100 no-hover:opacity-100 hover:bg-black/10 focus:opacity-100 ${compact ? "top-1/2 -translate-y-1/2" : "top-1"}`}
           style={{ color: fg }}
         >
           <X className="h-3 w-3" strokeWidth={3} />

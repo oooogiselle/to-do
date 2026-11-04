@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "./page-header";
 import { useState } from "react";
 import Link from "next/link";
 import { ClipboardPaste, Pencil, Plus, X } from "lucide-react";
@@ -45,13 +46,7 @@ export function Inbox() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-6xl p-4 md:p-8">
-        <header className="mb-6 flex flex-wrap items-end gap-4">
-          <div className="mr-auto">
-            <p className="text-[12px] font-bold tracking-wider text-grape uppercase">
-              {openTotal} open · {doneTotal} done
-            </p>
-            <h1 className="text-[28px] font-extrabold tracking-tight text-ink">To-dos</h1>
-          </div>
+        <PageHeader title="To-dos" description={`${openTotal} open · ${doneTotal} done`}>
           <Segmented
             label="Sort"
             value={sort}
@@ -67,7 +62,7 @@ export function Inbox() {
           </label>
           <Link
             href="/import"
-            className="flex items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2 text-sm font-bold text-ink hover:bg-[#f0f1f7]"
+            className="flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 text-[13px] text-ink hover:bg-row"
           >
             <ClipboardPaste className="h-4 w-4 text-sun" strokeWidth={2.5} />
             Import
@@ -75,12 +70,12 @@ export function Inbox() {
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="flex items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2 text-sm font-bold text-ink hover:bg-[#f0f1f7]"
+            className="flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 text-[13px] text-ink hover:bg-row"
           >
             <Plus className="h-4 w-4" strokeWidth={3} />
             New list
           </button>
-        </header>
+        </PageHeader>
 
         {creating && <NewListForm count={lists.length} onDone={() => setCreating(false)} />}
 
@@ -109,7 +104,7 @@ export function Inbox() {
 
 function EmptyState() {
   return (
-    <div className="rounded-2xl border-2 border-dashed border-line bg-white px-6 py-14 text-center">
+    <div className="rounded-2xl border-2 border-dashed border-line bg-surface px-6 py-14 text-center">
       <p className="text-base font-bold text-ink">No tasks yet.</p>
       <p className="mt-1 text-sm font-semibold text-coral">Press ⌘K to add your first one.</p>
     </div>
@@ -137,7 +132,7 @@ function ListCard({
   return (
     <section
       aria-label={name}
-      className="overflow-hidden rounded-2xl border border-line bg-white"
+      className="overflow-hidden rounded-2xl border border-line bg-surface"
     >
       {editing && list ? (
         <ListEditor list={list} openCount={openCount} onDone={() => setEditing(false)} />
@@ -165,9 +160,9 @@ function ListCard({
       )}
 
       {tasks.length === 0 ? (
-        <p className="px-4 py-5 text-sm text-[#7a7f96]">No open tasks.</p>
+        <p className="px-4 py-5 text-sm text-muted">No open tasks.</p>
       ) : (
-        <ul className="divide-y divide-[#eef0f5]">
+        <ul className="divide-y divide-row-hover">
           {tasks.map((t) => (
             <TaskRow key={t.id} task={t} color={c.solid} tz={tz} nextAt={nextBlock.get(t.id)} />
           ))}
@@ -195,7 +190,7 @@ function TaskRow({
   const done = task.status === "done";
   const rowColor = task.color ?? color;
   return (
-    <li className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-[#f8f9fc]">
+    <li className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-row">
       <TaskCheck
         done={done}
         color={rowColor}
@@ -278,7 +273,7 @@ function ListEditor({
         autoFocus
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="min-w-[140px] flex-1 rounded-xl border border-line bg-white px-3 py-1.5 text-sm font-semibold text-ink outline-none focus:ring-2 focus:ring-sky/30"
+        className="min-w-[140px] flex-1 rounded-xl border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink outline-none focus:ring-2 focus:ring-sky/30"
       />
       <ColorPicker value={color} onChange={(v) => v && setColor(v)} label="List color" size={22} />
       <div className="flex w-full items-center gap-2">
@@ -336,7 +331,7 @@ function NewListForm({ count, onDone }: { count: number; onDone: () => void }) {
         onChange={(e) => setName(e.target.value)}
         placeholder="List name, e.g. CS61"
         aria-label="List name"
-        className="min-w-[180px] flex-1 rounded-xl border border-line bg-white px-3 py-2 text-sm font-semibold text-ink outline-none focus:ring-2 focus:ring-sky/30"
+        className="min-w-[180px] flex-1 rounded-xl border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink outline-none focus:ring-2 focus:ring-sky/30"
       />
       <ColorPicker value={color} onChange={(v) => v && setColor(v)} label="List color" size={28} />
       <button type="submit" className="rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white">

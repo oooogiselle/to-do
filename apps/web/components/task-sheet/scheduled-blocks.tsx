@@ -5,7 +5,7 @@ import { formatMinutes, localDate, zonedInstant, type Step, type TimeBlock } fro
 import { fmtDay, fmtTime, isTemp, localTime, useDeleteBlock, useMoveBlock } from "@tt/client";
 
 const field =
-  "rounded-lg border border-line bg-white px-2 py-1 font-semibold outline-none focus:border-sky";
+  "rounded-lg border border-line bg-surface px-2 py-1 font-semibold outline-none focus:border-sky";
 
 const DURATIONS = [15, 30, 45, 60, 75, 90, 120, 150, 180, 240];
 
@@ -41,7 +41,7 @@ export function ScheduledBlocks(props: {
           const current = Math.round((Date.parse(b.end) - start) / 60_000);
           if (editing === b.id)
             return (
-              <li key={b.id} className="rounded-xl bg-white px-3 py-2 text-[13px]">
+              <li key={b.id} className="rounded-xl bg-surface px-3 py-2 text-[13px]">
                 <BlockEditor
                   block={b}
                   tz={props.tz}
@@ -56,7 +56,7 @@ export function ScheduledBlocks(props: {
           return (
             <li
               key={b.id}
-              className={`flex items-center gap-2.5 rounded-xl bg-white px-3 py-2 text-[13px] font-semibold ${past ? "text-muted" : "text-ink"}`}
+              className={`flex items-center gap-2.5 rounded-xl bg-surface px-3 py-2 text-[13px] font-semibold ${past ? "text-muted" : "text-ink"}`}
             >
               <span
                 className="h-2 w-2 shrink-0 rounded-full"

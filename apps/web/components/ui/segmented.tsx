@@ -15,7 +15,7 @@ export function Segmented<T extends string | number>({
   size?: "sm" | "md";
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-xl bg-[#e6e8f1] p-1">
+    <div role="radiogroup" aria-label={label} className="inline-flex rounded-xl bg-chip p-1">
       {options.map((o) => {
         const active = o.value === value;
         return (
@@ -27,7 +27,7 @@ export function Segmented<T extends string | number>({
             onClick={() => onChange(o.value)}
             className={`rounded-lg font-bold transition-colors ${
               size === "sm" ? "px-2.5 py-0.5 text-[12px]" : "px-3 py-1 text-sm"
-            } ${active ? "bg-ink text-white" : "text-[#5b6078] hover:text-ink"}`}
+            } ${active ? "bg-ink text-white" : "text-chip-ink hover:text-ink"}`}
           >
             {o.label}
           </button>

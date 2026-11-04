@@ -90,7 +90,7 @@ export function DuePane({ pane, now }: { pane: string; now: number }) {
                 localStorage.setItem(RANGE_KEY, String(n));
               } catch {}
             }}
-            className="rounded-md border border-line bg-white px-1 py-0.5 font-bold text-ink"
+            className="rounded-md border border-line bg-surface px-1 py-0.5 font-bold text-ink"
           >
             {DUE_RANGES.map((n) => (
               <option key={n} value={n}>
@@ -186,10 +186,10 @@ function DueCard(props: {
       ref={setNodeRef}
       {...listeners}
       aria-roledescription="draggable task"
-      className={`@container relative cursor-grab touch-none rounded-xl border pl-3.5 transition-opacity active:cursor-grabbing ${
+      className={`@container relative cursor-grab select-none [-webkit-touch-callout:none] rounded-xl border pl-3.5 transition-opacity active:cursor-grabbing ${
         isDragging
           ? "border-[1.5px] border-dashed border-grape bg-grape-bg opacity-70"
-          : `bg-white shadow-[0_1px_2px_rgba(21,23,43,0.05)] ${atRisk ? "border-[#f0d5cc]" : "border-line-soft"}`
+          : `bg-surface shadow-card ${atRisk ? "border-[#f0d5cc]" : "border-line-soft"}`
       }`}
     >
       <span
@@ -315,7 +315,7 @@ function DueStep(props: {
       ref={setNodeRef}
       {...listeners}
       aria-roledescription="draggable step"
-      className={`flex cursor-grab touch-none items-center justify-between gap-2 rounded-lg bg-row px-2 py-1 text-[11px] hover:bg-row-hover active:cursor-grabbing ${isDragging ? "opacity-40" : ""}`}
+      className={`flex cursor-grab select-none [-webkit-touch-callout:none] items-center justify-between gap-2 rounded-lg bg-row px-2 py-1 text-[11px] hover:bg-row-hover active:cursor-grabbing ${isDragging ? "opacity-40" : ""}`}
     >
       <span className="min-w-0">
         <span className="block truncate font-semibold text-ink">{step.title}</span>

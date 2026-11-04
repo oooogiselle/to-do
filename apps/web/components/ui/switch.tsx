@@ -26,7 +26,7 @@ export function Switch({
       style={{ background: checked ? color : "#d3d6e2" }}
     >
       <span
-        className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-all ${checked ? "left-5" : "left-1"}`}
+        className={`absolute top-1 h-4 w-4 rounded-full bg-surface transition-all ${checked ? "left-5" : "left-1"}`}
       />
     </button>
   );

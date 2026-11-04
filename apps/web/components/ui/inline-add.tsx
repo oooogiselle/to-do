@@ -40,7 +40,7 @@ export function InlineAdd({
   };
   return (
     <form
-      className={`flex items-center gap-2 border-t border-[#f0f1f7] ${size === "sm" ? "px-3 py-1.5" : "px-4 py-2"}`}
+      className={`flex items-center gap-2 border-t border-row-hover ${size === "sm" ? "px-3 py-1.5" : "px-4 py-2"}`}
       onSubmit={(e) => {
         e.preventDefault();
         submit();
@@ -56,7 +56,7 @@ export function InlineAdd({
         onChange={(e) => setDraft(e.target.value)}
         placeholder={`Add to ${listName}`}
         aria-label={`Add task to ${listName}`}
-        className={`min-w-0 flex-1 bg-transparent py-1 font-medium text-ink placeholder:text-[#a5a9bd] focus:outline-none ${size === "sm" ? "text-[12px]" : "text-sm"}`}
+        className={`min-w-0 flex-1 bg-transparent py-1 font-medium text-ink placeholder:text-faint focus:outline-none ${size === "sm" ? "text-[12px]" : "text-sm"}`}
       />
     </form>
   );

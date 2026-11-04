@@ -51,7 +51,7 @@ export function SchedulePanel({ task, onClose }: { task: Task; onClose: () => vo
             <li key={i}>
               <button
                 onClick={() => choose(s)}
-                className="w-full rounded-xl border-2 border-transparent bg-white px-3 py-2 text-left text-[13px] transition-colors hover:border-grape"
+                className="w-full rounded-xl border-2 border-transparent bg-surface px-3 py-2 text-left text-[13px] transition-colors hover:border-grape"
               >
                 {s.kind === "split" ? (
                   <>

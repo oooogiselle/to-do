@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "./page-header";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +21,7 @@ const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Satur
 const WEEKDAY_KEYS = ["1", "2", "3", "4", "5", "6", "0"] as const;
 
 const field =
-  "rounded-xl border border-line bg-white px-3 py-2 text-sm font-semibold text-ink outline-none focus:border-sky focus:ring-2 focus:ring-sky/20";
+  "rounded-xl border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink outline-none focus:border-sky focus:ring-2 focus:ring-sky/20";
 
 function Section({
   title,
@@ -32,9 +33,9 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-line bg-white p-5">
+    <section className="rounded-2xl border border-line bg-surface p-5">
       <h2 className="text-base font-extrabold text-ink">{title}</h2>
-      {description && <p className="mb-4 text-sm text-[#5b6078]">{description}</p>}
+      {description && <p className="mb-4 text-sm text-chip-ink">{description}</p>}
       <div className={description ? "" : "mt-3"}>{children}</div>
     </section>
   );
@@ -85,10 +86,7 @@ export function SettingsView() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-3xl space-y-5 p-4 md:p-8">
-        <div>
-          <p className="text-[12px] font-bold tracking-wider text-grape uppercase">Preferences</p>
-          <h1 className="text-[28px] font-extrabold tracking-tight text-ink">Settings</h1>
-        </div>
+        <PageHeader title="Settings" description="Calendar, time zone and working hours." />
         {googleStatus && (
           <p
             className={`rounded-xl px-4 py-3 text-sm font-semibold ${googleStatus === "connected" ? "bg-open text-open-ink" : "bg-risk-bg text-risk"}`}
@@ -97,11 +95,11 @@ export function SettingsView() {
           </p>
         )}
 
-        <section className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-white p-5">
+        <section className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-surface p-5">
           <GoogleMark />
           <div className="mr-auto min-w-0">
             <h2 className="text-base font-extrabold text-ink">Google account</h2>
-            <p className={`text-sm ${google?.needs_reconnect ? "font-semibold text-warn" : "text-[#5b6078]"}`}>
+            <p className={`text-sm ${google?.needs_reconnect ? "font-semibold text-warn" : "text-chip-ink"}`}>
               {google?.needs_reconnect ? (
                 `Access for ${google.email} expired. Reconnect to keep your calendar in sync.`
               ) : google ? (
@@ -116,7 +114,7 @@ export function SettingsView() {
           {google && !google.needs_reconnect && <SyncButton />}
           <a
             href="/api/google/connect"
-            className={`rounded-xl px-4 py-2 text-sm font-bold ${google && !google.needs_reconnect ? "border border-line text-ink hover:bg-paper" : "bg-ink text-white hover:bg-[#2a2d4a]"}`}
+            className={`rounded-xl px-4 py-2 text-sm font-bold ${google && !google.needs_reconnect ? "border border-line text-ink hover:bg-paper" : "bg-ink text-white hover:opacity-90"}`}
           >
             {google ? "Reconnect" : "Connect Google Calendar"}
           </a>
@@ -134,7 +132,7 @@ export function SettingsView() {
           />
         </Section>
 
-        <section className="grid gap-6 rounded-2xl border border-line bg-white p-5 sm:grid-cols-2">
+        <section className="grid gap-6 rounded-2xl border border-line bg-surface p-5 sm:grid-cols-2">
           <fieldset>
             <legend className="mb-3 text-base font-extrabold text-ink">Default block length</legend>
             <div className="flex flex-wrap gap-1.5">
@@ -280,7 +278,7 @@ function WorkingHoursEditor({
                   onChange={(e) => set(key, { ...hours, start: e.target.value })}
                   className={field}
                 />
-                <span className="text-sm font-bold text-[#8a8fa6]">to</span>
+                <span className="text-sm font-bold text-muted">to</span>
                 <input
                   type="time"
                   step={900}

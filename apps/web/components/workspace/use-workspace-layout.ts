@@ -9,19 +9,24 @@ import {
   resizeSide,
   resizeStack,
   sanitize,
+  SCREEN_PRESETS,
   type PaneId,
   type PresetId,
+  type Screen,
   type WorkspaceLayout,
   type ZoneId,
 } from "./layout";
 
-const LAYOUT_KEY = "workspace.layout.v1";
-const PRESET_KEY = "workspace.preset";
+// Each screen remembers its own arrangement; Calendar keeps the original keys.
+const KEYS: Record<Screen, { layout: string; preset: string }> = {
+  calendar: { layout: "workspace.layout.v1", preset: "workspace.preset" },
+  day: { layout: "workspace.day.layout.v1", preset: "workspace.day.preset" },
+};
 
-function load(): { layout: unknown; preset: PresetId | null } {
+function load(screen: Screen): { layout: unknown; preset: PresetId | null } {
   try {
-    const raw = localStorage.getItem(LAYOUT_KEY);
-    const preset = localStorage.getItem(PRESET_KEY) as PresetId | null;
+    const raw = localStorage.getItem(KEYS[screen].layout);
+    const preset = localStorage.getItem(KEYS[screen].preset) as PresetId | null;
     return { layout: raw ? JSON.parse(raw) : null, preset: raw ? preset || null : null };
   } catch {
     return { layout: null, preset: null };
@@ -32,8 +37,11 @@ function load(): { layout: unknown; preset: PresetId | null } {
  * The workspace's pane arrangement, remembered in this browser. Waits for `lists` to load
  * (`ready`), since panes for lists that no longer exist are dropped.
  */
-export function useWorkspaceLayout(lists: List[], ready: boolean) {
-  const presets = useMemo(() => buildPresets(lists), [lists]);
+export function useWorkspaceLayout(lists: List[], ready: boolean, screen: Screen) {
+  const presets = useMemo(
+    () => buildPresets(lists).filter((p) => SCREEN_PRESETS[screen].includes(p.id)),
+    [lists, screen],
+  );
   const [layout, setLayout] = useState<WorkspaceLayout | null>(null);
   const [presetId, setPresetId] = useState<PresetId | null>(null);
   const loaded = useRef(false);
@@ -42,33 +50,37 @@ export function useWorkspaceLayout(lists: List[], ready: boolean) {
   useEffect(() => {
     if (!ready || loaded.current) return;
     loaded.current = true;
-    const saved = load();
-    const restored = sanitize(saved.layout, lists);
+    const saved = load(screen);
+    const restored = sanitize(saved.layout, lists, screen);
     if (restored) {
       setLayout(restored);
       setPresetId(saved.preset);
       return;
     }
     const narrow = window.matchMedia("(max-width: 640px)").matches;
-    const preset = presets.find((p) => p.id === (narrow ? "focus-day" : "plan-week"))!;
-    setLayout(preset.layout);
-    setPresetId(preset.id);
-  }, [ready, lists, presets]);
+    const wanted: PresetId =
+      screen === "day" ? "plan-day" : narrow ? "focus-day" : "plan-week";
+    const preset = presets.find((p) => p.id === wanted)!;
+    // On a phone My day is the plan and its schedule; lists stay a tap away in the pane menu.
+    const phoneDay = screen === "day" && narrow;
+    setLayout(phoneDay ? { ...preset.layout, left: [] } : preset.layout);
+    setPresetId(phoneDay ? null : preset.id);
+  }, [ready, lists, presets, screen]);
 
   // Lists change (one deleted): drop its pane.
   useEffect(() => {
     if (!ready) return;
-    setLayout((l) => (l ? sanitize(l, lists) : l));
-  }, [ready, lists]);
+    setLayout((l) => (l ? sanitize(l, lists, screen) : l));
+  }, [ready, lists, screen]);
 
   useEffect(() => {
     if (!layout) return;
     try {
-      localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
-      if (presetId) localStorage.setItem(PRESET_KEY, presetId);
-      else localStorage.removeItem(PRESET_KEY);
+      localStorage.setItem(KEYS[screen].layout, JSON.stringify(layout));
+      if (presetId) localStorage.setItem(KEYS[screen].preset, presetId);
+      else localStorage.removeItem(KEYS[screen].preset);
     } catch {}
-  }, [layout, presetId]);
+  }, [layout, presetId, screen]);
 
   // Any hand-made change leaves the preset ("Custom").
   const change = useCallback((fn: (l: WorkspaceLayout) => WorkspaceLayout) => {

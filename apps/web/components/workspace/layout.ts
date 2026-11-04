@@ -1,9 +1,24 @@
 import type { List } from "@tt/shared";
 
-/** Panes: the two calendars, the Due pane, one per list, and one for tasks without a list. */
-export type PaneId = "week" | "today" | "due" | "list:none" | `list:${string}`;
+/**
+ * Panes: the day plan, the two calendars, the Due pane, one per list, and one for tasks
+ * without a list.
+ */
+export type PaneId = "plan" | "week" | "today" | "due" | "list:none" | `list:${string}`;
 export type ZoneId = "left" | "center" | "right";
-export type PresetId = "plan-week" | "focus-day" | "lists-only";
+export type PresetId = "plan-day" | "plan-week" | "focus-day" | "lists-only";
+
+/** The two screens built on the workspace: My day (plan + schedule) and Calendar. */
+export type Screen = "day" | "calendar";
+
+/** Panes a screen can't show: My day has no week or Due pane, Calendar has no plan. */
+const EXCLUDED: Record<Screen, PaneId[]> = { day: ["week", "due"], calendar: ["plan"] };
+
+/** The saved layouts each screen offers. */
+export const SCREEN_PRESETS: Record<Screen, PresetId[]> = {
+  day: ["plan-day"],
+  calendar: ["plan-week", "focus-day", "lists-only"],
+};
 
 export interface WorkspaceLayout {
   left: PaneId[];
@@ -39,11 +54,13 @@ export function listIdOf(pane: PaneId): string | null | undefined {
 
 export const isCalendarPane = (p: PaneId): p is "week" | "today" => p === "week" || p === "today";
 
-export function allPaneIds(lists: List[]): PaneId[] {
-  return ["week", "today", "due", ...lists.map((l) => listPane(l.id)), "list:none"];
+export function allPaneIds(lists: List[], screen: Screen = "calendar"): PaneId[] {
+  const all: PaneId[] = ["plan", "week", "today", "due", ...lists.map((l) => listPane(l.id)), "list:none"];
+  return all.filter((p) => !EXCLUDED[screen].includes(p));
 }
 
 export function paneLabel(pane: PaneId, lists: List[]): string {
+  if (pane === "plan") return "Plan";
   if (pane === "week") return "Week";
   if (pane === "today") return "Day";
   if (pane === "due") return "Due soon";
@@ -53,6 +70,7 @@ export function paneLabel(pane: PaneId, lists: List[]): string {
 }
 
 export function paneColor(pane: PaneId, lists: List[]): string {
+  if (pane === "plan") return "var(--tt-sun)";
   if (pane === "week") return "var(--tt-sky)";
   if (pane === "today") return "var(--ink)";
   if (pane === "due") return "var(--tt-coral)";
@@ -126,10 +144,14 @@ export function resizeStack(
  * Drops panes that no longer exist (a deleted list) or that appear twice, and fixes the
  * active tab and widths. Run on anything loaded from storage.
  */
-export function sanitize(input: unknown, lists: List[]): WorkspaceLayout | null {
+export function sanitize(
+  input: unknown,
+  lists: List[],
+  screen: Screen = "calendar",
+): WorkspaceLayout | null {
   if (!input || typeof input !== "object") return null;
   const raw = input as Partial<Record<keyof WorkspaceLayout, unknown>>;
-  const valid = new Set<string>(allPaneIds(lists));
+  const valid = new Set<string>(allPaneIds(lists, screen));
   const seen = new Set<string>();
   const zone = (v: unknown): PaneId[] =>
     (Array.isArray(v) ? v : []).filter((p): p is PaneId => {
@@ -163,6 +185,20 @@ export function buildPresets(lists: List[]): LayoutPreset[] {
   const ids = lists.map((l) => listPane(l.id));
   const thirds = Math.ceil(ids.length / 3);
   return [
+    {
+      id: "plan-day",
+      name: "My day",
+      description: "Your lists, the day's plan, and its schedule side by side",
+      layout: {
+        left: ids.slice(0, 3),
+        center: ["plan"],
+        right: ["today"],
+        activeCenter: "plan",
+        leftWidth: 260,
+        rightWidth: 340,
+        weights: {},
+      },
+    },
     {
       id: "plan-week",
       name: "Plan week",

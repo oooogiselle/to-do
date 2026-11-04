@@ -10,7 +10,7 @@ import { CalendarDatesProvider } from "./calendar-dates";
 import { CalendarKeys } from "./calendar-keys";
 import { CenterTabs } from "./center-tabs";
 import { LayoutMenu } from "./layout-menu";
-import { allPaneIds, visiblePanes, type PaneId } from "./layout";
+import { allPaneIds, visiblePanes, type PaneId, type Screen } from "./layout";
 import { PaneColumn } from "./pane-column";
 import { Splitter } from "./splitter";
 import { weekStart } from "./time";
@@ -26,24 +26,24 @@ function useNow(intervalMs = 60_000) {
   return now;
 }
 
-export function Workspace() {
+export function Workspace({ screen }: { screen: Screen }) {
   // Everything here depends on the current time, client-fetched data and this browser's
   // saved layout; skip SSR to avoid hydration mismatches.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  return mounted ? <WorkspaceView /> : null;
+  return mounted ? <WorkspaceView screen={screen} /> : null;
 }
 
-function WorkspaceView() {
+function WorkspaceView({ screen }: { screen: Screen }) {
   const { lists, tasks, settings, isLoading, error } = useModel();
   const now = useNow();
-  const ws = useWorkspaceLayout(lists, !isLoading && !error);
+  const ws = useWorkspaceLayout(lists, !isLoading && !error, screen);
   const { layout } = ws;
 
   if (!layout) {
     return (
       <div className="flex h-full flex-col">
-        <Header now={now} tz={settings.timezone} ws={ws} />
+        <Header now={now} tz={settings.timezone} ws={ws} screen={screen} />
         <div className="grid flex-1 place-items-center font-semibold text-muted">
           {error ? `Couldn't load your tasks: ${error.message}` : "Loading…"}
         </div>
@@ -53,7 +53,7 @@ function WorkspaceView() {
 
   const visible = new Set(visiblePanes(layout));
   const hasUnlisted = tasks.some((t) => t.status === "open" && !t.list_id);
-  const hidden = allPaneIds(lists).filter(
+  const hidden = allPaneIds(lists, screen).filter(
     (p) => !visible.has(p) && (p !== "list:none" || hasUnlisted),
   );
   // d / w: bring up Today or Week, opening it as a tab if it's not showing.
@@ -67,7 +67,7 @@ function WorkspaceView() {
       <CalendarDatesProvider>
         <CalendarKeys layout={layout} onShow={show}>
           <div className="flex h-full flex-col">
-            <Header now={now} tz={settings.timezone} ws={ws} />
+            <Header now={now} tz={settings.timezone} ws={ws} screen={screen} />
             <ConnectBanner />
             <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-2.5 lg:flex-row lg:gap-0 lg:overflow-hidden">
               <PaneColumn
@@ -130,12 +130,15 @@ function Header({
   now,
   tz,
   ws,
+  screen,
 }: {
   now: number;
   tz: string;
   ws: ReturnType<typeof useWorkspaceLayout>;
+  screen: Screen;
 }) {
   const qc = useQueryClient();
+  const title = screen === "day" ? "My day" : "Calendar";
   const { dataUpdatedAt } = useSync();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
@@ -160,15 +163,15 @@ function Header({
   return (
     <header className="relative z-40 flex h-12 shrink-0 items-center gap-4 border-b border-line bg-surface px-4">
       <div className="min-w-0 leading-tight">
-        <h1 className="text-[14px] font-extrabold tracking-tight text-ink">Workspace</h1>
-        <p className="truncate text-[11px] font-bold text-[#787c94]">{subtitle}</p>
+        <h1 className="text-[15px] font-medium tracking-tight text-ink">{title}</h1>
+        <p className="truncate text-[11px] text-muted">{subtitle}</p>
       </div>
       <button
         type="button"
         onClick={refresh}
         disabled={refreshing}
         title="Refresh Google Calendar"
-        className="ml-auto hidden items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold text-[#5b5e72] hover:bg-paper disabled:opacity-70 sm:flex"
+        className="ml-auto hidden items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] text-chip-ink hover:bg-row-hover disabled:opacity-70 sm:flex"
       >
         {refreshError ? (
           <span className="text-risk">{refreshError}</span>
