@@ -427,5 +427,5 @@ enabled = true
 project_id = "wkymrjxknigncefzqjdc"
 
 [remotes.production.auth]
-site_url = "https://timeline-todo-gi-selle.vercel.app"
-additional_redirect_urls = ["https://timeline-todo-gi-selle.vercel.app/auth/callback", "timelinetodo://auth/callback"]
+site_url = "https://www.tapestry-todo.com"
+additional_redirect_urls = ["https://www.tapestry-todo.com/auth/callback", "https://timeline-todo-gi-selle.vercel.app/auth/callback", "timelinetodo://auth/callback"]
