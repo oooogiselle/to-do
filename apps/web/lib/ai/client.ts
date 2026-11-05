@@ -20,27 +20,10 @@ function anthropic() {
   return client;
 }
 
-export async function assertUnderMonthlyCap(userId: string) {
-  const cap = Number(process.env.AI_MONTHLY_CAP_USD || 5);
-  const monthStart = new Date();
-  monthStart.setUTCDate(1);
-  monthStart.setUTCHours(0, 0, 0, 0);
-  const { data, error } = await adminClient()
-    .from("ai_usage")
-    .select("cost_usd")
-    .eq("user_id", userId)
-    .gte("ts", monthStart.toISOString());
-  if (error) throw new Error(error.message);
-  const spent = data.reduce((sum, r) => sum + Number(r.cost_usd), 0);
-  if (spent >= cap) {
-    throw new HttpError(429, `This month's AI budget ($${cap}) is used up. It resets on the 1st.`);
-  }
-}
-
 /**
- * One structured-output request to Claude: checks the monthly budget, logs usage, and maps
- * refusals, truncation and API errors to user-facing HTTP errors. Callers check the budget
- * once up front (assertUnderMonthlyCap) when they fan out several requests.
+ * One structured-output request to Claude: logs usage and maps refusals, truncation and API
+ * errors to user-facing HTTP errors. It does not check limits: callers must call
+ * `assertAiAllowed` (lib/ai/limits.ts) once up front, even when they fan out several requests.
  */
 export async function runStructured<S extends z.ZodType>(opts: {
   userId: string;

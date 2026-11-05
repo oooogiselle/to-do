@@ -1,7 +1,8 @@
 import "server-only";
 import { z } from "zod/v4";
 import type { ProposedStep } from "@tt/shared";
-import { assertUnderMonthlyCap, runStructured } from "@/lib/ai/client";
+import { runStructured } from "@/lib/ai/client";
+import { assertAiAllowed } from "@/lib/ai/limits";
 
 const Output = z.object({
   steps: z
@@ -34,7 +35,7 @@ export async function breakDownTask(
     timezone: string;
   },
 ): Promise<ProposedStep[]> {
-  await assertUnderMonthlyCap(userId);
+  await assertAiAllowed(userId, "breakdown");
 
   const due = input.due_at
     ? new Date(input.due_at).toLocaleString("en-US", {

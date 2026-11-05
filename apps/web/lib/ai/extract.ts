@@ -9,7 +9,8 @@ import {
   type ProposedTask,
   type SyllabusExtractionResult,
 } from "@tt/shared";
-import { assertUnderMonthlyCap, runStructured } from "@/lib/ai/client";
+import { runStructured } from "@/lib/ai/client";
+import { assertAiAllowed } from "@/lib/ai/limits";
 
 const CHUNK_CHARS = 16_000;
 const CONCURRENCY = 4;
@@ -154,7 +155,7 @@ async function mapLimit<T, R>(
 
 /** Free text of any length: chunked so long inputs don't drop items, then merged. */
 export async function extractFromText(text: string, ctx: ExtractContext): Promise<ProposedTask[]> {
-  await assertUnderMonthlyCap(ctx.userId);
+  await assertAiAllowed(ctx.userId, "extract");
   const chunks = chunkText(text, CHUNK_CHARS);
   const results = await mapLimit(chunks, CONCURRENCY, (chunk) =>
     runStructured({
@@ -185,7 +186,7 @@ export async function extractSyllabus(
   source: SyllabusSource,
   ctx: ExtractContext,
 ): Promise<SyllabusExtractionResult> {
-  await assertUnderMonthlyCap(ctx.userId);
+  await assertAiAllowed(ctx.userId, "extract");
   const intro = `${contextLines(ctx)}\n\nExtract every assignment, exam and reading from this syllabus.`;
   const content =
     source.kind === "text"
