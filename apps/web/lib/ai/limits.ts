@@ -14,7 +14,7 @@ import { adminClient } from "@/lib/supabase/admin";
  */
 
 export type AiFeature = "breakdown" | "extract" | "suggest";
-type Tier = "free"; // add "pro" here when subscriptions exist
+type Tier = "free" | "owner"; // add "pro" here when subscriptions exist
 
 type FeatureLimit = { perMinute: number; perHour: number };
 
@@ -25,16 +25,36 @@ const LIMITS: Record<Tier, Record<AiFeature, FeatureLimit>> = {
     extract: { perMinute: 3, perHour: 20 }, // imports from text and from a syllabus
     suggest: { perMinute: 10, perHour: 120 },
   },
+  // The app's owner, so using the app yourself isn't held to the free tier.
+  owner: {
+    breakdown: { perMinute: 30, perHour: 600 },
+    extract: { perMinute: 10, perHour: 200 },
+    suggest: { perMinute: 30, perHour: 600 },
+  },
 };
 
-/** Which limits apply to this user. Everyone is on the free tier until subscriptions exist. */
-async function tierFor(_userId: string): Promise<Tier> {
-  return "free";
+/**
+ * Which limits apply to this user. Accounts whose email is in AI_OWNER_EMAILS (comma-separated)
+ * get the owner tier; everyone else is free until subscriptions exist. The email lookup only
+ * happens when that variable is set.
+ */
+async function tierFor(userId: string): Promise<Tier> {
+  const owners = (process.env.AI_OWNER_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  if (!owners.length) return "free";
+  const { data, error } = await adminClient().auth.admin.getUserById(userId);
+  if (error) throw new Error(error.message);
+  const email = data.user?.email?.toLowerCase();
+  return email && owners.includes(email) ? "owner" : "free";
 }
 
-/** Monthly AI spend per user, in USD. Free is set by env; a paid tier would return its own. */
-function monthlyCapUsd(_tier: Tier): number {
-  return Number(process.env.AI_MONTHLY_CAP_USD || 1);
+/** Monthly AI spend per user, in USD, set by env per tier. */
+function monthlyCapUsd(tier: Tier): number {
+  return tier === "owner"
+    ? Number(process.env.AI_OWNER_MONTHLY_CAP_USD || 20)
+    : Number(process.env.AI_MONTHLY_CAP_USD || 1);
 }
 
 /** Monthly AI spend across all users, in USD. Switches AI off for everyone when reached. */
