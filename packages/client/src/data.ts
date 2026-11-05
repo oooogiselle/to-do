@@ -272,7 +272,12 @@ export function useCreateList() {
       api.createList(v.body),
     apply: (s, v) =>
       upsertRow(s, "lists", {
-        ...tempRow({ name: v.body.name, color: v.body.color, sort_order: v.body.sort_order ?? 0 }),
+        ...tempRow({
+          name: v.body.name,
+          color: v.body.color,
+          sort_order: v.body.sort_order ?? 0,
+          kind: v.body.kind ?? "normal",
+        }),
         id: v.tempId,
       }),
     settle: (s, list, v) => ({ ...s, lists: s.lists.map((l) => (l.id === v.tempId ? list : l)) }),

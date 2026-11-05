@@ -147,14 +147,14 @@ isOneToOne: false
                   ]
                 },"lists": {
                   Row: {
-                    "color": string,"created_at": string,"deleted_at": string | null,"id": string,"name": string,"sort_order": number,"updated_at": string,"user_id": string
+                    "color": string,"created_at": string,"deleted_at": string | null,"id": string,"kind": string,"name": string,"sort_order": number,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "color"?: string,"created_at"?: string,"deleted_at"?: string | null,"id"?: string,"name": string,"sort_order"?: number,"updated_at"?: string,"user_id"?: string
+                    "color"?: string,"created_at"?: string,"deleted_at"?: string | null,"id"?: string,"kind"?: string,"name": string,"sort_order"?: number,"updated_at"?: string,"user_id"?: string
                   }
                   Update: {
-                    "color"?: string,"created_at"?: string,"deleted_at"?: string | null,"id"?: string,"name"?: string,"sort_order"?: number,"updated_at"?: string,"user_id"?: string
+                    "color"?: string,"created_at"?: string,"deleted_at"?: string | null,"id"?: string,"kind"?: string,"name"?: string,"sort_order"?: number,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     

@@ -13,6 +13,7 @@ import {
   daySegment,
   fmtTime,
   HOUR_PX,
+  instantAt,
   isTemp,
   layoutDay,
   minutesIntoDay,
@@ -22,6 +23,7 @@ import {
   useModel,
 } from "@tt/client";
 import { Check } from "@/components/ui";
+import { SlotPicker } from "@/components/slot-picker";
 import { useRefresh } from "@/hooks/use-refresh";
 import { tint, useColors, type Colors } from "@/lib/theme";
 
@@ -81,6 +83,8 @@ export function DayTimeline(props: {
     [events, dayBlocks, settings.working_hours, tz, from, to, now, day],
   );
 
+  const [picker, setPicker] = useState<{ start: number; end: number } | null>(null);
+
   const nowMin = props.isToday ? minutesIntoDay(now, day, tz) : null;
   // Open on the hour before now, or on the start of the working day.
   const firstWorkHour = Number(
@@ -139,8 +143,16 @@ export function DayTimeline(props: {
               />
             ))}
             {free.map((s) => (
-              <View
+              <Pressable
                 key={s.startMin}
+                accessibilityRole="button"
+                accessibilityLabel={`Open time, ${formatMinutes(s.minutes)}. Suggest what to do`}
+                onPress={() =>
+                  setPicker({
+                    start: instantAt(day, s.startMin, tz),
+                    end: instantAt(day, s.endMin, tz),
+                  })
+                }
                 style={[
                   styles.free,
                   {
@@ -155,7 +167,7 @@ export function DayTimeline(props: {
                     {formatMinutes(s.minutes)} open
                   </Text>
                 )}
-              </View>
+              </Pressable>
             ))}
             {width > 0 &&
               items.map((item) => {
@@ -255,6 +267,9 @@ export function DayTimeline(props: {
           </View>
         </View>
       </ScrollView>
+      {picker && (
+        <SlotPicker start={picker.start} end={picker.end} tz={tz} onClose={() => setPicker(null)} />
+      )}
     </View>
   );
 }

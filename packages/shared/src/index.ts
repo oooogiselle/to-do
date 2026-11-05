@@ -2,6 +2,7 @@ export * from "./schemas";
 export * from "./time";
 export * from "./slots/freeSlots";
 export * from "./slots/rankSlots";
+export * from "./slots/normalizePicks";
 export * from "./parse/quickAdd";
 export * from "./format/eventTitle";
 export * from "./format/color";

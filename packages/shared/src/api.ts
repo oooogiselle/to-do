@@ -19,6 +19,8 @@ import type {
   Step,
   StepCreate,
   StepPatch,
+  SuggestRequest,
+  SuggestResponse,
   SyncResponse,
   ProposedStep,
   Task,
@@ -117,6 +119,7 @@ export function createApiClient({ baseUrl, getToken, fetch: f = fetch }: Opts) {
 
     breakdown: (taskId: string, mode: "default" | "more_detailed" = "default") =>
       call<{ steps: ProposedStep[] }>("POST", `/tasks/${taskId}/breakdown`, { mode }),
+    suggest: (body: SuggestRequest) => call<SuggestResponse>("POST", "/suggest", body),
     extractText: (text: string) =>
       call<TextExtractionResult>("POST", "/imports/extract-text", { text }),
     extractSyllabus: (body: { text: string } | { storage_path: string; file_name?: string }) =>
