@@ -31,6 +31,17 @@ function LoginForm() {
         Sign in with Google
       </button>
       {DEMO && <DemoSignIn />}
+      <p className="mt-2 max-w-xs text-center text-[12px] leading-relaxed text-muted">
+        By signing in you agree to the{" "}
+        <a href="/terms" className="underline hover:text-ink">
+          Terms
+        </a>{" "}
+        and{" "}
+        <a href="/privacy" className="underline hover:text-ink">
+          Privacy Policy
+        </a>
+        .
+      </p>
     </main>
   );
 }

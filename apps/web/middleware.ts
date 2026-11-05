@@ -23,11 +23,15 @@ export async function middleware(req: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = req.nextUrl.pathname;
+  // Signed-out visitors to the front door see the landing page, at the same URL.
+  if (!user && path === "/") return NextResponse.rewrite(new URL("/welcome", req.url));
   const isPublic =
     path.startsWith("/login") ||
     path.startsWith("/auth") ||
     path.startsWith("/api") ||
-    path === "/privacy";
+    path === "/welcome" ||
+    path === "/privacy" ||
+    path === "/terms";
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
