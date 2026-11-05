@@ -28,6 +28,7 @@ import {
 import { X } from "lucide-react";
 import { useOpenTask } from "@/components/app-shell";
 import { TaskCheck } from "@/components/ui/task-check";
+import { SlotPicker } from "@/components/timeline/slot-picker";
 import { dayColumnId, type DayDropData, type DragItem } from "@/components/workspace/dnd";
 import { useDragState } from "@/components/workspace/workspace-dnd";
 
@@ -182,6 +183,11 @@ function DayColumn(
   const { setNodeRef } = useDroppable({ id: col, data: { kind: "day", day } satisfies DayDropData });
   const { active, preview } = useDragState();
   const scheduling = !!active && active.kind !== "pane";
+  const [picker, setPicker] = useState<{
+    anchor: DOMRect;
+    start: number;
+    end: number;
+  } | null>(null);
 
   const items = useMemo(
     () => layoutDay(day, tz, props.timed, props.blocks, hourPx),
@@ -222,7 +228,23 @@ function DayColumn(
           <div
             key={f.startMin}
             data-active={scheduling}
-            className="open-slot absolute inset-x-1 rounded-lg transition-colors"
+            role="button"
+            tabIndex={0}
+            aria-label={`Open time, ${formatMinutes(f.minutes)}. Suggest what to do`}
+            onClick={(e) => {
+              if (scheduling) return;
+              setPicker({
+                anchor: e.currentTarget.getBoundingClientRect(),
+                start: instantAt(day, f.startMin, tz),
+                end: instantAt(day, f.endMin, tz),
+              });
+            }}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter" && e.key !== " ") return;
+              e.preventDefault();
+              e.currentTarget.click();
+            }}
+            className="open-slot absolute inset-x-1 cursor-pointer rounded-lg transition-colors hover:brightness-95"
             style={{ top: toY(f.startMin) + 1, height: height - 2 }}
           >
             {height >= 26 && (
@@ -289,6 +311,16 @@ function DayColumn(
             <span className="absolute -top-[4px] -left-1 h-2.5 w-2.5 rounded-full bg-now ring-2 ring-white" />
           </div>
         </div>
+      )}
+
+      {picker && (
+        <SlotPicker
+          anchor={picker.anchor}
+          start={picker.start}
+          end={picker.end}
+          tz={tz}
+          onClose={() => setPicker(null)}
+        />
       )}
     </div>
   );

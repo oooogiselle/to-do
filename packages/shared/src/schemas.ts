@@ -24,11 +24,16 @@ const PlainDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 /** Day of the week: 0 = Sunday ... 6 = Saturday. */
 const Weekday = z.number().int().min(0).max(6);
 
+/** "someday" lists hold ideas and optional things to do when there's free time. */
+export const ListKind = z.enum(["normal", "someday"]);
+export type ListKind = z.infer<typeof ListKind>;
+
 export const List = z.object({
   ...syncFields,
   name: z.string().min(1),
   color: z.string(),
   sort_order: z.number().int(),
+  kind: ListKind,
 });
 export type List = z.infer<typeof List>;
 
@@ -127,6 +132,7 @@ export type Settings = z.infer<typeof Settings>;
 
 export const ListCreate = List.pick({ name: true, color: true }).extend({
   sort_order: z.number().int().optional(),
+  kind: ListKind.optional(),
 });
 export const ListPatch = ListCreate.partial();
 
@@ -216,6 +222,34 @@ export const ProposedStep = z.object({
 export type ProposedStep = z.infer<typeof ProposedStep>;
 export const BreakdownResponse = z.object({ steps: z.array(ProposedStep) });
 export type BreakdownResponse = z.infer<typeof BreakdownResponse>;
+
+export const Energy = z.enum(["low", "ok", "high"]);
+export type Energy = z.infer<typeof Energy>;
+
+/** Asks the AI what to do in a free gap. Nothing is saved. */
+export const SuggestRequest = z
+  .object({
+    start: z.string().datetime({ offset: true }),
+    end: z.string().datetime({ offset: true }),
+    energy: Energy.optional(),
+    /** Tasks already shown (shuffle / regenerate), so they aren't repeated. */
+    exclude_task_ids: z.array(z.string().uuid()).max(50).optional(),
+    /** Free-text steer for a regenerate, e.g. "something lighter". */
+    feedback: z.string().trim().max(300).optional(),
+  })
+  .refine((r) => Date.parse(r.end) > Date.parse(r.start), "end must be after start");
+export type SuggestRequest = z.infer<typeof SuggestRequest>;
+
+export const SlotPick = z.object({
+  task_id: z.string().uuid(),
+  step_id: z.string().uuid().nullable(),
+  start: z.string().datetime({ offset: true }),
+  end: z.string().datetime({ offset: true }),
+  reason: z.string(),
+});
+export type SlotPick = z.infer<typeof SlotPick>;
+export const SuggestResponse = z.object({ picks: z.array(SlotPick), note: z.string().nullable() });
+export type SuggestResponse = z.infer<typeof SuggestResponse>;
 
 /** Accepting a breakdown: replaces the task's unfinished steps; done steps are kept. */
 export const StepsReplace = z.object({ steps: z.array(ProposedStep).min(1).max(20) });

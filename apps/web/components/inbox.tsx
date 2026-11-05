@@ -145,6 +145,14 @@ function ListCard({
           <span className="shrink-0 rounded-full bg-black/15 px-2 py-0.5 text-[12px] font-bold">
             {openCount} open
           </span>
+          {list?.kind === "someday" && (
+            <span
+              title="Ideas for free time: the AI suggests these when you click open time"
+              className="shrink-0 rounded-full bg-white/25 px-2 py-0.5 text-[11px] font-bold"
+            >
+              Someday
+            </span>
+          )}
           {list && !isTemp(list.id) && (
             <button
               type="button"
@@ -251,6 +259,7 @@ function ListEditor({
   const deleteList = useDeleteList();
   const [name, setName] = useState(list.name);
   const [color, setColor] = useState(list.color);
+  const [someday, setSomeday] = useState(list.kind === "someday");
   const c = swatch(color);
 
   return (
@@ -258,7 +267,10 @@ function ListEditor({
       onSubmit={(e) => {
         e.preventDefault();
         if (!name.trim()) return;
-        updateList.mutate({ id: list.id, patch: { name: name.trim(), color } });
+        updateList.mutate({
+          id: list.id,
+          patch: { name: name.trim(), color, kind: someday ? "someday" : "normal" },
+        });
         onDone();
       }}
       onKeyDown={(e) => e.key === "Escape" && onDone()}
@@ -276,6 +288,7 @@ function ListEditor({
         className="min-w-[140px] flex-1 rounded-xl border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink outline-none focus:ring-2 focus:ring-sky/30"
       />
       <ColorPicker value={color} onChange={(v) => v && setColor(v)} label="List color" size={22} />
+      <SomedayToggle checked={someday} onChange={setSomeday} />
       <div className="flex w-full items-center gap-2">
         <button
           type="button"
@@ -308,6 +321,7 @@ function NewListForm({ count, onDone }: { count: number; onDone: () => void }) {
   const createList = useCreateList();
   const [name, setName] = useState("");
   const [color, setColor] = useState(PALETTE[count % PALETTE.length]!);
+  const [someday, setSomeday] = useState(false);
   const c = swatch(color);
   return (
     <form
@@ -319,7 +333,7 @@ function NewListForm({ count, onDone }: { count: number; onDone: () => void }) {
         if (!name.trim()) return;
         createList.mutate({
           tempId: tempId(),
-          body: { name: name.trim(), color, sort_order: count },
+          body: { name: name.trim(), color, sort_order: count, kind: someday ? "someday" : "normal" },
         });
         setName("");
         onDone();
@@ -334,6 +348,7 @@ function NewListForm({ count, onDone }: { count: number; onDone: () => void }) {
         className="min-w-[180px] flex-1 rounded-xl border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink outline-none focus:ring-2 focus:ring-sky/30"
       />
       <ColorPicker value={color} onChange={(v) => v && setColor(v)} label="List color" size={28} />
+      <SomedayToggle checked={someday} onChange={setSomeday} />
       <button type="submit" className="rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white">
         Create
       </button>
@@ -346,5 +361,18 @@ function NewListForm({ count, onDone }: { count: number; onDone: () => void }) {
         <X className="h-4 w-4" />
       </button>
     </form>
+  );
+}
+
+/** Marks a list as ideas for free time (no deadlines); the open-time suggestions draw on it. */
+function SomedayToggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label
+      className="flex w-full cursor-pointer items-center gap-2 text-[13px] font-semibold text-ink"
+      title="The AI suggests tasks from this list when you click open time"
+    >
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      Someday list <span className="font-normal text-muted">(things to do when there&apos;s time)</span>
+    </label>
   );
 }
