@@ -17,8 +17,11 @@ export class HttpError extends Error {
 
 export type AuthedContext = { user: User; supabase: SupabaseClient<Database> };
 
+/** With no allowlist configured, any signed-in account with an email is allowed. */
 export function isAllowedEmail(email: string | undefined): boolean {
-  return !!email && env.allowedEmails.includes(email.toLowerCase());
+  if (!email) return false;
+  const allowed = env.allowedEmails;
+  return allowed.length === 0 || allowed.includes(email.toLowerCase());
 }
 
 /**
