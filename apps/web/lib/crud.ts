@@ -6,7 +6,7 @@ import { parseBody, route, unwrap } from "@/lib/api";
 // The tables share a shape (id, deleted_at, ...), so queries go through an untyped client.
 const loose = (c: unknown) => c as SupabaseClient;
 
-type Opts = { table: "lists" | "steps"; create: ZodTypeAny; patch: ZodTypeAny; order?: string };
+type Opts = { table: "lists" | "steps" | "day_plan_items"; create: ZodTypeAny; patch: ZodTypeAny; order?: string };
 
 /** Collection + item handlers for a user-owned, soft-deletable table. RLS scopes every query. */
 export function crud({ table, create, patch, order = "created_at" }: Opts) {

@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "../page-header";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, FileText, Sparkles, Upload } from "lucide-react";
 import type { ProposedTask } from "@tt/shared";
@@ -109,17 +110,15 @@ export function ImportView() {
   const primary =
     "flex items-center gap-1.5 rounded-xl bg-sun px-4 py-2 text-sm font-extrabold text-[#4a3a12] transition-colors hover:bg-[#d9ae48] disabled:opacity-40";
   const area =
-    "w-full flex-1 resize-y rounded-xl border border-line bg-[#fafafd] p-3 text-[13px] text-ink outline-none placeholder:text-[#a5a9bd] focus:border-sky focus:ring-2 focus:ring-sky/20";
+    "w-full flex-1 resize-y rounded-xl border border-line bg-row p-3 text-[13px] text-ink outline-none placeholder:text-faint focus:border-sky focus:ring-2 focus:ring-sky/20";
 
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-5xl p-4 md:p-8">
-        <p className="text-[12px] font-bold tracking-wider text-[#b88400] uppercase">Bulk add</p>
-        <h1 className="text-[28px] font-extrabold tracking-tight text-ink">Import</h1>
-        <p className="mt-1 max-w-xl text-sm text-[#5b6078]">
-          Paste a syllabus, an email or a messy list, or upload a syllabus PDF or photo. AI finds
-          the tasks and due dates, and you review every one before it&apos;s added.
-        </p>
+        <PageHeader
+          title="Import"
+          description="Paste a syllabus, an email or a messy list, or upload a syllabus PDF or photo. AI finds the tasks and due dates, and you review every one before it's added."
+        />
 
         {proposal ? (
           <div className="mt-6">
@@ -131,11 +130,11 @@ export function ImportView() {
           </div>
         ) : (
           <div className="mt-6 grid gap-5 lg:grid-cols-2">
-            <section className="flex flex-col rounded-2xl border border-line bg-white p-4">
+            <section className="flex flex-col rounded-2xl border border-line bg-surface p-4">
               <div
                 role="tablist"
                 aria-label="Import from"
-                className="mb-3 inline-flex self-start rounded-xl bg-[#e6e8f1] p-1"
+                className="mb-3 inline-flex self-start rounded-xl bg-chip p-1"
               >
                 {(
                   [
@@ -148,7 +147,7 @@ export function ImportView() {
                     role="tab"
                     aria-selected={tab === value}
                     onClick={() => setTab(value)}
-                    className={`rounded-lg px-3 py-1 text-sm font-bold transition-colors ${tab === value ? "bg-ink text-white" : "text-[#5b6078] hover:text-ink"}`}
+                    className={`rounded-lg px-3 py-1 text-sm font-bold transition-colors ${tab === value ? "bg-ink text-white" : "text-chip-ink hover:text-ink"}`}
                   >
                     {label}
                   </button>
@@ -192,7 +191,7 @@ export function ImportView() {
                       e.preventDefault();
                       pickFile(e.dataTransfer.files[0] ?? null);
                     }}
-                    className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border-2 border-dashed border-line-strong bg-[#fafafd] px-4 py-8 text-center transition-colors hover:border-sun hover:bg-warn-bg"
+                    className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border-2 border-dashed border-line-strong bg-row px-4 py-8 text-center transition-colors hover:border-sun hover:bg-warn-bg"
                   >
                     <input
                       type="file"
@@ -257,9 +256,9 @@ export function ImportView() {
               )}
             </section>
 
-            <section className="flex min-h-64 flex-col rounded-2xl bg-[#e9ebf3] p-4" aria-live="polite">
+            <section className="flex min-h-64 flex-col rounded-2xl bg-line-soft p-4" aria-live="polite">
               <h2 className="mb-3 text-[13px] font-extrabold text-ink">Preview</h2>
-              <div className="grid flex-1 place-items-center rounded-xl border-2 border-dashed border-[#cdd0de] p-8 text-center text-sm">
+              <div className="grid flex-1 place-items-center rounded-xl border-2 border-dashed border-line-strong p-8 text-center text-sm">
                 {busy ? (
                   <p role="status" className="flex flex-col items-center gap-2 font-semibold text-ink">
                     <Sparkles className="h-5 w-5 animate-pulse text-sun" />
@@ -269,7 +268,7 @@ export function ImportView() {
                 ) : error ? (
                   <p className="font-semibold text-risk">{error}</p>
                 ) : (
-                  <p className="text-[#7a7f96]">Tasks will show up here before anything is added.</p>
+                  <p className="text-muted">Tasks will show up here before anything is added.</p>
                 )}
               </div>
             </section>

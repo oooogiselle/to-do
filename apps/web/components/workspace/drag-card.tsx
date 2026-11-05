@@ -17,7 +17,7 @@ export function DragCard({
 }) {
   if (item.kind === "pane") {
     return (
-      <div className="inline-flex -rotate-2 items-center gap-2 rounded-xl bg-ink px-3 py-2 text-[12px] font-bold whitespace-nowrap text-white shadow-[0_18px_36px_rgba(21,23,43,0.35)]">
+      <div className="inline-flex -rotate-2 items-center gap-2 rounded-xl bg-ink px-3 py-2 text-[12px] font-bold whitespace-nowrap text-white shadow-sheet">
         <PanelsTopLeft className="h-4 w-4" />
         {item.label}
         <span className="font-semibold text-white/50">· drop on a column</span>
@@ -32,10 +32,10 @@ export function DragCard({
 
   return (
     <div
-      className="relative w-[220px] -rotate-2 cursor-grabbing rounded-xl bg-white py-2 pr-3 pl-3 shadow-[0_22px_40px_rgba(21,23,43,0.3),0_6px_14px_rgba(21,23,43,0.16)]"
+      className="relative w-[220px] -rotate-2 cursor-grabbing rounded-xl bg-surface py-2 pr-3 pl-3 shadow-sheet"
       style={{ borderLeft: `5px solid ${c.solid}` }}
     >
-      <GripVertical className="absolute top-2 right-2 h-3.5 w-3.5 text-[#c2c5d4]" />
+      <GripVertical className="absolute top-2 right-2 h-3.5 w-3.5 text-line-strong" />
       <p className="pr-4 text-[12px] leading-snug font-extrabold text-ink">{item.title}</p>
       <div className="mt-1.5 flex flex-wrap gap-1">
         {item.listName && (

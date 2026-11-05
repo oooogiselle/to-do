@@ -18,7 +18,7 @@ import { useCalendarKeys } from "./calendar-keys";
 import { earliestStart, weekStart } from "./time";
 
 const btn =
-  "grid h-7 w-7 place-items-center rounded-lg border border-line bg-white text-ink hover:bg-[#f0f1f7] disabled:opacity-40";
+  "grid h-7 w-7 place-items-center rounded-lg border border-line bg-surface text-ink hover:bg-row-hover disabled:opacity-40";
 
 /** A week (Mon–Sun) or single-day calendar of events, time blocks and open time. */
 export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: number }) {
@@ -102,7 +102,7 @@ export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: numbe
           onClick={() => setAnchor(null)}
           title={days.includes(today) ? "Showing today" : "Back to today (t)"}
           aria-label={days.includes(today) ? undefined : "Back to today"}
-          className={`h-7 rounded-lg border border-line bg-white px-2.5 text-[12px] font-bold hover:bg-[#f0f1f7] ${
+          className={`h-7 rounded-lg border border-line bg-surface px-2.5 text-[12px] font-bold hover:bg-row-hover ${
             days.includes(today) ? "text-faint" : "text-ink"
           }`}
         >
@@ -166,16 +166,16 @@ export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: numbe
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 px-3 py-2 text-[11px] font-semibold text-[#7d8099]">
+      <div className="flex flex-wrap items-center gap-3 px-3 py-2 text-[11px] font-semibold text-muted">
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-[3px] bg-sky" /> Task
+          <span className="h-2.5 w-2.5 rounded-sm bg-sky" /> Task
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-[3px] border border-[#d3ddee] bg-white shadow-[inset_2px_0_0_var(--tt-sky)]" />
+          <span className="h-2.5 w-2.5 rounded-sm border border-[#d3ddee] bg-surface shadow-[inset_2px_0_0_var(--tt-sky)]" />
           Google event
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="open-slot h-2.5 w-2.5 rounded-[3px]" /> Open time
+          <span className="open-slot h-2.5 w-2.5 rounded-sm" /> Open time
         </span>
         <span className="ml-auto hidden text-faint sm:inline">
           Drag tasks or blocks onto the grid

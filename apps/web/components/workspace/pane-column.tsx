@@ -34,12 +34,12 @@ export function PaneColumn(props: {
       ref={setNodeRef}
       data-zone={zone}
       style={{ "--col-w": `${panes.length ? width : 150}px` } as React.CSSProperties}
-      className={`relative flex w-full shrink-0 flex-col rounded-[15px] transition-colors lg:h-auto lg:w-[var(--col-w)] ${
+      className={`relative flex w-full shrink-0 flex-col rounded-2xl transition-colors lg:h-auto lg:w-[var(--col-w)] ${
         panes.length > 1 ? "h-auto" : "h-[440px]"
       } ${draggingPane ? (isOver ? "bg-[#e9e5f7] ring-2 ring-grape" : "bg-line-soft") : ""}`}
     >
       {panes.length === 0 ? (
-        <div className="grid min-h-24 flex-1 place-items-center rounded-[13px] border-2 border-dashed border-line-strong p-3 text-center text-[11px] font-bold text-[#8a8fa6]">
+        <div className="grid min-h-24 flex-1 place-items-center rounded-2xl border-2 border-dashed border-line-strong p-3 text-center text-[11px] font-bold text-muted">
           Drop pane here
         </div>
       ) : (

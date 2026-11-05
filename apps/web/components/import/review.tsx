@@ -195,7 +195,7 @@ export function ImportReview(props: {
         ? newListName
         : lists.find((l) => l.id === (result.list_id ?? target))?.name;
     return (
-      <div className="animate-pop-in space-y-4 rounded-2xl border border-line bg-white p-6">
+      <div className="animate-pop-in space-y-4 rounded-2xl border border-line bg-surface p-6">
         <p className="flex items-center gap-2 text-base font-bold text-ink">
           <CheckCircle2 className="h-5 w-5 text-mint" />
           Added {result.created.length} {result.created.length === 1 ? "task" : "tasks"}
@@ -205,7 +205,7 @@ export function ImportReview(props: {
         <div className="flex gap-2">
           <Link
             href="/to-dos"
-            className="rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white hover:bg-[#2a2d4a]"
+            className="rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white hover:opacity-90"
           >
             View in To-dos
           </Link>
@@ -223,7 +223,7 @@ export function ImportReview(props: {
   const uncertainCount = effective.filter((e) => e.include && !e.row.proposed.date_certain).length;
 
   return (
-    <div className="space-y-4 rounded-2xl bg-[#e9ebf3] p-4">
+    <div className="space-y-4 rounded-2xl bg-line-soft p-4">
       <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
         <div>
           <h2 className="text-base font-extrabold tracking-tight text-ink">
@@ -231,7 +231,7 @@ export function ImportReview(props: {
               ? `Found ${props.tasks.length} ${props.tasks.length === 1 ? "task" : "tasks"}`
               : "No tasks found"}
           </h2>
-          <p className="text-sm text-[#5b6078]">
+          <p className="text-sm text-chip-ink">
             {props.tasks.length
               ? "Fix anything that's off, uncheck what to skip, then add them."
               : "Nothing in there looked like something to do. Try pasting more of the text."}
@@ -239,11 +239,11 @@ export function ImportReview(props: {
         </div>
         {isSyllabus ? (
           <label className="flex flex-wrap items-center gap-2">
-            <span className="text-[12px] font-bold text-[#7a7f96]">Add to</span>
+            <span className="text-[12px] font-bold text-muted">Add to</span>
             <select
               value={target}
               onChange={(e) => setTarget(e.target.value)}
-              className="rounded-lg border border-line bg-white px-2 py-1.5 text-sm font-semibold text-ink"
+              className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm font-semibold text-ink"
             >
               <option value={NO_LIST}>No list</option>
               {lists.map((l) => (
@@ -259,7 +259,7 @@ export function ImportReview(props: {
                 value={newListName}
                 onChange={(e) => setNewListName(e.target.value)}
                 placeholder="List name"
-                className="w-36 rounded-lg border border-line bg-white px-2 py-1.5 text-sm font-semibold text-ink"
+                className="w-36 rounded-lg border border-line bg-surface px-2 py-1.5 text-sm font-semibold text-ink"
               />
             )}
           </label>
@@ -297,7 +297,7 @@ export function ImportReview(props: {
       )}
 
       {isSyllabus && missing.length > 0 && (
-        <details className="rounded-xl bg-white px-3 py-2 text-sm">
+        <details className="rounded-xl bg-surface px-3 py-2 text-sm">
           <summary className="cursor-pointer font-bold text-muted">
             Not in the new syllabus ({missing.length})
           </summary>
@@ -316,11 +316,11 @@ export function ImportReview(props: {
         </details>
       )}
 
-      <div className="sticky bottom-0 -mx-4 -mb-4 flex flex-wrap items-center gap-3 rounded-b-2xl bg-[#e9ebf3]/95 px-4 py-3 backdrop-blur">
+      <div className="sticky bottom-0 -mx-4 -mb-4 flex flex-wrap items-center gap-3 rounded-b-2xl bg-line-soft/95 px-4 py-3 backdrop-blur">
         <button
           disabled={!canSave || saving}
           onClick={save}
-          className="rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white hover:bg-[#2a2d4a] disabled:opacity-40"
+          className="rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40"
         >
           {saving ? "Adding…" : addLabel(creates.length, updates.length)}
         </button>
@@ -359,12 +359,12 @@ function ReviewRow(props: {
   const [showSource, setShowSource] = useState(false);
   const uncertain = !row.proposed.date_certain;
   const input =
-    "rounded-lg border bg-white px-2 py-1 text-[13px] font-semibold text-ink outline-none focus:border-sky";
+    "rounded-lg border bg-surface px-2 py-1 text-[13px] font-semibold text-ink outline-none focus:border-sky";
   const sw = swatch(props.color);
   const dateInput = uncertain ? `${input} border-warn bg-warn-bg` : `${input} border-line`;
 
   return (
-    <li className="space-y-1.5 rounded-xl bg-white p-3">
+    <li className="space-y-1.5 rounded-xl bg-surface p-3">
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"

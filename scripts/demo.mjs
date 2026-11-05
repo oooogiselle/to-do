@@ -111,6 +111,22 @@ const tasks = await insert(user, "tasks", [
   task(rec, "Update resume", at(-1, "23:59"), "med", 60),
   task(econ, "Read chapter 7", at(3, "09:00"), "none", 45),
 ]);
+// Routines (checked off per day) and today's plan for My day.
+const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const dayAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return ymd(d); };
+const routines = await insert(user, "tasks", [
+  { list_id: pers.id, title: "Take vitamins", estimate_min: 5, repeat: "daily", done_dates: [dayAgo(1), dayAgo(2), dayAgo(3)] },
+  { list_id: pers.id, title: "Stretch", estimate_min: 15, repeat: "weekdays", done_dates: [dayAgo(1)] },
+  { list_id: pers.id, title: "Plan tomorrow", estimate_min: 10, repeat: "custom", repeat_days: [0, 1, 2, 3, 4] },
+]);
+const today = ymd(new Date());
+await insert(user, "day_plan_items", [
+  { task_id: tasks[5].id, plan_date: today, position: 1 },
+  { task_id: tasks[0].id, plan_date: today, position: 2 },
+  { task_id: tasks[3].id, plan_date: today, position: 3 },
+]);
+void routines;
+
 const step = (title, estimate_min, order, done = false) => ({ task_id: tasks[0].id, title, estimate_min, order, done });
 await insert(user, "steps", [
   step("Run experiments", 90, 0, true),

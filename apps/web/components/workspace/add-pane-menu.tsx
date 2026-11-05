@@ -20,16 +20,16 @@ export function AddPaneMenu({ hidden, onOpen }: { hidden: PaneId[]; onOpen: (pan
         aria-label="Open a pane"
         aria-expanded={open}
         aria-haspopup="menu"
-        className="grid h-7 w-7 place-items-center rounded-lg text-[#7d8099] hover:bg-white hover:text-ink"
+        className="grid h-7 w-7 place-items-center rounded-lg text-muted hover:bg-surface hover:text-ink"
       >
         <Plus className="h-4 w-4" strokeWidth={2.5} />
       </button>
       {open && (
         <div
           role="menu"
-          className="animate-pop-in absolute top-9 left-0 z-50 w-48 rounded-[13px] border border-line-soft bg-white p-1.5 shadow-[0_18px_34px_rgba(21,23,43,0.2)]"
+          className="animate-pop-in absolute top-9 left-0 z-50 w-48 rounded-2xl border border-line-soft bg-surface p-1.5 shadow-pop"
         >
-          <p className="px-2 pt-1 pb-1 text-[10px] font-extrabold tracking-wider text-[#9699ac] uppercase">
+          <p className="px-2 pt-1 pb-1 text-[10px] font-extrabold tracking-wider text-faint uppercase">
             Open pane
           </p>
           {hidden.length === 0 ? (
@@ -44,9 +44,9 @@ export function AddPaneMenu({ hidden, onOpen }: { hidden: PaneId[]; onOpen: (pan
                   onOpen(p);
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] font-bold text-[#4b4e63] hover:bg-paper"
+                className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] font-bold text-chip-ink hover:bg-paper"
               >
-                <span className="h-2 w-2 rounded-[3px]" style={{ background: paneColor(p, lists) }} />
+                <span className="h-2 w-2 rounded-sm" style={{ background: paneColor(p, lists) }} />
                 {paneLabel(p, lists)}
               </button>
             ))

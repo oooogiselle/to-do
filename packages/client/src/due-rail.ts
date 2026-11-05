@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { dueRisk, findFreeSlots, type CalendarEvent, type Step, type Task } from "@tt/shared";
+import { dueRisk, findFreeSlots, isRecurring, type CalendarEvent, type Step, type Task } from "@tt/shared";
 import { useEvents, useModel } from "./data";
 
 /** A task scheduled whole becomes one block of its remaining estimated work, in 15-minute steps. */
@@ -93,7 +93,8 @@ export function useDueRail(now: number, days: DueRange) {
     const items: RailItem[] = [];
     const undated: RailItem[] = [];
     for (const task of tasks) {
-      if (task.status !== "open") continue;
+      // Routines are checked off per day on My day; they never come due.
+      if (task.status !== "open" || isRecurring(task)) continue;
       const plannedAt = lastPast.byTask.get(task.id);
       if (!task.due_at) {
         const work = remainingWork(task);

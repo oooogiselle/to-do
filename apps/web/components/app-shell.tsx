@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Nav } from "./nav";
+import { Sidebar } from "./sidebar";
 import { NoticeBanner } from "./notice-banner";
 import { QuickAdd } from "./quick-add";
 import { TaskSheet } from "./task-sheet";
@@ -59,9 +59,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="flex h-dvh flex-col bg-paper md:flex-row">
-      <Nav onQuickAdd={() => setQuickAdd(true)} />
-      <main className="min-h-0 min-w-0 flex-1">{children}</main>
+    <div className="h-dvh w-full bg-surface">
+      <div className="flex h-full w-full flex-col overflow-hidden md:flex-row">
+        <Sidebar onQuickAdd={() => setQuickAdd(true)} />
+        <main className="min-h-0 min-w-0 flex-1 bg-surface">{children}</main>
+      </div>
       <QuickAdd open={quickAdd} onClose={closeQuickAdd} />
       <NoticeBanner />
       <Suspense>

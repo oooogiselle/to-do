@@ -143,7 +143,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
         role="dialog"
         aria-modal="true"
         aria-label="Add a task"
-        className="animate-pop-in w-full max-w-xl overflow-hidden rounded-2xl bg-surface shadow-[0_24px_60px_rgba(21,23,43,0.3)]"
+        className="animate-pop-in w-full max-w-xl overflow-hidden rounded-2xl bg-surface shadow-sheet"
       >
         <div className="flex h-1.5" aria-hidden>
           <span className="flex-1 bg-coral" />
@@ -165,7 +165,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
             onKeyDown={onKeyDown}
             placeholder="cs61 lab report fri 11pm high"
             autoComplete="off"
-            className="block w-full resize-none bg-transparent text-xl font-bold text-ink outline-none placeholder:font-semibold placeholder:text-[#b5b9cb] focus-visible:outline-none"
+            className="block w-full resize-none bg-transparent text-xl font-bold text-ink outline-none placeholder:font-semibold placeholder:text-faint focus-visible:outline-none"
           />
           <div className="mt-3 flex min-h-[30px] flex-wrap items-center gap-1.5 text-[13px]">
             {long ? (
@@ -192,7 +192,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
                   </span>
                 )}
                 {!parsed && (
-                  <span className="text-[13px] text-[#8a8fa6]">
+                  <span className="text-[13px] text-muted">
                     Type a task. Add a list, a due date and a priority to set them.
                   </span>
                 )}
@@ -200,7 +200,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
             )}
           </div>
         </div>
-        <div className="flex items-center justify-between gap-3 border-t border-line bg-[#f7f8fb] px-4 py-2.5 text-[12px] font-semibold text-[#7a7f96]">
+        <div className="flex items-center justify-between gap-3 border-t border-line bg-row px-4 py-2.5 text-[12px] font-semibold text-muted">
           <span className="hidden min-w-0 truncate sm:inline">
             {long ? "⌘Enter or Enter to split with AI" : lists.length ? `Lists: ${listHints}` : "Enter to add, ⌘Enter to split with AI"}
           </span>

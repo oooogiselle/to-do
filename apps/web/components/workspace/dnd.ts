@@ -10,6 +10,8 @@ export type DragItem =
       color: string;
       listName?: string;
       dueAt: string | null;
+      /** Set when dragged from the day plan: the plan item being reordered. */
+      planItemId?: string;
     }
   | {
       kind: "step";
@@ -55,3 +57,6 @@ export type DropPreview = {
 };
 
 export const dayColumnId = (paneKey: string, day: string) => `${paneKey}:${day}`;
+
+/** Where a dragged to-do would land in a day's plan: the date, and the index among its items. */
+export type PlanTarget = { date: string; index: number };

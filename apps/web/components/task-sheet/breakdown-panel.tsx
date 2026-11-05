@@ -51,7 +51,7 @@ export function BreakdownPanel({ task, onClose }: { task: Task; onClose: () => v
         <>
           <ol className="space-y-1">
             {draft.map((s, i) => (
-              <li key={i} className="group flex items-center gap-2 rounded-xl bg-white px-2.5 py-1.5 text-sm">
+              <li key={i} className="group flex items-center gap-2 rounded-xl bg-surface px-2.5 py-1.5 text-sm">
                 <span className="w-4 text-right text-[12px] font-bold text-faint">{i + 1}</span>
                 <input
                   aria-label={`Step ${i + 1} title`}
@@ -70,7 +70,7 @@ export function BreakdownPanel({ task, onClose }: { task: Task; onClose: () => v
                 <button
                   aria-label={`Remove step ${i + 1}`}
                   onClick={() => setDraft((d) => d && d.filter((_, j) => j !== i))}
-                  className="text-muted opacity-0 group-hover:opacity-100 hover:text-risk focus:opacity-100"
+                  className="text-muted opacity-0 group-hover:opacity-100 no-hover:opacity-100 hover:text-risk focus:opacity-100"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -86,19 +86,19 @@ export function BreakdownPanel({ task, onClose }: { task: Task; onClose: () => v
               onClick={() =>
                 accept.mutate({ taskId: task.id, steps: draft }, { onSuccess: onClose })
               }
-              className="rounded-xl bg-ink px-3 py-1.5 text-[13px] font-bold text-white hover:bg-[#2a2d4a] disabled:opacity-50"
+              className="rounded-xl bg-ink px-3 py-1.5 text-[13px] font-bold text-white hover:opacity-90 disabled:opacity-50"
             >
               Use these steps
             </button>
             <button
               onClick={() => propose.mutate("default")}
-              className="rounded-xl bg-white px-3 py-1.5 text-[13px] font-bold text-chip-ink hover:text-ink"
+              className="rounded-xl bg-surface px-3 py-1.5 text-[13px] font-bold text-chip-ink hover:text-ink"
             >
               Regenerate
             </button>
             <button
               onClick={() => propose.mutate("more_detailed")}
-              className="rounded-xl bg-white px-3 py-1.5 text-[13px] font-bold text-chip-ink hover:text-ink"
+              className="rounded-xl bg-surface px-3 py-1.5 text-[13px] font-bold text-chip-ink hover:text-ink"
             >
               More detailed
             </button>

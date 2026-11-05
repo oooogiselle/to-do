@@ -10,7 +10,7 @@ import { fmtDue } from "@tt/client";
 const END_OF_DAY = "23:59";
 
 const field =
-  "rounded-lg border border-line bg-white px-2 py-1 font-medium outline-none focus:border-sky focus:ring-2 focus:ring-sky/20";
+  "rounded-lg border border-line bg-surface px-2 py-1 font-medium outline-none focus:border-sky focus:ring-2 focus:ring-sky/20";
 
 /** Wall date and time of `dueAt` in tz; time is "" when it's the end-of-day default. */
 function split(dueAt: string | null, tz: string): { date: string; time: string } {
@@ -116,7 +116,7 @@ export function DuePicker({
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className={`rounded-lg border px-2 py-1 font-semibold ${value ? "border-line bg-white text-ink" : "border-dashed border-line-strong text-muted"} hover:border-ink ${className}`}
+        className={`rounded-lg border px-2 py-1 font-semibold ${value ? "border-line bg-surface text-ink" : "border-dashed border-line-strong text-muted"} hover:border-ink ${className}`}
       >
         {value ? `Due ${fmtDue(value, tz)}` : "Add due date"}
       </button>
@@ -131,7 +131,7 @@ export function DuePicker({
               left: pos?.left ?? 0,
               visibility: pos ? "visible" : "hidden",
             }}
-            className="animate-pop-in fixed z-[60] w-64 space-y-3 rounded-[13px] border border-line-soft bg-surface p-3 text-[13px] text-ink shadow-[0_18px_34px_rgba(21,23,43,0.2)]"
+            className="animate-pop-in fixed z-[60] w-64 space-y-3 rounded-2xl border border-line-soft bg-surface p-3 text-[13px] text-ink shadow-pop"
           >
             <div className="flex flex-wrap gap-1.5">
               {shortcuts.map((s) => (

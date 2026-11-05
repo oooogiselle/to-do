@@ -78,7 +78,7 @@ export function ListPane({ listId, pane, now }: { listId: string | null; pane: s
         </div>
       )}
       {doneCount > 0 && (
-        <p className="px-3.5 pb-1 text-[10px] font-semibold text-[#a0a3b5]">{doneCount} done</p>
+        <p className="px-3.5 pb-1 text-[10px] font-semibold text-faint">{doneCount} done</p>
       )}
       <InlineAdd listId={listId} listName={name} color={color} />
     </div>
@@ -118,7 +118,7 @@ function ListPaneRow(props: {
     return (
       <li
         ref={setNodeRef}
-        className="rounded-[10px] border-[1.5px] border-dashed border-grape bg-grape-bg px-2.5 py-2"
+        className="rounded-xl border-[1.5px] border-dashed border-grape bg-grape-bg px-2.5 py-2"
       >
         <p className="text-[12px] leading-snug font-extrabold text-[#4b3f7a]">{task.title}</p>
         <p className="mt-0.5 text-[11px] font-semibold text-grape italic">
@@ -133,7 +133,7 @@ function ListPaneRow(props: {
       ref={setNodeRef}
       {...listeners}
       aria-roledescription="draggable task"
-      className="group flex cursor-grab touch-none items-start gap-2 rounded-[10px] bg-row px-2.5 py-2 transition-colors hover:bg-row-hover active:cursor-grabbing"
+      className="group flex cursor-grab select-none [-webkit-touch-callout:none] items-start gap-2 rounded-xl bg-row px-2.5 py-2 transition-colors hover:bg-row-hover active:cursor-grabbing"
     >
       <div className="pt-0.5">
         <TaskCheck
@@ -167,7 +167,7 @@ function ListPaneRow(props: {
         </span>
       </button>
       <GripVertical
-        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#c2c5d4] opacity-0 transition-opacity group-hover:opacity-100"
+        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-line-strong opacity-0 transition-opacity group-hover:opacity-100"
         aria-hidden
       />
     </li>

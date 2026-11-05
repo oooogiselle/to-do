@@ -2,7 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CalendarPlus, Plus, Sparkles, Trash2, X } from "lucide-react";
-import { formatMinutes, swatch, type Priority, type Step, type Task } from "@tt/shared";
+import {
+  formatMinutes,
+  isRecurring,
+  repeatLabel,
+  swatch,
+  WEEKDAY_OPTIONS,
+  type Priority,
+  type Step,
+  type Task,
+} from "@tt/shared";
 import {
   isTemp,
   NO_COLOR,
@@ -10,13 +19,14 @@ import {
   tempId,
   useCompletion,
   useCreateStep,
-  useDeleteTask,
+  useDeleteTaskWithUndo,
   useModel,
   useUpdateStep,
   useUpdateTask,
 } from "@tt/client";
 import { DuePicker } from "./due-picker";
 import { ColorPicker } from "./color-picker";
+import { Segmented } from "./ui/segmented";
 import { TaskCheck } from "./ui/task-check";
 import { BreakdownPanel } from "./task-sheet/breakdown-panel";
 import { SchedulePanel } from "./task-sheet/schedule-panel";
@@ -30,9 +40,9 @@ const PRIORITIES: { value: Priority; label: string; color: string }[] = [
 ];
 const ESTIMATES = [15, 30, 60, 90, 120, 180];
 
-const label = "mb-1.5 block text-[11px] font-bold tracking-wider text-[#8a8fa6] uppercase";
+const label = "mb-1.5 block text-[11px] font-bold tracking-wider text-muted uppercase";
 const field =
-  "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm font-medium text-ink outline-none focus:border-sky focus:ring-2 focus:ring-sky/20";
+  "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:border-sky focus:ring-2 focus:ring-sky/20";
 
 /** Text input that saves on blur or Enter, and resyncs when the stored value changes. */
 function CommitInput({
@@ -118,7 +128,7 @@ export function TaskSheet({
   const steps = stepsByTask.get(taskId) ?? [];
   const taskBlocks = blocks.filter((b) => b.task_id === taskId);
   const updateTask = useUpdateTask();
-  const deleteTask = useDeleteTask();
+  const deleteTask = useDeleteTaskWithUndo();
   const { setTaskDone } = useCompletion();
   const [panel, setPanel] = useState<"breakdown" | "schedule" | null>(initialPanel);
 
@@ -279,7 +289,7 @@ export function TaskSheet({
                   update({ estimate_min: Number.isFinite(n) && n > 0 ? n : null });
                 }}
                 placeholder="Other"
-                className="w-16 rounded-lg border border-line bg-white px-2 py-1 text-[13px] font-bold text-ink outline-none focus:border-sky"
+                className="w-16 rounded-lg border border-line bg-surface px-2 py-1 text-[13px] font-bold text-ink outline-none focus:border-sky"
               />
               min
             </label>
@@ -292,6 +302,57 @@ export function TaskSheet({
             >
               Use step total ({formatMinutes(stepTotal)})
             </button>
+          )}
+        </fieldset>
+
+        <fieldset>
+          <legend className={label}>Repeat</legend>
+          <Segmented
+            label="Repeat"
+            size="sm"
+            value={task.repeat}
+            onChange={(repeat) => update({ repeat })}
+            options={[
+              { value: "none", label: "Never" },
+              { value: "daily", label: "Daily" },
+              { value: "weekdays", label: "Weekdays" },
+              { value: "custom", label: "Custom" },
+            ]}
+          />
+          {task.repeat === "custom" && (
+            <div role="group" aria-label="Repeat on" className="mt-2 flex gap-1.5">
+              {WEEKDAY_OPTIONS.map((o) => {
+                const on = task.repeat_days.includes(o.day);
+                return (
+                  <button
+                    key={o.day}
+                    type="button"
+                    aria-pressed={on}
+                    aria-label={o.name}
+                    title={o.name}
+                    onClick={() =>
+                      update({
+                        repeat_days: on
+                          ? task.repeat_days.filter((d) => d !== o.day)
+                          : [...task.repeat_days, o.day].sort((a, b) => a - b),
+                      })
+                    }
+                    className={`grid h-8 w-8 place-items-center rounded-lg text-[12px] transition-colors ${
+                      on ? "bg-ink text-white" : "bg-chip text-chip-ink hover:bg-line"
+                    }`}
+                  >
+                    {o.short}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {task.repeat !== "none" && (
+            <p className="mt-1.5 text-[12px] text-muted">
+              {isRecurring(task)
+                ? `${repeatLabel(task)} · checked off each day on My day.`
+                : "Pick at least one day."}
+            </p>
           )}
         </fieldset>
 
@@ -375,10 +436,8 @@ export function TaskSheet({
         <button
           type="button"
           onClick={() => {
-            if (confirm(`Delete “${task.title}”?`)) {
-              deleteTask.mutate(task.id);
-              onClose();
-            }
+            deleteTask(task);
+            onClose();
           }}
           className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-bold text-risk hover:bg-risk-bg"
         >
@@ -388,7 +447,7 @@ export function TaskSheet({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white hover:bg-[#2a2d4a]"
+          className="rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white hover:opacity-90"
         >
           Done
         </button>
@@ -487,7 +546,7 @@ function StepsEditor({
               aria-label={`Delete step ${s.title}`}
               disabled={isTemp(s.id)}
               onClick={() => deleteStep(taskId, s.id)}
-              className="grid h-6 w-6 place-items-center rounded-md text-faint opacity-0 group-hover:opacity-100 hover:bg-white hover:text-risk focus:opacity-100"
+              className="grid h-6 w-6 place-items-center rounded-md text-faint opacity-0 group-hover:opacity-100 no-hover:opacity-100 hover:bg-surface hover:text-risk focus:opacity-100"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -526,7 +585,7 @@ function Sheet({
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className="animate-sheet-in flex h-full w-full max-w-[460px] flex-col bg-surface shadow-[-12px_0_40px_rgba(21,23,43,0.18)]"
+        className="animate-sheet-in flex h-full w-full max-w-[460px] flex-col bg-surface shadow-sheet"
       >
         {children}
       </aside>

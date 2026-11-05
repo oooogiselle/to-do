@@ -91,6 +91,26 @@ isOneToOne: true
                   Relationships: [
                     
                   ]
+                },"day_plan_items": {
+                  Row: {
+                    "created_at": string,"deleted_at": string | null,"id": string,"plan_date": string,"position": number,"task_id": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"deleted_at"?: string | null,"id"?: string,"plan_date": string,"position"?: number,"task_id": string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"deleted_at"?: string | null,"id"?: string,"plan_date"?: string,"position"?: number,"task_id"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "day_plan_items_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "tasks"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"google_accounts": {
                   Row: {
                     "created_at": string,"email": string,"needs_reconnect": boolean,"refresh_token_enc": string,"scopes": string,"updated_at": string,"user_id": string
@@ -175,14 +195,14 @@ isOneToOne: false
                   ]
                 },"tasks": {
                   Row: {
-                    "color": string | null,"created_at": string,"deleted_at": string | null,"due_at": string | null,"estimate_min": number | null,"id": string,"import_id": string | null,"list_id": string | null,"notes": string,"priority": Database["public"]['Enums']["priority"],"source_quote": string | null,"status": Database["public"]['Enums']["task_status"],"title": string,"updated_at": string,"user_id": string
+                    "color": string | null,"created_at": string,"deleted_at": string | null,"done_dates": (string)[],"due_at": string | null,"estimate_min": number | null,"id": string,"import_id": string | null,"list_id": string | null,"notes": string,"priority": Database["public"]['Enums']["priority"],"repeat": string,"repeat_days": (number)[],"source_quote": string | null,"status": Database["public"]['Enums']["task_status"],"title": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "color"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"due_at"?: string | null,"estimate_min"?: number | null,"id"?: string,"import_id"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"source_quote"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title": string,"updated_at"?: string,"user_id"?: string
+                    "color"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"done_dates"?: (string)[],"due_at"?: string | null,"estimate_min"?: number | null,"id"?: string,"import_id"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"repeat"?: string,"repeat_days"?: (number)[],"source_quote"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title": string,"updated_at"?: string,"user_id"?: string
                   }
                   Update: {
-                    "color"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"due_at"?: string | null,"estimate_min"?: number | null,"id"?: string,"import_id"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"source_quote"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title"?: string,"updated_at"?: string,"user_id"?: string
+                    "color"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"done_dates"?: (string)[],"due_at"?: string | null,"estimate_min"?: number | null,"id"?: string,"import_id"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"repeat"?: string,"repeat_days"?: (number)[],"source_quote"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {

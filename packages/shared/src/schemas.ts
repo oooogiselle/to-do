@@ -16,6 +16,14 @@ const HexColor = z.string().regex(/^#[0-9a-f]{6}$/i);
 export const TaskStatus = z.enum(["open", "done", "archived"]);
 export type TaskStatus = z.infer<typeof TaskStatus>;
 
+export const Repeat = z.enum(["none", "daily", "weekdays", "custom"]);
+export type Repeat = z.infer<typeof Repeat>;
+
+/** A local calendar date, "YYYY-MM-DD". */
+const PlainDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+/** Day of the week: 0 = Sunday ... 6 = Saturday. */
+const Weekday = z.number().int().min(0).max(6);
+
 export const List = z.object({
   ...syncFields,
   name: z.string().min(1),
@@ -35,11 +43,26 @@ export const Task = z.object({
   priority: Priority,
   estimate_min: z.number().int().nullable(),
   status: TaskStatus,
+  /** Repeating tasks are checked off per day (done_dates) rather than once. */
+  repeat: Repeat,
+  /** Days of the week for a custom repeat. */
+  repeat_days: z.array(Weekday),
+  /** Local dates a repeating task was done on. */
+  done_dates: z.array(PlainDate),
   /** Set when the task came from an AI import; source_quote is the text it came from. */
   import_id: z.string().uuid().nullable(),
   source_quote: z.string().nullable(),
 });
 export type Task = z.infer<typeof Task>;
+
+/** A task planned for a day on the My day page; position orders the day's list. */
+export const DayPlanItem = z.object({
+  ...syncFields,
+  task_id: z.string().uuid(),
+  plan_date: PlainDate,
+  position: z.number(),
+});
+export type DayPlanItem = z.infer<typeof DayPlanItem>;
 
 export const Step = z.object({
   ...syncFields,
@@ -115,8 +138,13 @@ export const TaskCreate = z.object({
   due_at: z.string().datetime({ offset: true }).nullable().optional(),
   priority: Priority.optional(),
   estimate_min: z.number().int().positive().nullable().optional(),
+  repeat: Repeat.optional(),
+  repeat_days: z.array(Weekday).optional(),
 });
-export const TaskPatch = TaskCreate.partial().extend({ status: TaskStatus.optional() });
+export const TaskPatch = TaskCreate.partial().extend({
+  status: TaskStatus.optional(),
+  done_dates: z.array(PlainDate).optional(),
+});
 
 export const StepCreate = z.object({
   task_id: z.string().uuid(),
@@ -127,6 +155,13 @@ export const StepCreate = z.object({
 export const StepPatch = StepCreate.omit({ task_id: true })
   .partial()
   .extend({ done: z.boolean().optional() });
+
+export const DayPlanItemCreate = z.object({
+  task_id: z.string().uuid(),
+  plan_date: PlainDate,
+  position: z.number().optional(),
+});
+export const DayPlanItemPatch = DayPlanItemCreate.omit({ task_id: true }).partial();
 
 export const SettingsPatch = Settings.omit({ updated_at: true }).partial();
 export const CalendarSelectionPatch = z.object({ selected: z.boolean() });
@@ -139,6 +174,7 @@ export const SyncResponse = z.object({
   tasks: z.array(Task),
   steps: z.array(Step),
   time_blocks: z.array(TimeBlock),
+  day_plan_items: z.array(DayPlanItem),
   settings: Settings.nullable(),
 });
 export type SyncResponse = z.infer<typeof SyncResponse>;

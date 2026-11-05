@@ -1,25 +1,29 @@
 @import "tailwindcss";
 
-/* Tokens: cool paper, ink, sage for open time, indigo now-line, red for at-risk. */
-/* Tokens: cool canvas, deep ink, six list hues. Light only. */
+/* Tokens: neutral zinc surfaces, deep ink, sage for open time, coral now-line, six list hues. Light only. */
 :root {
-  --paper: #f3f4f9;
+  --paper: #ececee;
+  --rail: #f7f7f8;
   --surface: #ffffff;
-  --ink: #15172b;
-  --muted: #6b7088;
-  --faint: #9a9eb3;
-  --line: #e3e5ee;
-  --line-soft: #ecedf4;
-  --line-strong: #c9cbdb;
-  --row: #f8f8fc;
-  --row-hover: #f0f1f8;
-  --chip: #eef0f6;
-  --chip-ink: #4d5370;
-  --event: #eef0f6;
-  --event-ink: #4d5370;
+  --ink: #18181b;
+  --muted: #71717a;
+  --faint: #a1a1aa;
+  --line: #e5e7eb;
+  --line-soft: #f0f0f2;
+  --line-strong: #d4d4d8;
+  --row: #fafafa;
+  --row-hover: #f4f4f5;
+  --chip: #f0f0f2;
+  --chip-ink: #52525b;
+  --event: #f0f0f2;
+  --event-ink: #52525b;
   --open: #f1f8f4;
   --open-line: #b5d8c7;
   --open-ink: #3f8466;
+  --open-active: #e9f5ef;
+  --open-active-line: #8cc5ab;
+  --active: #ededef;
+  --shadow-ink: 24 24 27;
   --now: #d9775e;
   --risk: #a04b35;
   --risk-bg: #f9ece7;
@@ -36,8 +40,13 @@
   --tt-pink: #c97a9f;
 }
 
+/* Devices that can't hover (phones, tablets): hover-only controls must be visible. */
+@custom-variant no-hover (@media (hover: none));
+
 @theme inline {
   --color-paper: var(--paper);
+  --color-rail: var(--rail);
+  --color-active: var(--active);
   --color-surface: var(--surface);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
@@ -68,7 +77,19 @@
   --color-sky: var(--tt-sky);
   --color-grape: var(--tt-grape);
   --color-pink: var(--tt-pink);
-  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-weight-semibold: 500;
+  --font-weight-bold: 500;
+  --font-weight-extrabold: 500;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 12px;
+  --radius-3xl: 16px;
+  --shadow-card: 0 1px 2px rgb(var(--shadow-ink) / 0.04);
+  --shadow-pop: 0 8px 24px rgb(var(--shadow-ink) / 0.12);
+  --shadow-sheet: 0 24px 60px rgb(var(--shadow-ink) / 0.2);
 }
 
 html,
@@ -94,18 +115,18 @@ body {
   border: 1px dashed var(--open-line);
 }
 .open-slot[data-active="true"] {
-  background: #e9f5ef;
-  border-color: #8cc5ab;
+  background: var(--open-active);
+  border-color: var(--open-active-line);
 }
 
 /* Drop target ghost on the grid. */
 @keyframes slot-glow {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(135, 117, 201, 0);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--tt-grape) 0%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(135, 117, 201, 0.18);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--tt-grape) 18%, transparent);
   }
 }
 .animate-slot-glow {
@@ -116,10 +137,10 @@ body {
 @keyframes sync-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(90, 165, 133, 0.5);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--tt-mint) 50%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(90, 165, 133, 0);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--tt-mint) 0%, transparent);
   }
 }
 .animate-sync-pulse {

@@ -35,7 +35,7 @@ export function CenterTabs(props: {
     <div
       ref={setNodeRef}
       data-zone="center"
-      className={`flex h-[640px] min-w-0 flex-1 flex-col rounded-[15px] transition-colors max-lg:order-first lg:h-auto ${
+      className={`flex h-[640px] min-w-0 flex-1 flex-col rounded-2xl transition-colors max-lg:order-first lg:h-auto ${
         draggingPane && isOver ? "bg-[#e9e5f7] ring-2 ring-grape" : ""
       }`}
     >
@@ -61,7 +61,7 @@ export function CenterTabs(props: {
       </div>
       <div
         role="tabpanel"
-        className={`relative min-h-0 flex-1 overflow-hidden rounded-[13px] border border-line bg-surface ${
+        className={`relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-line bg-surface ${
           current === panes[0] ? "rounded-tl-none" : ""
         }`}
       >
@@ -71,7 +71,7 @@ export function CenterTabs(props: {
           <div className="grid h-full place-items-center p-6 text-center">
             <div>
               <p className="text-sm font-extrabold text-ink">No pane open here</p>
-              <p className="mt-1 text-[12px] text-[#7d8099]">
+              <p className="mt-1 text-[12px] text-muted">
                 Drag a pane in by its handle, or open one with +.
               </p>
             </div>
@@ -105,7 +105,7 @@ function DraggableTab(props: {
       className={`group relative flex shrink-0 items-center rounded-t-[10px] border border-b-0 transition-colors ${
         props.active
           ? "border-line bg-surface text-ink"
-          : "border-transparent text-[#7d8099] hover:bg-white/60 hover:text-ink"
+          : "border-transparent text-muted hover:bg-white/60 hover:text-ink"
       } ${isDragging ? "opacity-40" : ""}`}
     >
       <button
@@ -114,18 +114,18 @@ function DraggableTab(props: {
         aria-selected={props.active}
         {...listeners}
         onClick={props.onSelect}
-        className="flex cursor-grab touch-none items-center gap-1.5 py-2 pr-1 pl-2 text-[12px] font-extrabold active:cursor-grabbing"
+        className="flex cursor-grab select-none [-webkit-touch-callout:none] items-center gap-1.5 py-2 pr-1 pl-2 text-[12px] font-extrabold active:cursor-grabbing"
       >
         <GripVertical className="h-3 w-3 opacity-40" aria-hidden />
-        <span className="h-2 w-2 rounded-[3px]" style={{ background: props.color }} />
+        <span className="h-2 w-2 rounded-sm" style={{ background: props.color }} />
         {props.label}
       </button>
       <button
         type="button"
         onClick={props.onClose}
         aria-label={`Close ${props.label}`}
-        className={`mr-1 grid h-5 w-5 place-items-center rounded text-[#a0a3b5] hover:bg-[#f0f1f7] hover:text-ink ${
-          props.active ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus:opacity-100"
+        className={`mr-1 grid h-5 w-5 place-items-center rounded text-faint hover:bg-row-hover hover:text-ink ${
+          props.active ? "opacity-100" : "opacity-0 group-hover:opacity-100 no-hover:opacity-100 focus:opacity-100"
         }`}
       >
         <X className="h-3 w-3" />

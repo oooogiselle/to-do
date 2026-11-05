@@ -40,10 +40,10 @@ export function ListPicker({
         role="menuitemradio"
         aria-checked={value === id}
         onClick={() => pick(id)}
-        className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] font-bold hover:bg-paper ${value === id ? "text-ink" : "text-[#4b4e63]"}`}
+        className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] font-bold hover:bg-paper ${value === id ? "text-ink" : "text-chip-ink"}`}
       >
         <span
-          className={`size-2 shrink-0 rounded-[3px] ${color ? "" : "border border-line-strong"}`}
+          className={`size-2 shrink-0 rounded-sm ${color ? "" : "border border-line-strong"}`}
           style={color ? { background: color } : undefined}
           aria-hidden
         />
@@ -69,10 +69,10 @@ export function ListPicker({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 font-semibold ${current ? "border-line bg-white text-ink" : "border-dashed border-line-strong text-muted"} hover:border-ink ${className}`}
+        className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 font-semibold ${current ? "border-line bg-surface text-ink" : "border-dashed border-line-strong text-muted"} hover:border-ink ${className}`}
       >
         {current && (
-          <span className="size-2 rounded-[3px]" style={{ background: current.color }} aria-hidden />
+          <span className="size-2 rounded-sm" style={{ background: current.color }} aria-hidden />
         )}
         {current ? current.name : "Add list"}
       </button>
@@ -80,7 +80,7 @@ export function ListPicker({
         <ul
           role="menu"
           aria-label="List"
-          className="animate-pop-in absolute top-full left-0 z-50 mt-1 max-h-64 w-48 overflow-y-auto rounded-[13px] border border-line-soft bg-surface p-1.5 text-ink shadow-[0_18px_34px_rgba(21,23,43,0.2)]"
+          className="animate-pop-in absolute top-full left-0 z-50 mt-1 max-h-64 w-48 overflow-y-auto rounded-2xl border border-line-soft bg-surface p-1.5 text-ink shadow-pop"
         >
           {lists.map((l) => option(l.id, l.name, l.color))}
           {option(null, "No list")}
