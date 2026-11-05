@@ -31,6 +31,8 @@ import { TaskCheck } from "./ui/task-check";
 import { BreakdownPanel } from "./task-sheet/breakdown-panel";
 import { SchedulePanel } from "./task-sheet/schedule-panel";
 import { ScheduledBlocks } from "./task-sheet/scheduled-blocks";
+import { LinkChip } from "./someday/link-chip";
+import { SomedayFields } from "./someday/someday-fields";
 
 const PRIORITIES: { value: Priority; label: string; color: string }[] = [
   { value: "none", label: "None", color: "#8a8fa6" },
@@ -167,8 +169,11 @@ export function TaskSheet({
     <Sheet onClose={onClose} label={`Task: ${task.title}`}>
       <div className="px-5 pt-4 pb-5" style={{ background: c.solid, color: c.onSolid }}>
         <div className="mb-4 flex items-center justify-between">
-          <span className="rounded-lg bg-black/15 px-2 py-1 text-[12px] font-bold">
-            {list?.name ?? "No list"}
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="rounded-lg bg-black/15 px-2 py-1 text-[12px] font-bold">
+              {list?.name ?? "No list"}
+            </span>
+            {task.link_url && list?.kind !== "someday" && <LinkChip url={task.link_url} />}
           </span>
           <button
             type="button"
@@ -230,6 +235,8 @@ export function TaskSheet({
             />
           </div>
         </div>
+
+        {list?.kind === "someday" && <SomedayFields task={task} onChange={update} />}
 
         <fieldset>
           <legend className={label}>Priority</legend>

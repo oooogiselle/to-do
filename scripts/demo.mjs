@@ -49,8 +49,17 @@ const session = await req(`${SB}/auth/v1/token?grant_type=password`, {
 });
 const uid = session.user.id;
 const user = { apikey: ANON, Authorization: `Bearer ${session.access_token}`, "content-type": "application/json", Prefer: "return=representation" };
-const insert = (headers, table, rows) =>
-  req(`${SB}/rest/v1/${table}`, { method: "POST", headers, body: JSON.stringify(rows) });
+// Bulk inserts need the same keys on every row; `columns` plus missing=default lets rows leave
+// some out and get the column default.
+const insert = (headers, table, rows) => {
+  const columns = [...new Set(rows.flatMap((r) => Object.keys(r)))].join(",");
+  const prefer = [headers.Prefer, "missing=default"].filter(Boolean).join(",");
+  return req(`${SB}/rest/v1/${table}?columns=${columns}`, {
+    method: "POST",
+    headers: { ...headers, Prefer: prefer },
+    body: JSON.stringify(rows),
+  });
+};
 
 const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 await req(`${SB}/rest/v1/settings?user_id=eq.${uid}`, { method: "PATCH", headers: admin, body: JSON.stringify({ timezone: tz }) });
@@ -134,6 +143,25 @@ await insert(user, "steps", [
   step("Make plots", 45, 2),
   step("Proofread", 15, 3),
 ]);
+// Someday: long-term goals and things to learn later.
+const [someday] = await insert(user, "lists", [
+  { name: "Someday", color: "#B27BC9", sort_order: 4, kind: "someday" },
+]);
+const idea = (title, idea_kind, horizon, extra = {}) => ({ list_id: someday.id, title, idea_kind, horizon, ...extra });
+const ideas = await insert(user, "tasks", [
+  idea("Run a half marathon", "goal", "year", { estimate_min: 45 }),
+  idea("Learn Rust ownership", "learn", "month", { link_url: "https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html", estimate_min: 60 }),
+  idea("3Blue1Brown: neural networks series", "learn", "someday", { link_url: "https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi" }),
+  idea("Get conversational in Spanish", "goal", "someday"),
+  idea("Try pottery class", null, null, { notes: "The studio on Main St has Thursday evening drop-ins." }),
+]);
+await insert(user, "steps", [
+  { task_id: ideas[0].id, title: "Run 5K without stopping", estimate_min: 30, order: 0, done: true },
+  { task_id: ideas[0].id, title: "Run 10K", estimate_min: 60, order: 1, done: true },
+  { task_id: ideas[0].id, title: "Sign up for a spring race", estimate_min: 15, order: 2 },
+  { task_id: ideas[0].id, title: "Long run of 18K", estimate_min: 120, order: 3 },
+]);
+
 await insert(admin, "time_blocks", [
   { user_id: uid, task_id: tasks[0].id, step_id: null, gcal_event_id: "demo-block-1", start: at(2, "16:00"), end: at(2, "17:30") },
 ]);

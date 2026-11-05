@@ -209,14 +209,14 @@ isOneToOne: false
                   ]
                 },"tasks": {
                   Row: {
-                    "color": string | null,"created_at": string,"deleted_at": string | null,"done_dates": (string)[],"due_at": string | null,"estimate_min": number | null,"id": string,"import_id": string | null,"list_id": string | null,"notes": string,"priority": Database["public"]['Enums']["priority"],"repeat": string,"repeat_days": (number)[],"source_quote": string | null,"status": Database["public"]['Enums']["task_status"],"title": string,"updated_at": string,"user_id": string
+                    "color": string | null,"created_at": string,"deleted_at": string | null,"done_dates": (string)[],"due_at": string | null,"estimate_min": number | null,"horizon": string | null,"id": string,"idea_kind": string | null,"import_id": string | null,"link_url": string | null,"list_id": string | null,"notes": string,"priority": Database["public"]['Enums']["priority"],"repeat": string,"repeat_days": (number)[],"source_quote": string | null,"status": Database["public"]['Enums']["task_status"],"title": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "color"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"done_dates"?: (string)[],"due_at"?: string | null,"estimate_min"?: number | null,"id"?: string,"import_id"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"repeat"?: string,"repeat_days"?: (number)[],"source_quote"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title": string,"updated_at"?: string,"user_id"?: string
+                    "color"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"done_dates"?: (string)[],"due_at"?: string | null,"estimate_min"?: number | null,"horizon"?: string | null,"id"?: string,"idea_kind"?: string | null,"import_id"?: string | null,"link_url"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"repeat"?: string,"repeat_days"?: (number)[],"source_quote"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title": string,"updated_at"?: string,"user_id"?: string
                   }
                   Update: {
-                    "color"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"done_dates"?: (string)[],"due_at"?: string | null,"estimate_min"?: number | null,"id"?: string,"import_id"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"repeat"?: string,"repeat_days"?: (number)[],"source_quote"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title"?: string,"updated_at"?: string,"user_id"?: string
+                    "color"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"done_dates"?: (string)[],"due_at"?: string | null,"estimate_min"?: number | null,"horizon"?: string | null,"id"?: string,"idea_kind"?: string | null,"import_id"?: string | null,"link_url"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"repeat"?: string,"repeat_days"?: (number)[],"source_quote"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {

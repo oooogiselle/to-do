@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { dueRisk, findFreeSlots, isRecurring, type CalendarEvent, type Step, type Task } from "@tt/shared";
 import { useEvents, useModel } from "./data";
+import { isSomedayTask } from "./someday";
 
 /** A task scheduled whole becomes one block of its remaining estimated work, in 15-minute steps. */
 export const dragMinutes = (min: number) =>
@@ -27,10 +28,10 @@ export type RailItem = {
 /**
  * Open tasks due in the next `days` days (plus anything overdue) that still have unscheduled
  * work, soonest first, flagged when the open time left before the deadline can't cover that
- * work. `undated` holds open tasks without a due date, oldest first.
+ * work. `undated` holds open tasks without a due date (except someday ideas), oldest first.
  */
 export function useDueRail(now: number, days: DueRange) {
-  const { tasks, stepsByTask, blocks, settings } = useModel();
+  const { tasks, listById, stepsByTask, blocks, settings } = useModel();
   const tz = settings.timezone;
   // Whole hours so the events query key doesn't change every minute.
   const from = Math.floor(now / 3_600_000) * 3_600_000;
@@ -97,6 +98,8 @@ export function useDueRail(now: number, days: DueRange) {
       if (task.status !== "open" || isRecurring(task)) continue;
       const plannedAt = lastPast.byTask.get(task.id);
       if (!task.due_at) {
+        // Someday ideas have no deadline on purpose; they live on the Someday page.
+        if (isSomedayTask(task, listById)) continue;
         const work = remainingWork(task);
         if (work.neededMin <= 0) continue;
         undated.push({
@@ -136,7 +139,7 @@ export function useDueRail(now: number, days: DueRange) {
     items.sort((a, b) => Date.parse(a.task.due_at!) - Date.parse(b.task.due_at!));
     undated.sort((a, b) => a.task.created_at.localeCompare(b.task.created_at));
     return { items, undated };
-  }, [tasks, stepsByTask, blocks, events, settings, tz, to, now, lastPast]);
+  }, [tasks, listById, stepsByTask, blocks, events, settings, tz, to, now, lastPast]);
 
   return { items, undated, stepPlannedAt: lastPast.byStep };
 }

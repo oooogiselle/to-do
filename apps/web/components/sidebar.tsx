@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, ClipboardPaste, ListChecks, Plus, Settings, Sun } from "lucide-react";
-import { swatch } from "@tt/shared";
+import { CalendarDays, ClipboardPaste, ListChecks, Plus, Settings, Sparkles, Sun } from "lucide-react";
+import { swatch, type List } from "@tt/shared";
 import { useModel, useSync } from "@tt/client";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { AppLogo } from "./app-logo";
@@ -13,6 +13,7 @@ const NAV = [
   { href: "/", label: "My day", icon: Sun },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/to-dos", label: "To-dos", icon: ListChecks },
+  { href: "/someday", label: "Someday", icon: Sparkles },
   { href: "/import", label: "Import", icon: ClipboardPaste },
 ];
 
@@ -41,6 +42,7 @@ export function Sidebar({ onQuickAdd }: { onQuickAdd: () => void }) {
   const { lists, tasks } = useModel();
   const { isError } = useSync();
 
+  const count = (l: List) => tasks.filter((t) => t.list_id === l.id && t.status === "open").length;
   const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
   const linkClass = (active: boolean) =>
     `${itemBase} ${active ? "bg-active text-ink" : "text-chip-ink hover:bg-row-hover hover:text-ink"}`;
@@ -81,24 +83,21 @@ export function Sidebar({ onQuickAdd }: { onQuickAdd: () => void }) {
         })}
       </nav>
 
-      <div className="hidden min-h-0 flex-1 flex-col md:flex">
-        <p className="px-2 pt-6 pb-1.5 text-[11px] tracking-[0.08em] text-faint uppercase">Lists</p>
-        <ul className="min-h-0 space-y-0.5 overflow-y-auto">
-          {lists.map((l) => {
-            const count = tasks.filter((t) => t.list_id === l.id && t.status === "open").length;
-            return (
-              <li key={l.id}>
-                <Link href={`/to-dos#${l.id}`} className={linkClass(false)}>
-                  <span className="grid h-4 w-4 place-items-center">
-                    <span className="h-2 w-2 rounded-full" style={{ background: swatch(l.color).solid }} />
-                  </span>
-                  <span className="min-w-0 flex-1 truncate">{l.name}</span>
-                  <span className="text-[11px] text-faint">{count}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+      <div className="hidden min-h-0 flex-1 flex-col overflow-y-auto md:flex">
+        <ListLinks
+          title="Lists"
+          lists={lists.filter((l) => l.kind !== "someday")}
+          href={(l) => `/to-dos#${l.id}`}
+          count={count}
+          linkClass={linkClass}
+        />
+        <ListLinks
+          title="Someday"
+          lists={lists.filter((l) => l.kind === "someday")}
+          href={(l) => `/someday#${l.id}`}
+          count={count}
+          linkClass={linkClass}
+        />
       </div>
 
       <div className="hidden border-t border-line-soft pt-3 md:block">
@@ -133,5 +132,39 @@ export function Sidebar({ onQuickAdd }: { onQuickAdd: () => void }) {
         <Settings className="h-4 w-4" strokeWidth={1.75} />
       </Link>
     </aside>
+  );
+}
+
+function ListLinks({
+  title,
+  lists,
+  href,
+  count,
+  linkClass,
+}: {
+  title: string;
+  lists: List[];
+  href: (l: List) => string;
+  count: (l: List) => number;
+  linkClass: (active: boolean) => string;
+}) {
+  if (!lists.length) return null;
+  return (
+    <>
+      <p className="px-2 pt-6 pb-1.5 text-[11px] tracking-[0.08em] text-faint uppercase">{title}</p>
+      <ul className="space-y-0.5">
+        {lists.map((l) => (
+          <li key={l.id}>
+            <Link href={href(l)} className={linkClass(false)}>
+              <span className="grid h-4 w-4 place-items-center">
+                <span className="h-2 w-2 rounded-full" style={{ background: swatch(l.color).solid }} />
+              </span>
+              <span className="min-w-0 flex-1 truncate">{l.name}</span>
+              <span className="text-[11px] text-faint">{count(l)}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }

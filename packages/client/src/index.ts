@@ -9,5 +9,6 @@ export * from "./due-rail";
 export * from "./slot-suggestions";
 export * from "./slot-picks";
 export * from "./inbox";
+export * from "./someday";
 export * from "./pending-deletes";
 export * from "./delete-undo";

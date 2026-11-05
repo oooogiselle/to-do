@@ -2,6 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod/v4";
 import {
+  linkLabel,
+  type Horizon,
   addDays,
   localDate,
   localWeekday,
@@ -43,7 +45,7 @@ Weigh, roughly in this order:
 - Deadline pressure: tasks due soon with lots of work left (remaining minutes) come first.
 - Fit: the work should fit the gap length. Use a step when a task is bigger than the gap. Leave a few minutes of slack in short gaps.
 - Time of day and energy: heavy, focused work in the morning or when energy is high; lighter or easier things in the evening or when energy is low.
-- Neglect: a task in the "someday" list, or a repeating/personal one (family, friends, exercise, learning), that hasn't been done for a long time deserves a spot when there's real room. Include at most one such pick unless deadlines are clear.
+- Neglect: a task in the "someday" list, or a repeating/personal one (family, friends, exercise, learning), that hasn't been done for a long time deserves a spot when there's real room. Include at most one such pick unless deadlines are clear. Among someday tasks, prefer ones marked "this month" over "this year", and those over "someday".
 - Variety: don't offer three near-identical options.
 
 Rules:
@@ -55,6 +57,18 @@ Rules:
 - Return fewer than 3 picks if fewer genuinely fit.`;
 
 type Db = SupabaseClient<Database>;
+
+/** One line of a task's notes, short enough to keep the prompt small. */
+const clip = (text: string, max = 160) => {
+  const line = text.replace(/\s+/g, " ").trim();
+  return line.length > max ? `${line.slice(0, max - 1)}…` : line;
+};
+
+const HORIZON_PROMPT: Record<Horizon, string> = {
+  month: "this month",
+  year: "this year",
+  someday: "someday",
+};
 
 const fmt = (ms: number, tz: string) =>
   new Date(ms).toLocaleString("en-US", {
@@ -91,7 +105,7 @@ export async function suggestForSlot(
     db
       .from("tasks")
       .select(
-        "id, list_id, title, notes, due_at, priority, estimate_min, repeat, repeat_days, done_dates",
+        "id, list_id, title, notes, due_at, priority, estimate_min, repeat, repeat_days, done_dates, idea_kind, horizon, link_url",
       )
       .eq("status", "open")
       .is("deleted_at", null)
@@ -175,6 +189,11 @@ export async function suggestForSlot(
     const last = Math.max(doneMs, lastWorked.get(t.id) ?? 0);
     const facts = [
       list && `list: ${list.name}${list.kind === "someday" ? " (someday)" : ""}`,
+      t.idea_kind === "goal" && "long-term goal",
+      t.idea_kind === "learn" && "something they want to learn",
+      t.horizon && `timeframe: ${HORIZON_PROMPT[t.horizon as Horizon] ?? t.horizon}`,
+      t.link_url && `from ${linkLabel(t.link_url)}`,
+      t.notes.trim() && `notes: ${clip(t.notes)}`,
       t.due_at ? `due ${fmt(Date.parse(t.due_at), tz)}` : "no due date",
       t.priority !== "none" && `priority ${t.priority}`,
       t.repeat !== "none" && `repeats ${t.repeat}`,

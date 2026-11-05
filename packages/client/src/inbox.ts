@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import type { List, Priority, Task } from "@tt/shared";
 import { useModel } from "./data";
+import { isSomedayTask } from "./someday";
 
 export type InboxSort = "due" | "priority";
 const PRIORITY_RANK: Record<Priority, number> = { high: 0, med: 1, low: 2, none: 3 };
@@ -20,10 +21,11 @@ const byPriority = (a: Task, b: Task) =>
 
 /**
  * Tasks grouped by list ("No list" first, then every list even when empty), sorted by due date
- * or priority, plus the start of each task's next upcoming (or in-progress) block.
+ * or priority, plus the start of each task's next upcoming (or in-progress) block. Someday
+ * lists and their tasks live on the Someday page instead.
  */
 export function useInbox(sort: InboxSort, showDone: boolean) {
-  const { lists, tasks, blocks } = useModel();
+  const { lists: allLists, listById, tasks, blocks } = useModel();
 
   const nextBlock = useMemo(() => {
     const now = Date.now();
@@ -38,7 +40,11 @@ export function useInbox(sort: InboxSort, showDone: boolean) {
   }, [blocks]);
 
   const groups = useMemo(() => {
-    const visible = tasks.filter((t) => t.status === "open" || (showDone && t.status === "done"));
+    const lists = allLists.filter((l) => l.kind !== "someday");
+    const visible = tasks.filter(
+      (t) =>
+        (t.status === "open" || (showDone && t.status === "done")) && !isSomedayTask(t, listById),
+    );
     const sorted = [...visible].sort(sort === "due" ? byDue : byPriority);
     const withList: { list: List | null; tasks: Task[] }[] = [
       {
@@ -48,7 +54,7 @@ export function useInbox(sort: InboxSort, showDone: boolean) {
       ...lists.map((list) => ({ list, tasks: sorted.filter((t) => t.list_id === list.id) })),
     ];
     return withList.filter((g) => g.list || g.tasks.length);
-  }, [tasks, lists, sort, showDone]);
+  }, [tasks, allLists, listById, sort, showDone]);
 
   return { groups, nextBlock };
 }
