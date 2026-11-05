@@ -59,7 +59,7 @@ sign-in redirects to the app's own `timelinetodo://` scheme.
    a development build and opens it in the simulator. The script unsets `CC`/`CXX`, since
    Xcode's pods only build with its own clang.
 
-Against production, set `EXPO_PUBLIC_API_URL=https://timeline-todo-gi-selle.vercel.app` and the
+Against production, set `EXPO_PUBLIC_API_URL=https://www.tapestry-todo.com` and the
 hosted project's Supabase URL and anon key. Add `timelinetodo://auth/callback` to the hosted
 project's auth redirect URLs (Dashboard → Authentication → URL Configuration, or
 `supabase config push`). To install on your phone, plug it in and run
