@@ -97,6 +97,9 @@ export function createApiClient({ baseUrl, getToken, fetch: f = fetch }: Opts) {
     settings: () => call<SettingsResponse>("GET", "/settings"),
     updateSettings: (body: z.infer<typeof SettingsPatch>) =>
       call<Settings>("PATCH", "/settings", body),
+    /** Permanently deletes the account and all data, and disconnects Google Calendar. */
+    deleteAccount: () =>
+      call<{ warnings: string[] }>("DELETE", "/account", { confirm: true }),
 
     calendars: () => call<Calendar[]>("GET", "/calendars"),
     setCalendarSelected: (id: string, selected: boolean) =>

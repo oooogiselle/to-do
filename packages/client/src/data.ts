@@ -310,6 +310,16 @@ export function useUpdateSettings() {
   });
 }
 
+/** Deletes the account. The caller signs out and leaves the app afterwards. */
+export function useDeleteAccount() {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: api.deleteAccount,
+    onSuccess: () => qc.clear(),
+  });
+}
+
 export const isTemp = (id: string) => id.startsWith("temp-");
 
 /**

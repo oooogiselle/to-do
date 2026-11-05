@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { formatMinutes, swatch, type WorkingHours } from "@tt/shared";
 import { api } from "@/lib/client/api";
-import { keys, useCalendars, useSettings, useUpdateSettings } from "@tt/client";
+import { keys, useCalendars, useDeleteAccount, useSettings, useUpdateSettings } from "@tt/client";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { Switch } from "@/components/ui/switch";
 
@@ -164,6 +164,8 @@ export function SettingsView() {
           </p>
         )}
 
+        <DeleteAccountSection />
+
         <div className="flex items-center justify-end gap-2 pb-6">
           <a href="/privacy" className="rounded-xl px-3 py-2 text-sm font-bold text-muted hover:text-ink">
             Privacy
@@ -180,6 +182,58 @@ export function SettingsView() {
         </div>
       </div>
     </div>
+  );
+}
+
+function DeleteAccountSection() {
+  const [confirming, setConfirming] = useState(false);
+  const del = useDeleteAccount();
+
+  return (
+    <section className="rounded-2xl border border-line bg-surface p-5">
+      <h2 className="text-base font-extrabold text-ink">Delete account</h2>
+      <p className="mt-1 text-sm font-semibold text-muted">
+        Permanently deletes your tasks, lists, plans and settings, removes the Tasks calendar this
+        app created in Google Calendar, and disconnects Google. This can&apos;t be undone.
+      </p>
+      {!confirming ? (
+        <button
+          onClick={() => setConfirming(true)}
+          className="mt-3 rounded-xl px-4 py-2 text-sm font-bold text-risk hover:bg-risk-bg"
+        >
+          Delete my account…
+        </button>
+      ) : (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            disabled={del.isPending}
+            onClick={() =>
+              del.mutate(undefined, {
+                onSuccess: async () => {
+                  await createBrowserSupabase().auth.signOut();
+                  window.location.assign("/login");
+                },
+              })
+            }
+            className="rounded-xl bg-risk px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+          >
+            {del.isPending ? "Deleting…" : "Yes, delete everything"}
+          </button>
+          <button
+            disabled={del.isPending}
+            onClick={() => setConfirming(false)}
+            className="rounded-xl px-4 py-2 text-sm font-bold text-muted hover:text-ink"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+      {del.isError && (
+        <p className="mt-2 text-sm font-semibold text-risk">
+          Couldn&apos;t delete the account: {del.error.message}. Nothing was lost; try again.
+        </p>
+      )}
+    </section>
   );
 }
 
