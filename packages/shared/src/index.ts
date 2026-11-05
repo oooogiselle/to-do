@@ -4,6 +4,7 @@ export * from "./slots/freeSlots";
 export * from "./slots/rankSlots";
 export * from "./slots/normalizePicks";
 export * from "./parse/quickAdd";
+export * from "./parse/link";
 export * from "./format/eventTitle";
 export * from "./format/color";
 export * from "./risk/dueRisk";

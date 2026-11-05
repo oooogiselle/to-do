@@ -28,6 +28,21 @@ const Weekday = z.number().int().min(0).max(6);
 export const ListKind = z.enum(["normal", "someday"]);
 export type ListKind = z.infer<typeof ListKind>;
 
+/** Someday items: a long-term goal, or something to learn. */
+export const IdeaKind = z.enum(["goal", "learn"]);
+export type IdeaKind = z.infer<typeof IdeaKind>;
+
+/** A loose timeframe for a someday item, instead of a due date. */
+export const Horizon = z.enum(["month", "year", "someday"]);
+export type Horizon = z.infer<typeof Horizon>;
+
+/** An http(s) link, e.g. the article or video a someday item came from. */
+const LinkUrl = z
+  .string()
+  .max(2048)
+  .url()
+  .refine((u) => /^https?:\/\//i.test(u), "Links must start with http:// or https://");
+
 export const List = z.object({
   ...syncFields,
   name: z.string().min(1),
@@ -57,6 +72,10 @@ export const Task = z.object({
   /** Set when the task came from an AI import; source_quote is the text it came from. */
   import_id: z.string().uuid().nullable(),
   source_quote: z.string().nullable(),
+  /** Someday fields: where the idea came from, goal vs. learn, and a rough timeframe. */
+  link_url: z.string().nullable(),
+  idea_kind: IdeaKind.nullable(),
+  horizon: Horizon.nullable(),
 });
 export type Task = z.infer<typeof Task>;
 
@@ -146,6 +165,9 @@ export const TaskCreate = z.object({
   estimate_min: z.number().int().positive().nullable().optional(),
   repeat: Repeat.optional(),
   repeat_days: z.array(Weekday).optional(),
+  link_url: LinkUrl.nullable().optional(),
+  idea_kind: IdeaKind.nullable().optional(),
+  horizon: Horizon.nullable().optional(),
 });
 export const TaskPatch = TaskCreate.partial().extend({
   status: TaskStatus.optional(),

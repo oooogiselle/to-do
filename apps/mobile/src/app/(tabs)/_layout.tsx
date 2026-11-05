@@ -15,6 +15,10 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Label>To-dos</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="checklist" md="checklist" />
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="someday">
+        <NativeTabs.Trigger.Label>Someday</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="sparkles" md="auto_awesome" />
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }

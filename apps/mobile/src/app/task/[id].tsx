@@ -1,9 +1,12 @@
 import { useState } from "react";
+import * as WebBrowser from "expo-web-browser";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   formatMinutes,
+  linkLabel,
   localDate,
+  normalizeLink,
   type Priority,
   type Step,
   type Task,
@@ -38,6 +41,18 @@ const PRIORITIES = [
   { value: "med", label: "Medium" },
   { value: "high", label: "High" },
 ] as const satisfies readonly { value: Priority; label: string }[];
+
+const IDEA_KINDS = [
+  { value: "none", label: "—" },
+  { value: "goal", label: "Goal" },
+  { value: "learn", label: "Learn" },
+] as const;
+const HORIZONS = [
+  { value: "none", label: "—" },
+  { value: "month", label: "Month" },
+  { value: "year", label: "Year" },
+  { value: "someday", label: "Someday" },
+] as const;
 
 export default function TaskSheet() {
   const { id, panel } = useLocalSearchParams<{ id: string; panel?: "schedule" }>();
@@ -115,6 +130,53 @@ export default function TaskSheet() {
             onChange={(list_id) => update({ list_id })}
           />
         </Field>
+
+        {listById.get(task.list_id ?? "")?.kind === "someday" ? (
+          <>
+            <Field label="Type">
+              <Segmented
+                label="Type"
+                value={task.idea_kind ?? "none"}
+                options={IDEA_KINDS}
+                onChange={(v) => update({ idea_kind: v === "none" ? null : v })}
+              />
+            </Field>
+            <Field label="Timeframe">
+              <Segmented
+                label="Timeframe"
+                value={task.horizon ?? "none"}
+                options={HORIZONS}
+                onChange={(v) => update({ horizon: v === "none" ? null : v })}
+              />
+            </Field>
+            <Field label="Link">
+              <View style={styles.inline}>
+                <CommitInput
+                  accessibilityLabel="Link"
+                  keyboardType="url"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  value={task.link_url ?? ""}
+                  placeholder="Where you saw it"
+                  onCommit={(v) => {
+                    const link = normalizeLink(v);
+                    if (link === undefined) Alert.alert("That doesn't look like a link.");
+                    else if (link !== task.link_url) update({ link_url: link });
+                  }}
+                  style={[styles.box, { borderColor: colors.line, flex: 1 }]}
+                />
+                {task.link_url && <OpenLink url={task.link_url} />}
+              </View>
+            </Field>
+          </>
+        ) : (
+          task.link_url && (
+            <Field label="Link">
+              <OpenLink url={task.link_url} />
+            </Field>
+          )
+        )}
 
         <Field label="Color">
           <View style={styles.swatches}>
@@ -213,6 +275,20 @@ export default function TaskSheet() {
       </ScrollView>
       <NoticeBanner />
     </View>
+  );
+}
+
+function OpenLink({ url }: { url: string }) {
+  const colors = useColors();
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={`Open ${linkLabel(url)}`}
+      hitSlop={8}
+      onPress={() => void WebBrowser.openBrowserAsync(url)}
+    >
+      <Text style={{ color: colors.now, fontSize: 15 }}>↗ {linkLabel(url)}</Text>
+    </Pressable>
   );
 }
 

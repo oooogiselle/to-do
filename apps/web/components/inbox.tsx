@@ -3,7 +3,7 @@
 import { PageHeader } from "./page-header";
 import { useState } from "react";
 import Link from "next/link";
-import { ClipboardPaste, Pencil, Plus, X } from "lucide-react";
+import { ArrowRight, ClipboardPaste, Pencil, Plus, Sparkles, X } from "lucide-react";
 import { formatMinutes, swatch, type List, type Task } from "@tt/shared";
 import {
   fmtWhen,
@@ -14,8 +14,10 @@ import {
   useCompletion,
   useCreateList,
   useDeleteList,
+  isSomedayTask,
   useInbox,
   useModel,
+  useSomeday,
   useUpdateList,
   type InboxSort,
 } from "@tt/client";
@@ -29,7 +31,10 @@ import { Switch } from "@/components/ui/switch";
 import { TaskCheck } from "@/components/ui/task-check";
 
 export function Inbox() {
-  const { lists, tasks, settings, isLoading } = useModel();
+  const { lists, listById, tasks: allTasks, settings, isLoading } = useModel();
+  // Someday ideas have their own page.
+  const tasks = allTasks.filter((t) => !isSomedayTask(t, listById));
+  const someday = useSomeday();
   const [sort, setSort] = useState<InboxSort>("due");
   const [showDone, setShowDone] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -97,6 +102,20 @@ export function Inbox() {
             ))}
           </div>
         )}
+
+        {someday.lists.length > 0 && (
+          <Link
+            href="/someday"
+            className="mt-5 flex items-center gap-2 rounded-2xl border border-dashed border-line px-4 py-3 text-[13px] text-chip-ink hover:bg-row"
+          >
+            <Sparkles className="h-4 w-4 text-grape" strokeWidth={2} aria-hidden />
+            <span>
+              {someday.openCount} idea{someday.openCount === 1 ? "" : "s"} in Someday
+              <span className="text-muted"> · goals and things to learn</span>
+            </span>
+            <ArrowRight className="ml-auto h-4 w-4 text-muted" aria-hidden />
+          </Link>
+        )}
       </div>
     </div>
   );
@@ -145,14 +164,6 @@ function ListCard({
           <span className="shrink-0 rounded-full bg-black/15 px-2 py-0.5 text-[12px] font-bold">
             {openCount} open
           </span>
-          {list?.kind === "someday" && (
-            <span
-              title="Ideas for free time: the AI suggests these when you click open time"
-              className="shrink-0 rounded-full bg-white/25 px-2 py-0.5 text-[11px] font-bold"
-            >
-              Someday
-            </span>
-          )}
           {list && !isTemp(list.id) && (
             <button
               type="button"
@@ -246,7 +257,7 @@ function TaskRow({
   );
 }
 
-function ListEditor({
+export function ListEditor({
   list,
   openCount,
   onDone,
@@ -317,11 +328,20 @@ function ListEditor({
   );
 }
 
-function NewListForm({ count, onDone }: { count: number; onDone: () => void }) {
+export function NewListForm({
+  count,
+  onDone,
+  someday: initialSomeday = false,
+}: {
+  count: number;
+  onDone: () => void;
+  /** Start with the Someday box checked (the Someday page). */
+  someday?: boolean;
+}) {
   const createList = useCreateList();
   const [name, setName] = useState("");
   const [color, setColor] = useState(PALETTE[count % PALETTE.length]!);
-  const [someday, setSomeday] = useState(false);
+  const [someday, setSomeday] = useState(initialSomeday);
   const c = swatch(color);
   return (
     <form

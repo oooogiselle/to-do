@@ -1,4 +1,4 @@
-import { BreakdownRequest } from "@tt/shared";
+import { BreakdownRequest, linkLabel } from "@tt/shared";
 import { parseBody, route, unwrap } from "@/lib/api";
 import { breakDownTask } from "@/lib/ai/breakdown";
 
@@ -18,7 +18,7 @@ export const POST = route<{ id: string }>(async (req, { supabase, user, params }
       .is("deleted_at", null)
       .order("order"),
     task.list_id
-      ? supabase.from("lists").select("name").eq("id", task.list_id).maybeSingle()
+      ? supabase.from("lists").select("name, kind").eq("id", task.list_id).maybeSingle()
       : null,
     supabase.from("settings").select("timezone").single(),
   ]);
@@ -27,6 +27,14 @@ export const POST = route<{ id: string }>(async (req, { supabase, user, params }
     notes: task.notes,
     due_at: task.due_at,
     list: list?.data?.name ?? null,
+    someday:
+      list?.data?.kind === "someday"
+        ? {
+            kind: task.idea_kind === "goal" || task.idea_kind === "learn" ? task.idea_kind : null,
+            horizon: task.horizon,
+            site: task.link_url ? linkLabel(task.link_url) : null,
+          }
+        : null,
     existingSteps: unwrap(steps),
     mode,
     timezone: settings.data?.timezone ?? "UTC",
