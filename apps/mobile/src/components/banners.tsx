@@ -49,6 +49,9 @@ export function NoticeBanner() {
     return () => clearTimeout(t);
   }, [notice]);
   if (!notice) return null;
+  // `deleted` and `blockRemoved` come from the undo hooks (delete-undo.ts), which only web uses.
+  // Mobile deletes immediately, so it never sets them. Add UI here if it adopts those hooks.
+  if (notice.kind !== "added" && notice.kind !== "completion") return null;
   return (
     <View
       accessibilityLiveRegion="polite"
