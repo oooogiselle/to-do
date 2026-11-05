@@ -172,7 +172,7 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
           </div>
 
           <div className="mt-6">
-            <DailySection date={date} routines={routines} />
+            <DailySection date={date} routines={routines} paneKey={pane} />
           </div>
 
           <section className="mt-7" aria-label={`Plan for ${fmtDay(date, tz, "long")}`}>
