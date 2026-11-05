@@ -4,7 +4,7 @@ import { adminClient } from "@/lib/supabase/admin";
 
 const TASKS_CALENDAR_SUMMARY = "Tasks";
 // Marks the calendar this app owns, so a reconnect finds it instead of creating another.
-const TASKS_CALENDAR_MARKER = "Managed by Timeline To-Do. Time blocks for tasks live here.";
+export const TASKS_CALENDAR_MARKER = "Managed by Timeline To-Do. Time blocks for tasks live here.";
 
 type CalendarRow = {
   user_id: string;

@@ -38,9 +38,12 @@ export const env = {
   get cronSecret() {
     return required("CRON_SECRET");
   },
-  /** Comma-separated; normally just the owner's address. */
+  /**
+   * Comma-separated beta allowlist. Unset or empty means signup is open to anyone with a
+   * Google account, so removing the variable is how you launch.
+   */
   get allowedEmails() {
-    return required("ALLOWED_EMAIL")
+    return (process.env.ALLOWED_EMAIL ?? "")
       .split(",")
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean);
