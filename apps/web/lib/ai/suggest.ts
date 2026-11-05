@@ -12,7 +12,8 @@ import {
   type SuggestResponse,
 } from "@tt/shared";
 import { HttpError } from "@/lib/api";
-import { assertUnderMonthlyCap, runStructured } from "@/lib/ai/client";
+import { runStructured } from "@/lib/ai/client";
+import { assertAiAllowed } from "@/lib/ai/limits";
 
 const MAX_TASKS = 80;
 const DAY = 86_400_000;
@@ -82,7 +83,7 @@ export async function suggestForSlot(
 ): Promise<SuggestResponse> {
   const gap = { start: Date.parse(req.start), end: Date.parse(req.end) };
   if (gap.end - gap.start < 15 * 60_000) throw new HttpError(400, "That gap is too short");
-  await assertUnderMonthlyCap(userId);
+  await assertAiAllowed(userId, "suggest");
 
   const [settingsRes, listsRes, tasksRes, stepsRes, blocksRes, calsRes] = await Promise.all([
     db.from("settings").select("timezone, working_hours, default_block_min").single(),

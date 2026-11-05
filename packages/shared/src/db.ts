@@ -159,6 +159,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"rate_limits": {
+                  Row: {
+                    "bucket": string,"hits": number,"user_id": string,"window_start": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "bucket": string,"hits"?: number,"user_id": string,"window_start": string
+                  }
+                  Update: {
+                    "bucket"?: string,"hits"?: number,"user_id"?: string,"window_start"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"settings": {
                   Row: {
                     "created_at": string,"default_block_min": number,"timezone": string,"updated_at": string,"user_id": string,"working_hours": NonNullable<Json>
@@ -251,8 +265,14 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "commit_import":
+            "ai_spend":
+{ Args: { "p_since": string,"p_user"?: string }; Returns: number
+                           },
+"commit_import":
 { Args: { "payload": Json }; Returns: Json
+                           },
+"hit_rate_limit":
+{ Args: { "p_bucket": string,"p_max": number,"p_user": string,"p_window_seconds": number }; Returns: boolean
                            }
           }
           Enums: {
