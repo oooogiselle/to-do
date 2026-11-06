@@ -205,6 +205,7 @@ export function useCreateTask() {
           link_url: v.body.link_url ?? null,
           idea_kind: v.body.idea_kind ?? null,
           horizon: v.body.horizon ?? null,
+          start_date: v.body.start_date ?? null,
         }),
         id: v.tempId,
       }),

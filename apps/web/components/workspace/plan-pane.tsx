@@ -18,16 +18,23 @@ import {
   endPosition,
   fmtDay,
   fmtDue,
+  fmtRelDay,
   tempId,
   useAddToPlan,
+  useComingUp,
   useCreateTask,
   useEvents,
   useModel,
+  type ComingUpItem,
 } from "@tt/client";
+import { useOpenTask } from "@/components/app-shell";
 import { DailySection } from "./daily-section";
 import { useCalendarAnchor, dayLabel } from "./calendar-dates";
 import { PlanItem } from "./plan-item";
 import { useDragState } from "./workspace-dnd";
+
+/** Coming up rows shown before "Show more". */
+const COMING_UP_SHOWN = 5;
 
 const navBtn =
   "grid h-7 w-7 place-items-center rounded-lg border border-line bg-surface text-chip-ink hover:bg-row hover:text-ink";
@@ -80,19 +87,29 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
   }, [isPast, eventData, blocks, settings.working_hours, tz, dayStart, dayEnd, date, today, now]);
   const overbooked = plannedMin > freeMin;
 
-  const plannedIds = new Set(entries.map((e) => e.task.id));
-  const horizon = zonedInstant(addDays(date, 3), "00:00", tz).getTime();
-  const suggestions = tasks
-    .filter(
-      (t) =>
-        t.status === "open" &&
-        !isRecurring(t) &&
-        !plannedIds.has(t.id) &&
-        t.due_at &&
-        Date.parse(t.due_at) < horizon,
-    )
-    .sort((a, b) => Date.parse(a.due_at!) - Date.parse(b.due_at!))
-    .slice(0, 4);
+  const openTask = useOpenTask();
+  const comingUp = useComingUp(now, date);
+  const [showAllComingUp, setShowAllComingUp] = useState(false);
+  const shownComingUp = showAllComingUp ? comingUp : comingUp.slice(0, COMING_UP_SHOWN);
+
+  /** Why a to-do is in Coming up, as a short label, and whether it's urgent. */
+  const comingUpHint = ({ reason, task, startBy }: ComingUpItem) => {
+    const thisDay = date === today ? "today" : "this day";
+    switch (reason) {
+      case "overdue":
+        return { text: "Overdue", urgent: true };
+      case "at-risk":
+        return { text: "Short on time", urgent: true };
+      case "start-today":
+        return { text: `Start ${thisDay}`, urgent: true };
+      case "started":
+        return task.start_date === date
+          ? { text: `Starts ${thisDay}`, urgent: false }
+          : { text: `Started ${fmtRelDay(zonedInstant(task.start_date!, "12:00", tz), tz, now)}`, urgent: false };
+      case "upcoming":
+        return { text: `Start by ${fmtRelDay(startBy ?? Date.parse(task.due_at!), tz, now)}`, urgent: false };
+    }
+  };
 
   const plan = (task: Pick<Task, "id">) =>
     addToPlan.mutate({
@@ -206,30 +223,67 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
             </form>
           </section>
 
-          {suggestions.length > 0 && (
-            <section className="mt-7" aria-label="Due soon">
+          {!isPast && comingUp.length > 0 && (
+            <section className="mt-7" aria-label="Coming up">
               <h3 className="px-1 pb-1 text-[11px] tracking-[0.08em] text-faint uppercase">
-                Due soon · add to this day
+                Coming up · add to this day
               </h3>
               <ul>
-                {suggestions.map((t) => (
-                  <li
-                    key={t.id}
-                    className="group flex items-center gap-3 rounded-lg py-1.5 pr-1 pl-2 hover:bg-row"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => plan(t)}
-                      aria-label={`Add ${t.title} to this day`}
-                      className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-line bg-surface text-muted hover:text-ink"
+                {shownComingUp.map((item) => {
+                  const t = item.task;
+                  const hint = comingUpHint(item);
+                  return (
+                    <li
+                      key={t.id}
+                      className="group flex items-center gap-3 rounded-lg py-1.5 pr-1 pl-2 hover:bg-row"
                     >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                    <span className="min-w-0 flex-1 truncate text-[13px] text-chip-ink">{t.title}</span>
-                    <span className="shrink-0 text-[11px] text-risk">{fmtDue(t.due_at!, tz, now)}</span>
-                  </li>
-                ))}
+                      <button
+                        type="button"
+                        onClick={() => plan(t)}
+                        aria-label={`Add ${t.title} to this day`}
+                        className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-line bg-surface text-muted hover:text-ink"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openTask(t.id)}
+                        className="min-w-0 flex-1 truncate text-left text-[13px] text-chip-ink hover:text-ink"
+                      >
+                        {t.title}
+                      </button>
+                      <span
+                        className={`shrink-0 text-[11px] ${hint.urgent ? "text-risk" : "text-muted"}`}
+                        title={
+                          item.estimated
+                            ? `${formatMinutes(item.neededMin)} of work not on the calendar yet`
+                            : "No estimate yet, so this assumes your default block length"
+                        }
+                      >
+                        {hint.text}
+                        {t.due_at && (
+                          <span className="text-faint">
+                            {" "}
+                            · due{" "}
+                            {fmtDue(t.due_at, tz, now).replace(/^(Today|Tomorrow|Yesterday)/, (w) =>
+                              w.toLowerCase(),
+                            )}
+                          </span>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
+              {comingUp.length > COMING_UP_SHOWN && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllComingUp((v) => !v)}
+                  className="mt-1 px-2 text-[12px] text-muted hover:text-ink"
+                >
+                  {showAllComingUp ? "Show less" : `Show ${comingUp.length - COMING_UP_SHOWN} more`}
+                </button>
+              )}
             </section>
           )}
         </div>

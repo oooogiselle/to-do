@@ -76,6 +76,8 @@ export const Task = z.object({
   link_url: z.string().nullable(),
   idea_kind: IdeaKind.nullable(),
   horizon: Horizon.nullable(),
+  /** Local date to start working on it; My day surfaces the task from then on. */
+  start_date: PlainDate.nullable(),
 });
 export type Task = z.infer<typeof Task>;
 
@@ -168,6 +170,7 @@ export const TaskCreate = z.object({
   link_url: LinkUrl.nullable().optional(),
   idea_kind: IdeaKind.nullable().optional(),
   horizon: Horizon.nullable().optional(),
+  start_date: PlainDate.nullable().optional(),
 });
 export const TaskPatch = TaskCreate.partial().extend({
   status: TaskStatus.optional(),

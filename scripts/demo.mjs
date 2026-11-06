@@ -128,6 +128,19 @@ const routines = await insert(user, "tasks", [
   { list_id: pers.id, title: "Stretch", estimate_min: 15, repeat: "weekdays", done_dates: [dayAgo(1)] },
   { list_id: pers.id, title: "Plan tomorrow", estimate_min: 10, repeat: "custom", repeat_days: [0, 1, 2, 3, 4] },
 ]);
+// Further out, so My day's Coming up has something to surface: a midterm next week to study
+// for this week, and a proposal set to start tomorrow (hidden from My day until then).
+const fromNow = (n, hm) => {
+  const [h, m] = hm.split(":").map(Number);
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  d.setHours(h, m, 0, 0);
+  return d.toISOString();
+};
+await insert(user, "tasks", [
+  { list_id: econ.id, title: "Study for Econ midterm", due_at: fromNow(8, "10:00"), priority: "high", estimate_min: 360 },
+  { list_id: cs.id, title: "CS project proposal", due_at: fromNow(12, "23:59"), priority: "med", estimate_min: 120, start_date: dayAgo(-1) },
+]);
 const today = ymd(new Date());
 await insert(user, "day_plan_items", [
   { task_id: tasks[5].id, plan_date: today, position: 1 },

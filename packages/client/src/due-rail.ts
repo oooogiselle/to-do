@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { dueRisk, findFreeSlots, isRecurring, type CalendarEvent, type Step, type Task } from "@tt/shared";
+import { dueRisk, findFreeSlots, isRecurring, latestStart, type CalendarEvent, type Step, type Task } from "@tt/shared";
 import { useEvents, useModel } from "./data";
 import { isSomedayTask } from "./someday";
 
@@ -21,6 +21,8 @@ export type RailItem = {
   freeMin: number;
   atRisk: boolean;
   overdue: boolean;
+  /** Latest time work can start and still fit before the deadline (null: undated, overdue, or it doesn't fit). */
+  startBy: number | null;
   /** Start of the task's most recent whole-task block that has already ended, if any. */
   plannedAt?: number;
 };
@@ -110,6 +112,7 @@ export function useDueRail(now: number, days: DueRange) {
           freeMin: 0,
           atRisk: false,
           overdue: false,
+          startBy: null,
           plannedAt,
         });
         continue;
@@ -133,6 +136,9 @@ export function useDueRail(now: number, days: DueRange) {
         estimated: work.estimated,
         atRisk: overdue || risk.atRisk,
         overdue,
+        startBy: overdue
+          ? null
+          : latestStart({ dueAt: due, neededMin: risk.neededMin, freeSlots: free }),
         plannedAt,
       });
     }

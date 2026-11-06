@@ -45,6 +45,13 @@ export function fmtSlot(start: number, end: number, tz: string, now = Date.now()
   return `${dayLabel}, ${fmtTime(start, tz)}–${fmtTime(end, tz)}`;
 }
 
+/** The day of an instant relative to now: "today", "tomorrow", "Thu", "Oct 21" (lowercase words). */
+export function fmtRelDay(instant: number | string | Date, tz: string, now = Date.now()): string {
+  return relDay(new Date(instant), tz, now).replace(/^(Today|Tomorrow|Yesterday)$/, (w) =>
+    w.toLowerCase(),
+  );
+}
+
 /** "Today", "Tomorrow", "Yesterday", a weekday within the coming week, else "Oct 21". */
 function relDay(d: Date, tz: string, now: number): string {
   const today = localDate(new Date(now), tz);
