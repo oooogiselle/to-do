@@ -44,14 +44,50 @@ export function latestStart(opts: {
   return null;
 }
 
+/** How pressing one deadline is: past it, short on free time before it, and when to start. */
+export type Urgency = { overdue: boolean; atRisk: boolean; startBy: number | null };
+
+/** Urgency of `neededMin` of unscheduled work due at `dueAt`, given free time from now on. */
+export function deadlineUrgency(opts: {
+  dueAt: number;
+  neededMin: number;
+  freeSlots: Interval[];
+  now: number;
+}): Urgency {
+  if (opts.dueAt < opts.now) return { overdue: true, atRisk: true, startBy: null };
+  const { atRisk } = dueRisk({
+    dueAt: opts.dueAt,
+    remainingEstimateMin: opts.neededMin,
+    scheduledMin: 0,
+    freeSlots: opts.freeSlots,
+  });
+  return { overdue: false, atRisk, startBy: atRisk ? null : latestStart(opts) };
+}
+
+/** The more pressing of two urgencies: either one overdue or at risk, and the earlier start. */
+export function combineUrgency(a: Urgency, b: Urgency): Urgency {
+  const starts = [a.startBy, b.startBy].filter((t): t is number => t !== null);
+  return {
+    overdue: a.overdue || b.overdue,
+    atRisk: a.atRisk || b.atRisk,
+    startBy: starts.length ? Math.min(...starts) : null,
+  };
+}
+
 export type ComingUpReason = "overdue" | "at-risk" | "start-today" | "started" | "upcoming";
 
-export type ComingUpCandidate = {
-  task: { due_at: string | null; start_date: string | null };
-  overdue: boolean;
-  atRisk: boolean;
-  /** From latestStart; null when undated, overdue, or it doesn't fit. */
-  startBy: number | null;
+/** Why a deadline needs attention on a day ending at `dayEnd`, ignoring start dates. */
+export function urgencyReason(u: Urgency, dayEnd: number): Exclude<ComingUpReason, "started"> {
+  if (u.overdue) return "overdue";
+  if (u.atRisk) return "at-risk";
+  if (u.startBy !== null && u.startBy < dayEnd) return "start-today";
+  return "upcoming";
+}
+
+export type ComingUpCandidate = Urgency & {
+  task: { start_date: string | null };
+  /** The task's deadline, or its earliest open step's if that's sooner; null when undated. */
+  dueAt: number | null;
 };
 
 const REASON_RANK: Record<ComingUpReason, number> = {
@@ -74,21 +110,17 @@ export function rankComingUp<T extends ComingUpCandidate>(
 ): (T & { reason: ComingUpReason })[] {
   const out: (T & { reason: ComingUpReason })[] = [];
   for (const item of items) {
-    const { start_date, due_at } = item.task;
+    const { start_date } = item.task;
     const urgent = item.overdue || item.atRisk;
     if (start_date && start_date > opts.date && !urgent) continue;
     const started = !!start_date && start_date <= opts.date;
-    const due = due_at ? Date.parse(due_at) : null;
-    let reason: ComingUpReason;
-    if (item.overdue) reason = "overdue";
-    else if (item.atRisk) reason = "at-risk";
-    else if (item.startBy !== null && item.startBy < opts.dayEnd) reason = "start-today";
-    else if (started) reason = "started";
-    else if (due !== null && due < opts.horizonEnd) reason = "upcoming";
-    else continue;
+    let reason: ComingUpReason = urgencyReason(item, opts.dayEnd);
+    if (reason === "upcoming") {
+      if (started) reason = "started";
+      else if (item.dueAt === null || item.dueAt >= opts.horizonEnd) continue;
+    }
     out.push({ ...item, reason });
   }
-  const key = (i: ComingUpCandidate) =>
-    i.startBy ?? (i.task.due_at ? Date.parse(i.task.due_at) : Infinity);
+  const key = (i: ComingUpCandidate) => i.startBy ?? i.dueAt ?? Infinity;
   return out.sort((a, b) => REASON_RANK[a.reason] - REASON_RANK[b.reason] || key(a) - key(b));
 }

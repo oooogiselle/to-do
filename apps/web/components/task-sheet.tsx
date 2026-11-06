@@ -462,8 +462,8 @@ export function TaskSheet({
             />
           ) : (
             <p className="text-[13px]" style={{ color: c.ink }}>
-              No time blocked yet. &ldquo;Find time&rdquo; suggests open slots before it&apos;s
-              due, or drag it onto a calendar.
+              No time blocked yet. &ldquo;Find time&rdquo; suggests open slots before it&apos;s due,
+              or drag it onto a calendar.
             </p>
           )}
         </section>
@@ -486,7 +486,14 @@ export function TaskSheet({
           {panel === "breakdown" ? (
             <BreakdownPanel task={task} onClose={() => setPanel(null)} />
           ) : (
-            <StepsEditor taskId={task.id} steps={steps} disabled={saving} color={c.solid} />
+            <StepsEditor
+              taskId={task.id}
+              taskDue={task.due_at}
+              tz={settings.timezone}
+              steps={steps}
+              disabled={saving}
+              color={c.solid}
+            />
           )}
         </section>
 
@@ -545,11 +552,15 @@ function NotesField({ task, onCommit }: { task: Task; onCommit: (v: string) => v
 
 function StepsEditor({
   taskId,
+  taskDue,
+  tz,
   steps,
   disabled,
   color,
 }: {
   taskId: string;
+  taskDue: string | null;
+  tz: string;
   steps: Step[];
   disabled: boolean;
   color: string;
@@ -574,7 +585,10 @@ function StepsEditor({
     <div>
       <ul className="space-y-0.5">
         {steps.map((s) => (
-          <li key={s.id} className="group flex items-center gap-2.5 rounded-lg px-1 py-1 hover:bg-paper">
+          <li
+            key={s.id}
+            className="group flex items-center gap-2.5 rounded-lg px-1 py-1 hover:bg-paper"
+          >
             <TaskCheck
               done={s.done}
               color={color}
@@ -592,6 +606,33 @@ function StepsEditor({
               }
               className={`min-w-0 flex-1 bg-transparent text-sm font-medium outline-none ${s.done ? "text-faint line-through" : "text-ink"}`}
             />
+            {!isTemp(s.id) && (
+              <div
+                className={
+                  s.due_at
+                    ? ""
+                    : "opacity-0 group-hover:opacity-100 no-hover:opacity-100 focus-within:opacity-100"
+                }
+                title={
+                  s.due_at && taskDue && Date.parse(s.due_at) > Date.parse(taskDue)
+                    ? "After the task is due"
+                    : undefined
+                }
+              >
+                <DuePicker
+                  compact
+                  label={`Due date for ${s.title}`}
+                  value={s.due_at}
+                  tz={tz}
+                  onChange={(due_at) => updateStep.mutate({ id: s.id, patch: { due_at } })}
+                  className={
+                    s.due_at && taskDue && Date.parse(s.due_at) > Date.parse(taskDue)
+                      ? "underline decoration-risk decoration-dotted"
+                      : ""
+                  }
+                />
+              </div>
+            )}
             <CommitInput
               aria-label="Step estimate in minutes"
               inputMode="numeric"

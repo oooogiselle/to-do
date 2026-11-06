@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { CalendarDays } from "lucide-react";
 import { TZDate } from "@date-fns/tz";
 import { localDate, zonedInstant } from "@tt/shared";
 import { fmtDue } from "@tt/client";
@@ -25,17 +26,24 @@ function addDays(day: string, n: number, tz: string): string {
   return localDate(new Date(zonedInstant(day, "12:00", tz).getTime() + n * 86_400_000), tz);
 }
 
-/** Button showing the due date that opens a small picker: shortcuts, date, optional time. */
+/**
+ * Button showing the due date that opens a small picker: shortcuts, date, optional time.
+ * `compact` is for tight rows (steps): just the date, or a calendar icon when there's none.
+ */
 export function DuePicker({
   value,
   onChange,
   tz,
   className = "",
+  compact = false,
+  label = "Due date",
 }: {
   value: string | null;
   onChange: (dueAt: string | null) => void;
   tz: string;
   className?: string;
+  compact?: boolean;
+  label?: string;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -116,16 +124,34 @@ export function DuePicker({
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className={`rounded-lg border px-2 py-1 font-semibold ${value ? "border-line bg-surface text-ink" : "border-dashed border-line-strong text-muted"} hover:border-ink ${className}`}
+        aria-label={compact ? (value ? `${label}: ${fmtDue(value, tz)}` : label) : undefined}
+        title={compact ? label : undefined}
+        className={
+          compact
+            ? `flex h-6 items-center rounded-md px-1.5 text-[11px] font-semibold hover:bg-surface ${
+                value ? (Date.parse(value) < Date.now() ? "text-risk" : "text-muted") : "text-faint"
+              } ${className}`
+            : `rounded-lg border px-2 py-1 font-semibold ${value ? "border-line bg-surface text-ink" : "border-dashed border-line-strong text-muted"} hover:border-ink ${className}`
+        }
       >
-        {value ? `Due ${fmtDue(value, tz)}` : "Add due date"}
+        {compact ? (
+          value ? (
+            fmtDue(value, tz)
+          ) : (
+            <CalendarDays className="h-3.5 w-3.5" />
+          )
+        ) : value ? (
+          `Due ${fmtDue(value, tz)}`
+        ) : (
+          "Add due date"
+        )}
       </button>
       {open &&
         createPortal(
           <div
             ref={popRef}
             role="dialog"
-            aria-label="Due date"
+            aria-label={label}
             style={{
               top: pos?.top ?? 0,
               left: pos?.left ?? 0,

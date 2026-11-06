@@ -2,7 +2,17 @@
 
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { HUES, toggleDoneDate, type DayPlanItem, type List, type Settings, type Step, type SyncResponse, type Task, type TimeBlock } from "@tt/shared";
+import {
+  HUES,
+  toggleDoneDate,
+  type DayPlanItem,
+  type List,
+  type Settings,
+  type Step,
+  type SyncResponse,
+  type Task,
+  type TimeBlock,
+} from "@tt/shared";
 import { useApi, type ApiClient } from "./api-context";
 import { usePendingDeletes } from "./pending-deletes";
 
@@ -74,7 +84,11 @@ export function useModel() {
     const steps = kept(live(data?.steps)).sort((a, b) => a.order - b.order);
     const blocks = kept(live(data?.time_blocks));
     const taskIds = new Set(tasks.map((t) => t.id));
-    const dayPlanItems = live(data?.day_plan_items).filter((i) => taskIds.has(i.task_id));
+    const stepIds = new Set(steps.map((s) => s.id));
+    // Items for a deleted task or step stay hidden.
+    const dayPlanItems = live(data?.day_plan_items).filter(
+      (i) => taskIds.has(i.task_id) && (!i.step_id || stepIds.has(i.step_id)),
+    );
     const planByDate = new Map<string, DayPlanItem[]>();
     for (const i of [...dayPlanItems].sort((a, b) => a.position - b.position))
       planByDate.set(i.plan_date, [...(planByDate.get(i.plan_date) ?? []), i]);
@@ -244,6 +258,7 @@ export function useCreateStep() {
           estimate_min: v.body.estimate_min ?? null,
           order: v.body.order ?? 0,
           done: false,
+          due_at: v.body.due_at ?? null,
         }),
         id: v.tempId,
       }),
@@ -461,19 +476,24 @@ export const endPosition = (items: DayPlanItem[] = []) =>
 
 /** The position between two neighbors; pass undefined for the start or end of the list. */
 export const positionBetween = (before?: number, after?: number) =>
-  before === undefined ? (after === undefined ? 1 : after - 1) : after === undefined ? before + 1 : (before + after) / 2;
+  before === undefined
+    ? after === undefined
+      ? 1
+      : after - 1
+    : after === undefined
+      ? before + 1
+      : (before + after) / 2;
 
 export function useAddToPlan() {
   const api = useApi();
   return useOptimistic({
-    mutationFn: (v: {
-      tempId: string;
-      body: Parameters<ApiClient["createDayPlanItem"]>[0];
-    }) => api.createDayPlanItem(v.body),
+    mutationFn: (v: { tempId: string; body: Parameters<ApiClient["createDayPlanItem"]>[0] }) =>
+      api.createDayPlanItem(v.body),
     apply: (s, v) =>
       upsertRow(s, "day_plan_items", {
         ...tempRow({
           task_id: v.body.task_id,
+          step_id: v.body.step_id ?? null,
           plan_date: v.body.plan_date,
           position: v.body.position ?? 0,
         }),
@@ -509,5 +529,8 @@ export function useRemoveFromPlan() {
 export function useToggleRoutine() {
   const update = useUpdateTask();
   return (task: Pick<Task, "id" | "done_dates">, date: string, done: boolean) =>
-    update.mutate({ id: task.id, patch: { done_dates: toggleDoneDate(task.done_dates, date, done) } });
+    update.mutate({
+      id: task.id,
+      patch: { done_dates: toggleDoneDate(task.done_dates, date, done) },
+    });
 }

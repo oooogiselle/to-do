@@ -1,7 +1,17 @@
 "use client";
 
 import { useMemo } from "react";
-import { dueRisk, findFreeSlots, isRecurring, latestStart, type CalendarEvent, type Step, type Task } from "@tt/shared";
+import {
+  combineUrgency,
+  deadlineUrgency,
+  dueRisk,
+  findFreeSlots,
+  isRecurring,
+  type CalendarEvent,
+  type Step,
+  type Task,
+  type Urgency,
+} from "@tt/shared";
 import { useEvents, useModel } from "./data";
 import { isSomedayTask } from "./someday";
 
@@ -23,6 +33,10 @@ export type RailItem = {
   overdue: boolean;
   /** Latest time work can start and still fit before the deadline (null: undated, overdue, or it doesn't fit). */
   startBy: number | null;
+  /** The task's deadline, or its earliest open step's if that's sooner; null when undated. */
+  dueAt: number | null;
+  /** Open, unscheduled steps that have their own due date, and how pressing each one is. */
+  stepUrgency: Map<string, Urgency>;
   /** Start of the task's most recent whole-task block that has already ended, if any. */
   plannedAt?: number;
 };
@@ -90,7 +104,12 @@ export function useDueRail(now: number, days: DueRange) {
         (b) => b.task_id === task.id && !b.step_id && Date.parse(b.end) > now,
       );
       const stepsLeft = wholeTaskBlock ? 0 : openSteps.reduce((sum, s) => sum + stepMin(s), 0);
-      return { openSteps, estimated, neededMin: Math.max(remaining - scheduledMin, stepsLeft) };
+      return {
+        openSteps,
+        estimated,
+        wholeTaskBlock,
+        neededMin: Math.max(remaining - scheduledMin, stepsLeft),
+      };
     };
 
     const items: RailItem[] = [];
@@ -99,10 +118,31 @@ export function useDueRail(now: number, days: DueRange) {
       // Routines are checked off per day on My day; they never come due.
       if (task.status !== "open" || isRecurring(task)) continue;
       const plannedAt = lastPast.byTask.get(task.id);
-      if (!task.due_at) {
+      const work = remainingWork(task);
+      // Steps with their own deadline count on their own, unless a block for the whole task
+      // already covers them.
+      const stepUrgency = new Map<string, Urgency>();
+      if (!work.wholeTaskBlock) {
+        for (const s of work.openSteps) {
+          if (!s.due_at) continue;
+          stepUrgency.set(
+            s.id,
+            deadlineUrgency({
+              dueAt: Date.parse(s.due_at),
+              neededMin: stepMin(s),
+              freeSlots: free,
+              now,
+            }),
+          );
+        }
+      }
+      const dues = [
+        ...(task.due_at ? [Date.parse(task.due_at)] : []),
+        ...work.openSteps.filter((s) => stepUrgency.has(s.id)).map((s) => Date.parse(s.due_at!)),
+      ];
+      if (!dues.length) {
         // Someday ideas have no deadline on purpose; they live on the Someday page.
         if (isSomedayTask(task, listById)) continue;
-        const work = remainingWork(task);
         if (work.neededMin <= 0) continue;
         undated.push({
           task,
@@ -113,36 +153,48 @@ export function useDueRail(now: number, days: DueRange) {
           atRisk: false,
           overdue: false,
           startBy: null,
+          dueAt: null,
+          stepUrgency,
           plannedAt,
         });
         continue;
       }
-      const due = Date.parse(task.due_at);
-      const overdue = due < now;
-      if (!overdue && due >= to) continue;
+      const dueAt = Math.min(...dues);
+      if (dueAt >= to) continue;
+      if (work.neededMin <= 0) continue;
 
-      const work = remainingWork(task);
-      const risk = dueRisk({
-        dueAt: due,
+      const { freeMin } = dueRisk({
+        dueAt: task.due_at ? Date.parse(task.due_at) : dueAt,
         remainingEstimateMin: work.neededMin,
         scheduledMin: 0,
         freeSlots: free,
       });
-      if (risk.neededMin <= 0) continue;
+      const urgency = [
+        ...(task.due_at
+          ? [
+              deadlineUrgency({
+                dueAt: Date.parse(task.due_at),
+                neededMin: work.neededMin,
+                freeSlots: free,
+                now,
+              }),
+            ]
+          : []),
+        ...stepUrgency.values(),
+      ].reduce(combineUrgency);
       items.push({
         task,
         steps: work.openSteps,
-        ...risk,
+        neededMin: work.neededMin,
+        freeMin,
         estimated: work.estimated,
-        atRisk: overdue || risk.atRisk,
-        overdue,
-        startBy: overdue
-          ? null
-          : latestStart({ dueAt: due, neededMin: risk.neededMin, freeSlots: free }),
+        ...urgency,
+        dueAt,
+        stepUrgency,
         plannedAt,
       });
     }
-    items.sort((a, b) => Date.parse(a.task.due_at!) - Date.parse(b.task.due_at!));
+    items.sort((a, b) => a.dueAt! - b.dueAt!);
     undated.sort((a, b) => a.task.created_at.localeCompare(b.task.created_at));
     return { items, undated };
   }, [tasks, listById, stepsByTask, blocks, events, settings, tz, to, now, lastPast]);

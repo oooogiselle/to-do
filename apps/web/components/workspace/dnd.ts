@@ -22,6 +22,8 @@ export type DragItem =
       color: string;
       listName?: string;
       dueAt: string | null;
+      /** Set when dragged from the day plan: the plan item being reordered. */
+      planItemId?: string;
     }
   | {
       kind: "block";
