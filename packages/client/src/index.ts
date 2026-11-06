@@ -6,6 +6,7 @@ export * from "./time";
 export * from "./geometry";
 export * from "./realtime";
 export * from "./due-rail";
+export * from "./coming-up";
 export * from "./slot-suggestions";
 export * from "./slot-picks";
 export * from "./inbox";

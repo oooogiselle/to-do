@@ -5,6 +5,7 @@ import { CalendarPlus, Plus, Sparkles, Trash2, X } from "lucide-react";
 import {
   formatMinutes,
   isRecurring,
+  localDate,
   repeatLabel,
   swatch,
   WEEKDAY_OPTIONS,
@@ -71,6 +72,56 @@ function CommitInput({
       }}
       className={className}
     />
+  );
+}
+
+/**
+ * When to start working on the task. From that date My day lists it under Coming up; before
+ * it, My day leaves it alone unless it's short on time.
+ */
+function StartField({
+  value,
+  max,
+  onChange,
+}: {
+  value: string | null;
+  max?: string;
+  onChange: (startDate: string | null) => void;
+}) {
+  return (
+    <div>
+      <label htmlFor="task-start" className={label}>
+        Start
+      </label>
+      <div className="flex items-center gap-2">
+        <input
+          id="task-start"
+          type="date"
+          value={value ?? ""}
+          max={max}
+          onChange={(e) => {
+            const v = e.target.value;
+            // While a year is being typed the input reports dates like 0002-11-10; skip those.
+            if (!v) onChange(null);
+            else if (v >= "2000-01-01" && v !== value) onChange(v);
+          }}
+          className="rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:border-sky focus:ring-2 focus:ring-sky/20"
+        />
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            aria-label="Clear start date"
+            className="grid h-7 w-7 place-items-center rounded-lg text-faint hover:bg-row hover:text-ink"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+        <p className="min-w-0 text-[12px] leading-snug text-faint">
+          Shows on My day from this date
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -235,6 +286,14 @@ export function TaskSheet({
             />
           </div>
         </div>
+
+        {list?.kind !== "someday" && !isRecurring(task) && (
+          <StartField
+            value={task.start_date}
+            max={task.due_at ? localDate(new Date(task.due_at), settings.timezone) : undefined}
+            onChange={(start_date) => update({ start_date })}
+          />
+        )}
 
         {list?.kind === "someday" && <SomedayFields task={task} onChange={update} />}
 
