@@ -185,18 +185,19 @@ export function WorkspaceDnd({
 
   /** The plan target for a dragged to-do, if it's over a plan. Routines can't be planned. */
   const planTargetFor = (item: DragItem): PlanTarget | null => {
-    if (item.kind !== "task") return null;
+    if (item.kind !== "task" && item.kind !== "step") return null;
     const task = taskById.get(item.taskId);
     if (!task || isRecurring(task)) return null;
     return planAt(pointer.current.x, pointer.current.y, item.planItemId);
   };
 
-  const dropOnPlan = (item: Extract<DragItem, { kind: "task" }>, target: PlanTarget) => {
+  const dropOnPlan = (item: Extract<DragItem, { kind: "task" | "step" }>, target: PlanTarget) => {
     const others = (planByDate.get(target.date) ?? []).filter((i) => i.id !== item.planItemId);
-    // A task is on a day once: dropping it again moves the existing item.
+    const stepId = item.kind === "step" ? item.stepId : null;
+    // A task (or step) is on a day once: dropping it again moves the existing item.
     const existing = item.planItemId
       ? { id: item.planItemId }
-      : others.find((i) => i.task_id === item.taskId);
+      : others.find((i) => i.task_id === item.taskId && (i.step_id ?? null) === stepId);
     const rest = others.filter((i) => i.id !== existing?.id);
     const position = positionBetween(
       rest[target.index - 1]?.position,
@@ -207,7 +208,7 @@ export function WorkspaceDnd({
     } else {
       addToPlan.mutate({
         tempId: tempId(),
-        body: { task_id: item.taskId, plan_date: target.date, position },
+        body: { task_id: item.taskId, step_id: stepId, plan_date: target.date, position },
       });
     }
   };
@@ -225,9 +226,7 @@ export function WorkspaceDnd({
     pointer.current = a;
     const top = e.active.rect.current.initial?.top;
     grabMin.current =
-      item?.kind === "block" && top !== undefined
-        ? ((a.y - top) / item.sourceHourPx) * 60
-        : 0;
+      item?.kind === "block" && top !== undefined ? ((a.y - top) / item.sourceHourPx) * 60 : 0;
     setActive(item);
   };
 
@@ -243,7 +242,7 @@ export function WorkspaceDnd({
     }
     if (!item) return reset();
     const toPlan = planTargetFor(item);
-    if (toPlan && item.kind === "task") {
+    if (toPlan && (item.kind === "task" || item.kind === "step")) {
       reset();
       return dropOnPlan(item, toPlan);
     }
@@ -284,9 +283,7 @@ export function WorkspaceDnd({
           );
           const next = nextPlan ? null : previewFor(item);
           setPreview((prev) =>
-            prev && next && prev.col === next.col && prev.startMin === next.startMin
-              ? prev
-              : next,
+            prev && next && prev.col === next.col && prev.startMin === next.startMin ? prev : next,
           );
         }}
         onDragEnd={onDragEnd}

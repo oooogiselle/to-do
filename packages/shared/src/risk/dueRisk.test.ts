@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { eventTitle, formatMinutes } from "../format/eventTitle";
-import { dueRisk, latestStart, rankComingUp } from "./dueRisk";
+import {
+  combineUrgency,
+  deadlineUrgency,
+  dueRisk,
+  latestStart,
+  rankComingUp,
+  urgencyReason,
+} from "./dueRisk";
 
 const h = 3_600_000;
 
@@ -10,7 +17,9 @@ describe("dueRisk", () => {
     { start: 5 * h, end: 6 * h },
   ];
   it("counts only free time before the deadline", () => {
-    expect(dueRisk({ dueAt: 5.5 * h, remainingEstimateMin: 180, scheduledMin: 0, freeSlots })).toEqual({
+    expect(
+      dueRisk({ dueAt: 5.5 * h, remainingEstimateMin: 180, scheduledMin: 0, freeSlots }),
+    ).toEqual({
       neededMin: 180,
       freeMin: 150,
       atRisk: true,
@@ -24,11 +33,17 @@ describe("dueRisk", () => {
 
 describe("eventTitle / formatMinutes", () => {
   it("formats titles", () => {
-    expect(eventTitle("CS61", "Lab report", "Write analysis")).toBe("[CS61] Lab report — Write analysis");
+    expect(eventTitle("CS61", "Lab report", "Write analysis")).toBe(
+      "[CS61] Lab report — Write analysis",
+    );
     expect(eventTitle(null, "Lab report")).toBe("Lab report");
   });
   it("formats durations", () => {
-    expect([formatMinutes(45), formatMinutes(60), formatMinutes(105)]).toEqual(["45m", "1h", "1h 45m"]);
+    expect([formatMinutes(45), formatMinutes(60), formatMinutes(105)]).toEqual([
+      "45m",
+      "1h",
+      "1h 45m",
+    ]);
   });
 });
 
@@ -57,13 +72,13 @@ describe("latestStart", () => {
 
 describe("rankComingUp", () => {
   const day = 24 * h;
-  const iso = (t: number) => new Date(t).toISOString();
   const item = (
     id: string,
     o: Partial<{ due: number; start: string; overdue: boolean; atRisk: boolean; startBy: number }>,
   ) => ({
     id,
-    task: { due_at: o.due !== undefined ? iso(o.due) : null, start_date: o.start ?? null },
+    task: { start_date: o.start ?? null },
+    dueAt: o.due ?? null,
     overdue: o.overdue ?? false,
     atRisk: o.atRisk ?? false,
     startBy: o.startBy ?? null,
@@ -83,11 +98,20 @@ describe("rankComingUp", () => {
       opts,
     );
     expect(ids(r)).toEqual(["late", "risk", "today", "soon", "later"]);
-    expect(r.map((x) => x.reason)).toEqual(["overdue", "at-risk", "start-today", "upcoming", "upcoming"]);
+    expect(r.map((x) => x.reason)).toEqual([
+      "overdue",
+      "at-risk",
+      "start-today",
+      "upcoming",
+      "upcoming",
+    ]);
   });
   it("drops tasks due past the horizon unless started", () => {
     const r = rankComingUp(
-      [item("far", { due: 20 * day, startBy: 18 * day }), item("farStarted", { due: 20 * day, startBy: 18 * day, start: "1970-01-01" })],
+      [
+        item("far", { due: 20 * day, startBy: 18 * day }),
+        item("farStarted", { due: 20 * day, startBy: 18 * day, start: "1970-01-01" }),
+      ],
       opts,
     );
     expect(ids(r)).toEqual(["farStarted"]);
@@ -102,13 +126,68 @@ describe("rankComingUp", () => {
       opts,
     );
     expect(ids(r)).toEqual(["snoozedRisk"]);
-    expect(ids(rankComingUp([item("snoozed", { due: 5 * day, startBy: 3 * day, start: "1970-01-03" })], { ...opts, date: "1970-01-03" }))).toEqual(["snoozed"]);
+    expect(
+      ids(
+        rankComingUp([item("snoozed", { due: 5 * day, startBy: 3 * day, start: "1970-01-03" })], {
+          ...opts,
+          date: "1970-01-03",
+        }),
+      ),
+    ).toEqual(["snoozed"]);
   });
   it("includes started tasks without a due date, after dated ones", () => {
     const r = rankComingUp(
-      [item("undated", { start: "1970-01-01" }), item("undatedNotStarted", {}), item("dated", { due: 4 * day, start: "1970-01-01", startBy: 2 * day })],
+      [
+        item("undated", { start: "1970-01-01" }),
+        item("undatedNotStarted", {}),
+        item("dated", { due: 4 * day, start: "1970-01-01", startBy: 2 * day }),
+      ],
       opts,
     );
     expect(ids(r)).toEqual(["dated", "undated"]);
+  });
+});
+
+describe("deadlineUrgency / combineUrgency", () => {
+  const freeSlots = [
+    { start: 0, end: 2 * h },
+    { start: 5 * h, end: 6 * h },
+  ];
+  it("gives a start time when the work fits", () => {
+    expect(deadlineUrgency({ dueAt: 10 * h, neededMin: 30, freeSlots, now: 0 })).toEqual({
+      overdue: false,
+      atRisk: false,
+      startBy: 5.5 * h,
+    });
+  });
+  it("is at risk when it doesn't fit, and overdue past the deadline", () => {
+    expect(deadlineUrgency({ dueAt: 1 * h, neededMin: 120, freeSlots, now: 0 })).toEqual({
+      overdue: false,
+      atRisk: true,
+      startBy: null,
+    });
+    expect(deadlineUrgency({ dueAt: 1 * h, neededMin: 30, freeSlots, now: 2 * h })).toMatchObject({
+      overdue: true,
+      atRisk: true,
+    });
+  });
+  it("combines to the more pressing of the two", () => {
+    const calm = { overdue: false, atRisk: false, startBy: 5 * h };
+    expect(combineUrgency(calm, { overdue: false, atRisk: false, startBy: 3 * h }).startBy).toBe(
+      3 * h,
+    );
+    expect(combineUrgency(calm, { overdue: false, atRisk: true, startBy: null })).toEqual({
+      overdue: false,
+      atRisk: true,
+      startBy: 5 * h,
+    });
+  });
+  it("names the reason for a day", () => {
+    expect(urgencyReason({ overdue: false, atRisk: false, startBy: 3 * h }, 4 * h)).toBe(
+      "start-today",
+    );
+    expect(urgencyReason({ overdue: false, atRisk: false, startBy: 5 * h }, 4 * h)).toBe(
+      "upcoming",
+    );
   });
 });

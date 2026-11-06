@@ -93,17 +93,23 @@ isOneToOne: true
                   ]
                 },"day_plan_items": {
                   Row: {
-                    "created_at": string,"deleted_at": string | null,"id": string,"plan_date": string,"position": number,"task_id": string,"updated_at": string,"user_id": string
+                    "created_at": string,"deleted_at": string | null,"id": string,"plan_date": string,"position": number,"step_id": string | null,"task_id": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"deleted_at"?: string | null,"id"?: string,"plan_date": string,"position"?: number,"task_id": string,"updated_at"?: string,"user_id"?: string
+                    "created_at"?: string,"deleted_at"?: string | null,"id"?: string,"plan_date": string,"position"?: number,"step_id"?: string | null,"task_id": string,"updated_at"?: string,"user_id"?: string
                   }
                   Update: {
-                    "created_at"?: string,"deleted_at"?: string | null,"id"?: string,"plan_date"?: string,"position"?: number,"task_id"?: string,"updated_at"?: string,"user_id"?: string
+                    "created_at"?: string,"deleted_at"?: string | null,"id"?: string,"plan_date"?: string,"position"?: number,"step_id"?: string | null,"task_id"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "day_plan_items_step_id_fkey"
+      columns: ["step_id"]
+isOneToOne: false
+      referencedRelation: "steps"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "day_plan_items_task_id_fkey"
       columns: ["task_id"]
 isOneToOne: false
@@ -189,14 +195,14 @@ isOneToOne: false
                   ]
                 },"steps": {
                   Row: {
-                    "created_at": string,"deleted_at": string | null,"done": boolean,"estimate_min": number | null,"id": string,"order": number,"task_id": string,"title": string,"updated_at": string,"user_id": string
+                    "created_at": string,"deleted_at": string | null,"done": boolean,"due_at": string | null,"estimate_min": number | null,"id": string,"order": number,"task_id": string,"title": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"deleted_at"?: string | null,"done"?: boolean,"estimate_min"?: number | null,"id"?: string,"order"?: number,"task_id": string,"title": string,"updated_at"?: string,"user_id"?: string
+                    "created_at"?: string,"deleted_at"?: string | null,"done"?: boolean,"due_at"?: string | null,"estimate_min"?: number | null,"id"?: string,"order"?: number,"task_id": string,"title": string,"updated_at"?: string,"user_id"?: string
                   }
                   Update: {
-                    "created_at"?: string,"deleted_at"?: string | null,"done"?: boolean,"estimate_min"?: number | null,"id"?: string,"order"?: number,"task_id"?: string,"title"?: string,"updated_at"?: string,"user_id"?: string
+                    "created_at"?: string,"deleted_at"?: string | null,"done"?: boolean,"due_at"?: string | null,"estimate_min"?: number | null,"id"?: string,"order"?: number,"task_id"?: string,"title"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {

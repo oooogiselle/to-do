@@ -2,7 +2,14 @@
 
 import { useDraggable } from "@dnd-kit/core";
 import { CalendarPlus, Repeat, X } from "lucide-react";
-import { formatMinutes, localDate, swatch, type DayPlanItem, type Task } from "@tt/shared";
+import {
+  formatMinutes,
+  localDate,
+  swatch,
+  type DayPlanItem,
+  type Step,
+  type Task,
+} from "@tt/shared";
 import {
   dragMinutes,
   fmtTime,
@@ -19,46 +26,71 @@ import type { DragItem } from "./dnd";
 const iconBtn =
   "grid h-7 w-7 place-items-center rounded-md text-faint hover:bg-row-hover hover:text-ink focus-visible:outline-2";
 
-/** One planned to-do: drag it to reorder, or onto a day to give it a time. */
+/**
+ * One planned to-do, or one step of a bigger to-do: drag it to reorder, or onto a day to give
+ * it a time.
+ */
 export function PlanItem({
   item,
   task,
+  step,
   date,
   paneKey,
 }: {
   item: DayPlanItem;
   task: Task;
+  /** Set when this item plans one step of `task`. */
+  step?: Step;
   date: string;
   paneKey: string;
 }) {
   const { blocks, listById, settings } = useModel();
   const tz = settings.timezone;
   const openTask = useOpenTask();
-  const { setTaskDone } = useCompletion();
+  const { setTaskDone, setStepDone } = useCompletion();
   const remove = useRemoveFromPlan();
   const update = useUpdateTask();
 
   const list = task.list_id ? listById.get(task.list_id) : undefined;
   const color = taskColor(task, listById);
   const c = swatch(color);
-  const done = task.status === "done";
-  const estimate = task.estimate_min ?? settings.default_block_min;
+  const done = step ? step.done : task.status === "done";
+  const title = step ? step.title : task.title;
+  const estimate = (step ? step.estimate_min : task.estimate_min) ?? settings.default_block_min;
+  // A step shows its own block; a whole task shows any of its blocks.
   const block = blocks
-    .filter((b) => b.task_id === task.id && localDate(new Date(b.start), tz) === date)
+    .filter(
+      (b) =>
+        b.task_id === task.id &&
+        (!step || b.step_id === step.id) &&
+        localDate(new Date(b.start), tz) === date,
+    )
     .sort((a, b) => Date.parse(a.start) - Date.parse(b.start))[0];
 
   const { setNodeRef, listeners, isDragging } = useDraggable({
     id: `plan-${paneKey}-${item.id}`,
-    data: {
-      kind: "task",
-      taskId: task.id,
-      title: task.title,
-      minutes: dragMinutes(estimate),
-      color,
-      listName: list?.name,
-      dueAt: task.due_at,
-      planItemId: item.id,
-    } satisfies DragItem,
+    data: (step
+      ? {
+          kind: "step",
+          taskId: task.id,
+          stepId: step.id,
+          title: `${task.title} — ${step.title}`,
+          minutes: dragMinutes(estimate),
+          color,
+          listName: list?.name,
+          dueAt: step.due_at ?? task.due_at,
+          planItemId: item.id,
+        }
+      : {
+          kind: "task",
+          taskId: task.id,
+          title: task.title,
+          minutes: dragMinutes(estimate),
+          color,
+          listName: list?.name,
+          dueAt: task.due_at,
+          planItemId: item.id,
+        }) satisfies DragItem,
   });
 
   if (isDragging) {
@@ -70,7 +102,7 @@ export function PlanItem({
         style={{ borderColor: c.solid, background: c.tint }}
       >
         <span className="truncate text-[13px]" style={{ color: c.ink }}>
-          {task.title}
+          {title}
         </span>
       </li>
     );
@@ -92,8 +124,8 @@ export function PlanItem({
       <TaskCheck
         done={done}
         color={c.solid}
-        onToggle={() => setTaskDone(task.id, !done)}
-        label={task.title}
+        onToggle={() => (step ? setStepDone(task.id, step.id, !done) : setTaskDone(task.id, !done))}
+        label={title}
         size={16}
       />
       <button
@@ -104,9 +136,11 @@ export function PlanItem({
         <span
           className={`block truncate text-[13px] ${done ? "text-faint line-through" : "text-ink"}`}
         >
-          {task.title}
+          {title}
         </span>
         <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-faint">
+          {step && <span className="truncate">{task.title}</span>}
+          {step && <span aria-hidden="true">·</span>}
           {list && <span style={{ color: c.ink }}>{list.name}</span>}
           {list && <span aria-hidden="true">·</span>}
           <span>{formatMinutes(estimate)}</span>
@@ -125,32 +159,34 @@ export function PlanItem({
           <button
             type="button"
             onClick={() => openTask(task.id, { panel: "schedule" })}
-            aria-label={`Find time for ${task.title}`}
+            aria-label={`Find time for ${title}`}
             title="Find time"
             className={iconBtn}
           >
             <CalendarPlus className="h-3.5 w-3.5" />
           </button>
         )}
-        <button
-          type="button"
-          onClick={() => {
-            update.mutate({
-              id: task.id,
-              patch: { repeat: "daily", status: "open", done_dates: done ? [date] : [] },
-            });
-            remove.mutate(item.id);
-          }}
-          aria-label={`Repeat ${task.title} every day`}
-          title="Make daily"
-          className={iconBtn}
-        >
-          <Repeat className="h-3.5 w-3.5" />
-        </button>
+        {!step && (
+          <button
+            type="button"
+            onClick={() => {
+              update.mutate({
+                id: task.id,
+                patch: { repeat: "daily", status: "open", done_dates: done ? [date] : [] },
+              });
+              remove.mutate(item.id);
+            }}
+            aria-label={`Repeat ${task.title} every day`}
+            title="Make daily"
+            className={iconBtn}
+          >
+            <Repeat className="h-3.5 w-3.5" />
+          </button>
+        )}
         <button
           type="button"
           onClick={() => remove.mutate(item.id)}
-          aria-label={`Remove ${task.title} from this day`}
+          aria-label={`Remove ${title} from this day`}
           title="Remove from day"
           className={iconBtn}
         >

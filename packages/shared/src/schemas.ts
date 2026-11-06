@@ -85,6 +85,8 @@ export type Task = z.infer<typeof Task>;
 export const DayPlanItem = z.object({
   ...syncFields,
   task_id: z.string().uuid(),
+  /** Set when one step is planned rather than the whole task. */
+  step_id: z.string().uuid().nullable(),
   plan_date: PlainDate,
   position: z.number(),
 });
@@ -97,6 +99,8 @@ export const Step = z.object({
   estimate_min: z.number().int().nullable(),
   order: z.number().int(),
   done: z.boolean(),
+  /** The step's own deadline; null means it just follows the task's. */
+  due_at: z.string().nullable(),
 });
 export type Step = z.infer<typeof Step>;
 
@@ -181,6 +185,7 @@ export const StepCreate = z.object({
   task_id: z.string().uuid(),
   title: z.string().min(1),
   estimate_min: z.number().int().positive().nullable().optional(),
+  due_at: z.string().datetime({ offset: true }).nullable().optional(),
   order: z.number().int().optional(),
 });
 export const StepPatch = StepCreate.omit({ task_id: true })
@@ -189,10 +194,11 @@ export const StepPatch = StepCreate.omit({ task_id: true })
 
 export const DayPlanItemCreate = z.object({
   task_id: z.string().uuid(),
+  step_id: z.string().uuid().nullable().optional(),
   plan_date: PlainDate,
   position: z.number().optional(),
 });
-export const DayPlanItemPatch = DayPlanItemCreate.omit({ task_id: true }).partial();
+export const DayPlanItemPatch = DayPlanItemCreate.omit({ task_id: true, step_id: true }).partial();
 
 export const SettingsPatch = Settings.omit({ updated_at: true }).partial();
 export const CalendarSelectionPatch = z.object({ selected: z.boolean() });

@@ -7,6 +7,7 @@ import { formatMinutes, swatch, type Step, type Task } from "@tt/shared";
 import {
   dragMinutes,
   DUE_RANGES,
+  fmtDue,
   fmtWhen,
   taskColor,
   useDueRail,
@@ -255,6 +256,7 @@ function DueCard(props: {
               listName={props.listName}
               defaultMin={props.defaultMin}
               plannedAt={props.stepPlannedAt.get(s.id)}
+              atRisk={item.stepUrgency.get(s.id)?.atRisk ?? false}
               tz={props.tz}
               now={props.now}
             />
@@ -292,6 +294,8 @@ function DueStep(props: {
   listName?: string;
   defaultMin: number;
   plannedAt?: number;
+  /** The step's own deadline is past, or there isn't enough open time before it. */
+  atRisk: boolean;
   tz: string;
   now: number;
 }) {
@@ -307,7 +311,7 @@ function DueStep(props: {
       minutes,
       color: props.color,
       listName: props.listName,
-      dueAt: task.due_at,
+      dueAt: step.due_at ?? task.due_at,
     } satisfies DragItem,
   });
   return (
@@ -325,7 +329,14 @@ function DueStep(props: {
           </span>
         )}
       </span>
-      <span className="shrink-0 font-bold text-faint">{formatMinutes(minutes)}</span>
+      <span className="shrink-0 font-bold text-faint">
+        {step.due_at && (
+          <span className={props.atRisk ? "text-risk" : ""}>
+            Due {fmtDue(step.due_at, props.tz, props.now)} ·{" "}
+          </span>
+        )}
+        {formatMinutes(minutes)}
+      </span>
     </li>
   );
 }

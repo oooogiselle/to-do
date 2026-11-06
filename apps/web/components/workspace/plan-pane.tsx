@@ -12,6 +12,7 @@ import {
   occursOn,
   parseQuickAdd,
   zonedInstant,
+  type ComingUpReason,
   type Task,
 } from "@tt/shared";
 import {
@@ -25,13 +26,15 @@ import {
   useCreateTask,
   useEvents,
   useModel,
-  type ComingUpItem,
 } from "@tt/client";
 import { useOpenTask } from "@/components/app-shell";
 import { DailySection } from "./daily-section";
 import { useCalendarAnchor, dayLabel } from "./calendar-dates";
 import { PlanItem } from "./plan-item";
 import { useDragState } from "./workspace-dnd";
+
+const addBtn =
+  "grid h-6 w-6 shrink-0 place-items-center rounded-md border border-line bg-surface text-muted hover:text-ink";
 
 /** Coming up rows shown before "Show more". */
 const COMING_UP_SHOWN = 5;
@@ -44,7 +47,7 @@ const navBtn =
  * that day. The date follows the Day pane, so stepping one steps the other.
  */
 export function PlanPane({ pane, now }: { pane: string; now: number }) {
-  const { tasks, taskById, blocks, lists, planByDate, settings } = useModel();
+  const { tasks, taskById, stepsByTask, blocks, lists, planByDate, settings } = useModel();
   const tz = settings.timezone;
   const today = localDate(new Date(now), tz);
   const [anchor, setAnchor] = useCalendarAnchor("today");
@@ -56,18 +59,27 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
   const { planTarget } = useDragState();
   const [draft, setDraft] = useState("");
 
-  const entries = (planByDate.get(date) ?? [])
-    .map((item) => ({ item, task: taskById.get(item.task_id) }))
-    .filter((e): e is { item: typeof e.item; task: Task } => !!e.task && !isRecurring(e.task));
+  const entries = (planByDate.get(date) ?? []).flatMap((item) => {
+    const task = taskById.get(item.task_id);
+    if (!task || isRecurring(task)) return [];
+    const step = item.step_id
+      ? stepsByTask.get(task.id)?.find((s) => s.id === item.step_id)
+      : undefined;
+    return item.step_id && !step ? [] : [{ item, task, step }];
+  });
+  type Entry = (typeof entries)[number];
   const routines = tasks.filter((t) => t.status === "open" && isRecurring(t) && occursOn(t, date));
 
+  // A planned step counts as its own to-do, with its own estimate.
+  const entryDone = (e: Entry) => (e.step ? e.step.done : e.task.status === "done");
   const doneCount =
-    entries.filter((e) => e.task.status === "done").length +
-    routines.filter((t) => isDoneOn(t, date)).length;
+    entries.filter(entryDone).length + routines.filter((t) => isDoneOn(t, date)).length;
   const totalCount = entries.length + routines.length;
   const estimate = (t: Task) => t.estimate_min ?? settings.default_block_min;
+  const entryMin = (e: Entry) =>
+    e.step ? (e.step.estimate_min ?? settings.default_block_min) : estimate(e.task);
   const plannedMin =
-    entries.filter((e) => e.task.status !== "done").reduce((s, e) => s + estimate(e.task), 0) +
+    entries.filter((e) => !entryDone(e)).reduce((s, e) => s + entryMin(e), 0) +
     routines.filter((t) => !isDoneOn(t, date)).reduce((s, t) => s + estimate(t), 0);
 
   // Free time left in the day's working hours, after events and blocks (and, today, after now).
@@ -92,9 +104,14 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
   const [showAllComingUp, setShowAllComingUp] = useState(false);
   const shownComingUp = showAllComingUp ? comingUp : comingUp.slice(0, COMING_UP_SHOWN);
 
-  /** Why a to-do is in Coming up, as a short label, and whether it's urgent. */
-  const comingUpHint = ({ reason, task, startBy }: ComingUpItem) => {
-    const thisDay = date === today ? "today" : "this day";
+  const thisDay = date === today ? "today" : "this day";
+  /** Why a to-do (or one of its steps) is in Coming up, as a short label, and whether it's urgent. */
+  const hintFor = (
+    reason: ComingUpReason,
+    startBy: number | null,
+    dueAt: number | null,
+    startDate: string | null,
+  ) => {
     switch (reason) {
       case "overdue":
         return { text: "Overdue", urgent: true };
@@ -103,19 +120,27 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
       case "start-today":
         return { text: `Start ${thisDay}`, urgent: true };
       case "started":
-        return task.start_date === date
+        return startDate === date
           ? { text: `Starts ${thisDay}`, urgent: false }
-          : { text: `Started ${fmtRelDay(zonedInstant(task.start_date!, "12:00", tz), tz, now)}`, urgent: false };
-      case "upcoming":
-        return { text: `Start by ${fmtRelDay(startBy ?? Date.parse(task.due_at!), tz, now)}`, urgent: false };
+          : {
+              text: `Started ${fmtRelDay(zonedInstant(startDate!, "12:00", tz), tz, now)}`,
+              urgent: false,
+            };
+      case "upcoming": {
+        const by = startBy ?? dueAt;
+        return { text: by === null ? "" : `Start by ${fmtRelDay(by, tz, now)}`, urgent: false };
+      }
     }
   };
+  const dueText = (dueAt: string) =>
+    ` · due ${fmtDue(dueAt, tz, now).replace(/^(Today|Tomorrow|Yesterday)/, (w) => w.toLowerCase())}`;
 
-  const plan = (task: Pick<Task, "id">) =>
+  const plan = (task: Pick<Task, "id">, stepId?: string) =>
     addToPlan.mutate({
       tempId: tempId(),
       body: {
         task_id: task.id,
+        step_id: stepId ?? null,
         plan_date: date,
         position: endPosition(planByDate.get(date)),
       },
@@ -150,7 +175,12 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
               </h2>
               <p className="mt-0.5 pl-4 text-[13px] text-muted">{fmtDay(date, tz, "long")}</p>
             </div>
-            <button type="button" className={navBtn} onClick={() => step(-1)} aria-label="Previous day">
+            <button
+              type="button"
+              className={navBtn}
+              onClick={() => step(-1)}
+              aria-label="Previous day"
+            >
               <ChevronLeft className="h-4 w-4" />
             </button>
             {date !== today && (
@@ -195,10 +225,10 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
           <section className="mt-7" aria-label={`Plan for ${fmtDay(date, tz, "long")}`}>
             <h3 className="px-1 pb-1 text-[11px] tracking-[0.08em] text-faint uppercase">Plan</h3>
             <ol className="min-h-[60px] rounded-lg">
-              {entries.map(({ item, task }, i) => (
+              {entries.map(({ item, task, step }, i) => (
                 <Fragment key={item.id}>
                   {dropAt === i && dropLine}
-                  <PlanItem item={item} task={task} date={date} paneKey={pane} />
+                  <PlanItem item={item} task={task} step={step} date={date} paneKey={pane} />
                 </Fragment>
               ))}
               {dropAt === entries.length && entries.length > 0 && dropLine}
@@ -231,46 +261,74 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
               <ul>
                 {shownComingUp.map((item) => {
                   const t = item.task;
-                  const hint = comingUpHint(item);
+                  const hint = hintFor(item.reason, item.startBy, item.dueAt, t.start_date);
                   return (
-                    <li
-                      key={t.id}
-                      className="group flex items-center gap-3 rounded-lg py-1.5 pr-1 pl-2 hover:bg-row"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => plan(t)}
-                        aria-label={`Add ${t.title} to this day`}
-                        className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-line bg-surface text-muted hover:text-ink"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => openTask(t.id)}
-                        className="min-w-0 flex-1 truncate text-left text-[13px] text-chip-ink hover:text-ink"
-                      >
-                        {t.title}
-                      </button>
-                      <span
-                        className={`shrink-0 text-[11px] ${hint.urgent ? "text-risk" : "text-muted"}`}
-                        title={
-                          item.estimated
-                            ? `${formatMinutes(item.neededMin)} of work not on the calendar yet`
-                            : "No estimate yet, so this assumes your default block length"
-                        }
-                      >
-                        {hint.text}
-                        {t.due_at && (
-                          <span className="text-faint">
-                            {" "}
-                            · due{" "}
-                            {fmtDue(t.due_at, tz, now).replace(/^(Today|Tomorrow|Yesterday)/, (w) =>
-                              w.toLowerCase(),
-                            )}
-                          </span>
-                        )}
-                      </span>
+                    <li key={t.id}>
+                      <div className="group flex items-center gap-3 rounded-lg py-1.5 pr-1 pl-2 hover:bg-row">
+                        <button
+                          type="button"
+                          onClick={() => plan(t)}
+                          aria-label={`Add ${t.title} to this day`}
+                          className={addBtn}
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openTask(t.id)}
+                          className="min-w-0 flex-1 truncate text-left text-[13px] text-chip-ink hover:text-ink"
+                        >
+                          {t.title}
+                        </button>
+                        <span
+                          className={`shrink-0 text-[11px] ${hint.urgent ? "text-risk" : "text-muted"}`}
+                          title={
+                            item.estimated
+                              ? `${formatMinutes(item.neededMin)} of work not on the calendar yet`
+                              : "No estimate yet, so this assumes your default block length"
+                          }
+                        >
+                          {hint.text}
+                          {t.due_at && <span className="text-faint">{dueText(t.due_at)}</span>}
+                        </span>
+                      </div>
+                      {item.nextSteps.length > 0 && (
+                        <ul className="mb-1 ml-[22px] border-l border-line-soft pl-2">
+                          {item.nextSteps.map(({ step: st, reason, startBy }) => {
+                            const stepHint = reason ? hintFor(reason, startBy, null, null) : null;
+                            return (
+                              <li
+                                key={st.id}
+                                className="flex items-center gap-2.5 rounded-lg py-1 pr-1 pl-1.5 hover:bg-row"
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => plan(t, st.id)}
+                                  aria-label={`Add step ${st.title} to this day`}
+                                  className={`${addBtn} h-5 w-5`}
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </button>
+                                <span className="min-w-0 flex-1 truncate text-[12.5px] text-chip-ink">
+                                  {st.title}
+                                </span>
+                                <span
+                                  className={`shrink-0 text-[11px] ${stepHint?.urgent ? "text-risk" : "text-faint"}`}
+                                >
+                                  {st.estimate_min ? formatMinutes(st.estimate_min) : ""}
+                                  {stepHint && (
+                                    <>
+                                      {st.estimate_min ? " · " : ""}
+                                      {stepHint.text}
+                                    </>
+                                  )}
+                                  {st.due_at && dueText(st.due_at)}
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
                     </li>
                   );
                 })}
