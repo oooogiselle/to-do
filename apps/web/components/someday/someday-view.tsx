@@ -14,6 +14,7 @@ import {
   useAddToPlan,
   useCompletion,
   useModel,
+  useResearchTask,
   useSomeday,
   useUpdateTask,
   type SomedayItem,
@@ -25,6 +26,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { Switch } from "@/components/ui/switch";
 import { TaskCheck } from "@/components/ui/task-check";
 import { LinkChip } from "./link-chip";
+import { ResearchSummary } from "./research";
 
 type KindFilter = IdeaKind | "all";
 
@@ -186,7 +188,9 @@ function Capture({
   kindFilter: KindFilter;
 }) {
   const addSomeday = useAddSomeday();
+  const research = useResearchTask();
   const [text, setText] = useState("");
+  const [researchNote, setResearchNote] = useState<string | null>(null);
   const [kind, setKind] = useState<IdeaKind | null>(null);
   const [horizon, setHorizon] = useState<Horizon | "none">("none");
   const [pickedList, setPickedList] = useState<string>("");
@@ -202,6 +206,7 @@ function Capture({
     if (!parsed.title || busy) return;
     setBusy(true);
     setFailed(false);
+    setResearchNote(null);
     try {
       await addSomeday(
         {
@@ -212,8 +217,13 @@ function Capture({
         },
         {
           listId: target,
-          onAdded: (task) =>
-            setNotice({ kind: "added", taskId: task.id, label: task.title, listName: "Someday" }),
+          onAdded: (task) => {
+            setNotice({ kind: "added", taskId: task.id, label: task.title, listName: "Someday" });
+            // Every new item gets web resources and a time estimate; the card fills in when done.
+            research.mutate(task.id, {
+              onError: (e) => setResearchNote(`Added, but couldn't find resources: ${e.message}`),
+            });
+          },
         },
       );
       setText("");
@@ -247,6 +257,11 @@ function Capture({
         <p className="flex items-center gap-2 px-1 pb-1 text-[12px] text-muted">
           <LinkChip url={parsed.link_url} />
           saved as the link{parsed.title ? ` · “${parsed.title}”` : ""}
+        </p>
+      )}
+      {researchNote && (
+        <p role="status" className="px-1 pb-1 text-[12px] font-semibold text-muted">
+          {researchNote}
         </p>
       )}
       {failed && (
@@ -368,6 +383,8 @@ function IdeaCard({ item }: { item: SomedayItem }) {
       )}
 
       {task.notes && <p className="line-clamp-2 pl-8 text-[12px] text-muted">{task.notes}</p>}
+
+      {!done && <ResearchSummary task={task} onMore={() => openTask(task.id)} className="pl-8" />}
 
       {progress.total > 0 && (
         <div className="flex items-center gap-2 pl-8" title={`${progress.done} of ${progress.total} steps done`}>

@@ -165,7 +165,25 @@ const ideas = await insert(user, "tasks", [
   idea("Run a half marathon", "goal", "year", { estimate_min: 45 }),
   idea("Learn Rust ownership", "learn", "month", { link_url: "https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html", estimate_min: 60 }),
   idea("3Blue1Brown: neural networks series", "learn", "someday", { link_url: "https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi" }),
-  idea("Get conversational in Spanish", "goal", "someday"),
+  idea("Get conversational in Spanish", "goal", "someday", {
+    estimate_min: 30,
+    // What the AI research (POST /tasks/:id/research) leaves behind, so the demo shows it offline.
+    research: {
+      status: "done",
+      error: null,
+      resources: [
+        { title: "Language Transfer: Complete Spanish", url: "https://www.languagetransfer.org/complete-spanish", kind: "course", note: "Free audio course that builds speaking from the first lesson.", minutes: 900 },
+        { title: "Dreaming Spanish", url: "https://www.dreamingspanish.com/", kind: "video", note: "Comprehensible-input videos sorted by level, with an hours tracker.", minutes: null },
+        { title: "r/Spanish", url: "https://www.reddit.com/r/Spanish/", kind: "community", note: "Ask questions and find conversation partners.", minutes: null },
+      ],
+      total_min: 18000,
+      span: "over about a year",
+      session_min: 30,
+      basis: "Around 300 hours of practice gets most English speakers to everyday conversation; half an hour a day spreads that over a year.",
+      requested_at: new Date().toISOString(),
+      finished_at: new Date().toISOString(),
+    },
+  }),
   idea("Try pottery class", null, null, { notes: "The studio on Main St has Thursday evening drop-ins." }),
 ]);
 await insert(user, "steps", [

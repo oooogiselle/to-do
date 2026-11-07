@@ -122,6 +122,8 @@ export function createApiClient({ baseUrl, getToken, fetch: f = fetch }: Opts) {
 
     breakdown: (taskId: string, mode: "default" | "more_detailed" = "default") =>
       call<{ steps: ProposedStep[] }>("POST", `/tasks/${taskId}/breakdown`, { mode }),
+    /** Starts web research for a someday item; returns the task marked pending. */
+    research: (taskId: string) => call<Task>("POST", `/tasks/${taskId}/research`, {}),
     suggest: (body: SuggestRequest) => call<SuggestResponse>("POST", "/suggest", body),
     extractText: (text: string) =>
       call<TextExtractionResult>("POST", "/imports/extract-text", { text }),

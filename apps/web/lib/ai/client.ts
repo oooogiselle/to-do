@@ -1,6 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
+import type { ParsedBetaMessage } from "@anthropic-ai/sdk/lib/beta-parser";
 import type { z } from "zod/v4";
 import { HttpError } from "@/lib/api";
 import { adminClient } from "@/lib/supabase/admin";
@@ -20,6 +21,27 @@ function anthropic() {
   return client;
 }
 
+/** USD per web search (web_search tool): $10 per 1,000. */
+const SEARCH_PRICE = 0.01;
+/** How many times a paused server-tool turn (stop_reason "pause_turn") is resumed. */
+const MAX_RESUMES = 2;
+
+type Response = Anthropic.Beta.Messages.BetaMessage;
+
+async function logUsage(userId: string, response: Response) {
+  const searches = response.usage.server_tool_use?.web_search_requests ?? 0;
+  const cost =
+    (response.usage.input_tokens * PRICE.input + response.usage.output_tokens * PRICE.output) / 1e6 +
+    searches * SEARCH_PRICE;
+  await adminClient().from("ai_usage").insert({
+    user_id: userId,
+    model: response.model,
+    input_tokens: response.usage.input_tokens,
+    output_tokens: response.usage.output_tokens,
+    cost_usd: cost,
+  });
+}
+
 /**
  * One structured-output request to Claude: logs usage and maps refusals, truncation and API
  * errors to user-facing HTTP errors. It does not check limits: callers must call
@@ -33,45 +55,64 @@ export async function runStructured<S extends z.ZodType>(opts: {
   effort: "low" | "medium" | "high";
   maxTokens?: number;
 }): Promise<z.infer<S>> {
-  const api = anthropic();
-  let response;
-  try {
-    // Streamed so large outputs (long syllabi) aren't capped by the SDK's non-streaming limit.
-    response = await api.beta.messages
-      .stream({
-        model: MODEL,
-        max_tokens: opts.maxTokens ?? 16000,
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
-        output_config: { effort: opts.effort, format: betaZodOutputFormat(opts.schema) },
-        system: opts.system,
-        messages: [{ role: "user", content: opts.content }],
-      })
-      .finalMessage();
-  } catch (err) {
-    if (err instanceof Anthropic.RateLimitError) {
-      throw new HttpError(429, "The AI service is busy. Try again in a minute.");
-    }
-    if (err instanceof Anthropic.BadRequestError) {
-      throw new HttpError(
-        422,
-        "The AI couldn't read that input. Check the file or text and try again.",
-      );
-    }
-    if (err instanceof Anthropic.APIError)
-      throw new HttpError(502, "The AI service didn't respond. Try again.");
-    throw err;
-  }
+  return (await runStructuredWithTools(opts)).output;
+}
 
-  const cost =
-    (response.usage.input_tokens * PRICE.input + response.usage.output_tokens * PRICE.output) / 1e6;
-  await adminClient().from("ai_usage").insert({
-    user_id: opts.userId,
-    model: response.model,
-    input_tokens: response.usage.input_tokens,
-    output_tokens: response.usage.output_tokens,
-    cost_usd: cost,
-  });
+/**
+ * `runStructured` with server tools (e.g. web search). Resumes paused turns, and also returns
+ * every content block, so callers can check the output against the tool results.
+ */
+export async function runStructuredWithTools<S extends z.ZodType>(opts: {
+  userId: string;
+  system: string;
+  content: Content;
+  schema: S;
+  effort: "low" | "medium" | "high";
+  maxTokens?: number;
+  tools?: Anthropic.Beta.Messages.BetaToolUnion[];
+}): Promise<{ output: z.infer<S>; content: Anthropic.Beta.Messages.BetaContentBlock[] }> {
+  const api = anthropic();
+  const messages: Anthropic.Beta.Messages.BetaMessageParam[] = [
+    { role: "user", content: opts.content },
+  ];
+  const blocks: Anthropic.Beta.Messages.BetaContentBlock[] = [];
+  let response: ParsedBetaMessage<z.infer<S>> | undefined;
+  for (let attempt = 0; attempt <= MAX_RESUMES; attempt++) {
+    try {
+      // Streamed so large outputs (long syllabi) aren't capped by the SDK's non-streaming limit.
+      response = await api.beta.messages
+        .stream({
+          model: MODEL,
+          max_tokens: opts.maxTokens ?? 16000,
+          betas: ["server-side-fallback-2026-07-01"],
+          fallbacks: "default",
+          output_config: { effort: opts.effort, format: betaZodOutputFormat(opts.schema) },
+          system: opts.system,
+          messages,
+          ...(opts.tools ? { tools: opts.tools } : {}),
+        })
+        .finalMessage();
+    } catch (err) {
+      if (err instanceof Anthropic.RateLimitError) {
+        throw new HttpError(429, "The AI service is busy. Try again in a minute.");
+      }
+      if (err instanceof Anthropic.BadRequestError) {
+        throw new HttpError(
+          422,
+          "The AI couldn't read that input. Check the file or text and try again.",
+        );
+      }
+      if (err instanceof Anthropic.APIError)
+        throw new HttpError(502, "The AI service didn't respond. Try again.");
+      throw err;
+    }
+    await logUsage(opts.userId, response);
+    blocks.push(...response.content);
+    if (response.stop_reason !== "pause_turn") break;
+    // Resume: send the paused turn back as is; the API picks up where it left off.
+    messages.push({ role: "assistant", content: response.content });
+  }
+  response = response!;
 
   if (response.stop_reason === "refusal") {
     throw new HttpError(422, "The AI declined this request. Try rewording it.");
@@ -79,8 +120,8 @@ export async function runStructured<S extends z.ZodType>(opts: {
   if (response.stop_reason === "max_tokens") {
     throw new HttpError(422, "This is too long to process in one go. Try splitting it into parts.");
   }
-  if (!response.parsed_output) {
+  if (response.stop_reason === "pause_turn" || !response.parsed_output) {
     throw new HttpError(502, "The AI returned something unexpected. Try again.");
   }
-  return response.parsed_output as z.infer<S>;
+  return { output: response.parsed_output, content: blocks };
 }

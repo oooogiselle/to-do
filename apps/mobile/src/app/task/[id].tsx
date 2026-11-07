@@ -13,12 +13,14 @@ import {
   type TimeBlock,
 } from "@tt/shared";
 import {
+  effortLabel,
   fmtDay,
   fmtSlot,
   fmtTime,
   isTemp,
   NO_COLOR,
   PALETTE,
+  researchState,
   tempId,
   useCompletion,
   useCreateStep,
@@ -169,6 +171,7 @@ export default function TaskSheet() {
                 {task.link_url && <OpenLink url={task.link_url} />}
               </View>
             </Field>
+            <Research task={task} />
           </>
         ) : (
           task.link_url && (
@@ -275,6 +278,45 @@ export default function TaskSheet() {
       </ScrollView>
       <NoticeBanner />
     </View>
+  );
+}
+
+/** Web resources and the effort estimate. Read-only: research is started on web. */
+function Research({ task }: { task: Task }) {
+  const colors = useColors();
+  const s = researchState(task);
+  if (s.state === "none") return null;
+  if (s.state === "pending") {
+    return (
+      <Field label="Resources">
+        <Text style={{ color: colors.muted, fontSize: 15 }}>Finding resources…</Text>
+      </Field>
+    );
+  }
+  const r = s.research;
+  const effort = effortLabel(r);
+  return (
+    <Field label="Resources">
+      {effort && <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "600" }}>⏱ {effort}</Text>}
+      {r.basis && <Text style={{ color: colors.muted, fontSize: 13 }}>{r.basis}</Text>}
+      {r.resources.map((res) => (
+        <Pressable
+          key={res.url}
+          accessibilityRole="link"
+          accessibilityLabel={`Open ${res.title}`}
+          onPress={() => void WebBrowser.openBrowserAsync(res.url)}
+          style={{ paddingVertical: 4 }}
+        >
+          <Text style={{ color: colors.now, fontSize: 15 }}>↗ {res.title}</Text>
+          <Text style={{ color: colors.muted, fontSize: 13 }}>
+            {linkLabel(res.url)}
+            {res.minutes ? ` · ${formatMinutes(res.minutes)}` : ""}
+            {res.note ? ` · ${res.note}` : ""}
+          </Text>
+        </Pressable>
+      ))}
+      {s.state === "error" && <Text style={{ color: colors.muted, fontSize: 13 }}>{s.message}</Text>}
+    </Field>
   );
 }
 
