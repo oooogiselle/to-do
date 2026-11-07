@@ -65,3 +65,27 @@ export function normalizeLink(text: string): string | null | undefined {
   const u = parseUrl(withScheme);
   return u && u.hostname.includes(".") && withScheme.length <= MAX_LINK ? withScheme : undefined;
 }
+
+/**
+ * A comparable form of a link, for checking that two links point at the same page: lowercase
+ * host without www, no hash, no tracking params, no trailing slash. Null when it isn't a link.
+ */
+export function urlKey(url: string): string | null {
+  const u = parseUrl(url.trim());
+  if (!u) return null;
+  const drop: string[] = [];
+  u.searchParams.forEach((_v, k) => {
+    if (/^utm_|^(fbclid|gclid|ref|si)$/i.test(k)) drop.push(k);
+  });
+  for (const k of drop) u.searchParams.delete(k);
+  const query = u.searchParams.toString();
+  const path = u.pathname.replace(/\/+$/, "");
+  return `${u.hostname.toLowerCase().replace(/^www\./, "")}${path}${query ? `?${query}` : ""}`;
+}
+
+/** Every http(s) link in a piece of text, trimmed of trailing punctuation. */
+export function findUrls(text: string): string[] {
+  return [...text.matchAll(new RegExp(URL_RE.source, "gi"))]
+    .map((m) => trimUrl(m[0]))
+    .filter((u) => u.length <= MAX_LINK && !!parseUrl(u));
+}

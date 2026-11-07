@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Horizon, IdeaKind, List, Task } from "@tt/shared";
+import { formatMinutes, type Horizon, type IdeaKind, type List, type Task, type TaskResearch } from "@tt/shared";
 import type { ApiClient } from "./api-context";
 import { isTemp, PALETTE, tempId, useCreateList, useCreateTask, useModel } from "./data";
 
@@ -91,4 +91,40 @@ export function useAddSomeday() {
       { onSuccess: opts?.onAdded },
     );
   };
+}
+
+/** A research request still pending after this long is treated as failed (the server gave up). */
+const RESEARCH_STALE_MS = 4 * 60 * 1000;
+
+export type ResearchState =
+  | { state: "none" }
+  | { state: "pending" }
+  | { state: "done"; research: TaskResearch }
+  | { state: "error"; message: string; research: TaskResearch };
+
+/** Where a someday item's web research stands. */
+export function researchState(task: Pick<Task, "research">, now = Date.now()): ResearchState {
+  const r = task.research;
+  if (!r) return { state: "none" };
+  if (r.status === "pending") {
+    return now - Date.parse(r.requested_at) < RESEARCH_STALE_MS
+      ? { state: "pending" }
+      : { state: "error", message: "That took too long. Try again.", research: r };
+  }
+  if (r.status === "error") {
+    return { state: "error", message: r.error || "Couldn't look this up. Try again.", research: r };
+  }
+  return { state: "done", research: r };
+}
+
+/** "~30h" for a big total (whole hours), "45m" / "1h 30m" for small ones. */
+export function formatEffort(min: number): string {
+  return min < 120 ? formatMinutes(min) : `~${Math.round(min / 60)}h`;
+}
+
+/** The estimate line for a researched item: "~30h over about 3 months · 45m sessions". */
+export function effortLabel(r: Pick<TaskResearch, "total_min" | "span" | "session_min">): string | null {
+  const total = r.total_min ? [formatEffort(r.total_min), r.span].filter(Boolean).join(" ") : null;
+  const session = r.session_min ? `${formatMinutes(r.session_min)} sessions` : null;
+  return [total, session].filter(Boolean).join(" · ") || null;
 }

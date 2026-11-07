@@ -5,6 +5,7 @@ import { normalizeLink, type Horizon, type IdeaKind, type Task } from "@tt/share
 import { HORIZON_LABEL } from "@tt/client";
 import { Segmented } from "@/components/ui/segmented";
 import { LinkChip } from "./link-chip";
+import { ResearchSection } from "./research";
 
 const label = "mb-1.5 block text-[11px] font-bold tracking-wider text-muted uppercase";
 
@@ -47,6 +48,7 @@ export function SomedayFields({ task, onChange }: { task: Task; onChange: (patch
         </fieldset>
       </div>
       <LinkField value={task.link_url} onCommit={(link_url) => onChange({ link_url })} />
+      <ResearchSection task={task} />
     </section>
   );
 }

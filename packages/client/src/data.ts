@@ -11,6 +11,7 @@ import {
   type Step,
   type SyncResponse,
   type Task,
+  type TaskResearch,
   type TimeBlock,
 } from "@tt/shared";
 import { useApi, type ApiClient } from "./api-context";
@@ -220,6 +221,7 @@ export function useCreateTask() {
           idea_kind: v.body.idea_kind ?? null,
           horizon: v.body.horizon ?? null,
           start_date: v.body.start_date ?? null,
+          research: null,
         }),
         id: v.tempId,
       }),
@@ -233,6 +235,33 @@ export function useUpdateTask() {
     mutationFn: (v: { id: string; patch: Parameters<ApiClient["updateTask"]>[1] }) =>
       api.updateTask(v.id, v.patch),
     apply: (s, v) => updateRow(s, "tasks", v.id, v.patch as Partial<Task>),
+    settle: (s, task) => upsertRow(s, "tasks", task),
+  });
+}
+
+/**
+ * Starts web research for a someday item (resources + effort estimate). The card shows
+ * "pending" right away; the result arrives later through sync and realtime.
+ */
+export function useResearchTask() {
+  const api = useApi();
+  return useOptimistic({
+    mutationFn: (id: string) => api.research(id),
+    apply: (s, id) => {
+      const prev = s.tasks.find((t) => t.id === id)?.research;
+      const pending: TaskResearch = {
+        resources: [],
+        total_min: null,
+        span: null,
+        session_min: null,
+        basis: null,
+        ...prev,
+        status: "pending",
+        error: null,
+        requested_at: new Date().toISOString(),
+      };
+      return updateRow(s, "tasks", id, { research: pending });
+    },
     settle: (s, task) => upsertRow(s, "tasks", task),
   });
 }

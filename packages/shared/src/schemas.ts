@@ -43,6 +43,43 @@ const LinkUrl = z
   .url()
   .refine((u) => /^https?:\/\//i.test(u), "Links must start with http:// or https://");
 
+/** What kind of thing a researched resource is, for its icon. */
+export const ResourceKind = z.enum(["article", "video", "course", "book", "tool", "community", "other"]);
+export type ResourceKind = z.infer<typeof ResourceKind>;
+
+/** A web resource the AI found for a someday item. */
+export const ResearchResource = z.object({
+  title: z.string().min(1).max(200),
+  url: LinkUrl,
+  kind: ResourceKind,
+  /** Why it's worth a look, in a sentence. */
+  note: z.string().max(200),
+  /** Rough minutes to get through it, when that's meaningful (a video, a course). */
+  minutes: z.number().int().positive().nullable().optional(),
+});
+export type ResearchResource = z.infer<typeof ResearchResource>;
+
+/**
+ * Web research for a someday item (tasks.research): resources plus an effort estimate.
+ * The server writes it; "pending" while the search runs in the background.
+ */
+export const TaskResearch = z.object({
+  status: z.enum(["pending", "done", "error"]),
+  error: z.string().nullable().optional(),
+  resources: z.array(ResearchResource).max(10),
+  /** Total effort for the whole goal or topic, in minutes. */
+  total_min: z.number().int().positive().nullable(),
+  /** How that effort spreads out, e.g. "over about 3 months". */
+  span: z.string().max(80).nullable(),
+  /** A typical sitting, in minutes; also fills an empty estimate_min. */
+  session_min: z.number().int().positive().nullable(),
+  /** One sentence on how the estimate was reached. */
+  basis: z.string().max(300).nullable(),
+  requested_at: z.string(),
+  finished_at: z.string().nullable().optional(),
+});
+export type TaskResearch = z.infer<typeof TaskResearch>;
+
 export const List = z.object({
   ...syncFields,
   name: z.string().min(1),
@@ -78,6 +115,8 @@ export const Task = z.object({
   horizon: Horizon.nullable(),
   /** Local date to start working on it; My day surfaces the task from then on. */
   start_date: PlainDate.nullable(),
+  /** Someday research: web resources and an effort estimate. */
+  research: TaskResearch.nullable(),
 });
 export type Task = z.infer<typeof Task>;
 
@@ -179,6 +218,8 @@ export const TaskCreate = z.object({
 export const TaskPatch = TaskCreate.partial().extend({
   status: TaskStatus.optional(),
   done_dates: z.array(PlainDate).optional(),
+  /** Only so the user can remove resources; research itself runs through /research. */
+  research: TaskResearch.nullable().optional(),
 });
 
 export const StepCreate = z.object({

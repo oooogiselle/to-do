@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { linkLabel, linkTitle, normalizeLink, splitLink } from "./link";
+import { findUrls, linkLabel, linkTitle, normalizeLink, splitLink, urlKey } from "./link";
 
 describe("splitLink", () => {
   it("leaves text without a link alone", () => {
@@ -57,5 +57,28 @@ describe("normalizeLink", () => {
     expect(normalizeLink("http://a.org")).toBe("http://a.org");
     expect(normalizeLink("not a link")).toBeUndefined();
     expect(normalizeLink("javascript:alert(1)")).toBeUndefined();
+  });
+});
+
+describe("urlKey", () => {
+  it("matches the same page written differently", () => {
+    expect(urlKey("https://www.Example.com/guide/?utm_source=x#top")).toBe(urlKey("http://example.com/guide"));
+    expect(urlKey("https://youtube.com/watch?v=abc&si=123")).toBe("youtube.com/watch?v=abc");
+  });
+
+  it("keeps meaningful query params apart", () => {
+    expect(urlKey("https://youtube.com/watch?v=a")).not.toBe(urlKey("https://youtube.com/watch?v=b"));
+  });
+
+  it("rejects non-links", () => {
+    expect(urlKey("javascript:alert(1)")).toBeNull();
+    expect(urlKey("nope")).toBeNull();
+  });
+});
+
+describe("findUrls", () => {
+  it("finds every link in text", () => {
+    expect(findUrls("see https://a.com/x, and (https://b.org/y).")).toEqual(["https://a.com/x", "https://b.org/y"]);
+    expect(findUrls("no links")).toEqual([]);
   });
 });
