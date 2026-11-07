@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, MessageCircle, Pencil, Plus, Sun } from "lucide-react";
+import { Check, MessageCircle, Pencil, Plus, Sun, Trash2 } from "lucide-react";
 import { localDate, splitLink, swatch, type Horizon, type IdeaKind, type List } from "@tt/shared";
 import {
   endPosition,
@@ -13,6 +13,7 @@ import {
   useAddSomeday,
   useAddToPlan,
   useCompletion,
+  useDeleteTaskWithUndo,
   useModel,
   useResearchTask,
   useSomeday,
@@ -352,6 +353,7 @@ function IdeaCard({ item }: { item: SomedayItem }) {
   const { setTaskDone } = useCompletion();
   const addToPlan = useAddToPlan();
   const updateTask = useUpdateTask();
+  const deleteTask = useDeleteTaskWithUndo();
   const { ask } = useAssistant();
   const done = task.status === "done";
   const saving = isTemp(task.id);
@@ -364,7 +366,7 @@ function IdeaCard({ item }: { item: SomedayItem }) {
 
   return (
     <li
-      className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-3.5 transition-colors hover:border-line-strong"
+      className="group flex flex-col gap-2 rounded-2xl border border-line bg-surface p-3.5 transition-colors hover:border-line-strong"
       style={{ borderTop: `3px solid ${c.solid}` }}
     >
       <div className="flex items-start gap-2.5">
@@ -383,6 +385,16 @@ function IdeaCard({ item }: { item: SomedayItem }) {
           className={`min-w-0 flex-1 text-left text-[14px] leading-snug font-semibold ${done ? "text-faint line-through" : "text-ink"}`}
         >
           {task.title}
+        </button>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => deleteTask(task)}
+          title="Delete"
+          aria-label={`Delete “${task.title}”`}
+          className="-mt-0.5 -mr-1 grid h-7 w-7 shrink-0 place-items-center rounded-lg text-faint opacity-0 transition-opacity group-hover:opacity-100 hover:bg-risk-bg hover:text-risk focus-visible:opacity-100 disabled:hidden [@media(hover:none)]:opacity-100"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
 
