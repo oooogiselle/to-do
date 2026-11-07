@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { isRecurring, localDate, toggleDoneDate } from "@tt/shared";
+import { isDoneOn, isRecurring, localDate, toggleDoneDate, type TimeBlock } from "@tt/shared";
 import {
   useDeleteStep,
   useModel,
@@ -54,14 +54,20 @@ export function useCompletion() {
     [blocks],
   );
 
-  const setTaskDone = (taskId: string, done: boolean, auto?: Completion["auto"]) => {
-    // A repeating task is done for today, not for good.
+  const setTaskDone = (
+    taskId: string,
+    done: boolean,
+    auto?: Completion["auto"],
+    /** Local date to check a repeating task off for; today by default. */
+    date?: string,
+  ) => {
+    // A repeating task is done for one day, not for good.
     const routine = taskById.get(taskId);
     if (routine && isRecurring(routine)) {
-      const today = localDate(new Date(), settings.timezone);
+      const day = date ?? localDate(new Date(), settings.timezone);
       updateTask.mutate({
         id: taskId,
-        patch: { done_dates: toggleDoneDate(routine.done_dates, today, done) },
+        patch: { done_dates: toggleDoneDate(routine.done_dates, day, done) },
       });
       return;
     }
@@ -81,22 +87,40 @@ export function useCompletion() {
     return false;
   };
 
+  const setStepDone = (taskId: string, stepId: string, done: boolean) => {
+    updateStep.mutate({ id: stepId, patch: { done } });
+    const steps = (stepsByTask.get(taskId) ?? []).map((s) =>
+      s.id === stepId ? { ...s, done } : s,
+    );
+    if (completeIfAllDone(taskId, steps)) return;
+    if (!done && taskById.get(taskId)?.status === "done") {
+      return setTaskDone(taskId, false, "reopened");
+    }
+    const count = done ? upcoming(taskId, stepId) : 0;
+    const step = steps.find((s) => s.id === stepId);
+    if (count) {
+      setNotice({ kind: "completion", taskId, stepId, count, label: step?.title ?? "this step" });
+    }
+  };
+
+  // A block of a repeating task stands for the occurrence on the day it starts, so it's done
+  // exactly when the task is checked off for that day, in the list or on the calendar.
+  const blockDay = (b: Pick<TimeBlock, "start">) => localDate(new Date(b.start), settings.timezone);
+
   return {
     setTaskDone: (taskId: string, done: boolean) => setTaskDone(taskId, done),
-    setStepDone: (taskId: string, stepId: string, done: boolean) => {
-      updateStep.mutate({ id: stepId, patch: { done } });
-      const steps = (stepsByTask.get(taskId) ?? []).map((s) =>
-        s.id === stepId ? { ...s, done } : s,
-      );
-      if (completeIfAllDone(taskId, steps)) return;
-      if (!done && taskById.get(taskId)?.status === "done") {
-        return setTaskDone(taskId, false, "reopened");
-      }
-      const count = done ? upcoming(taskId, stepId) : 0;
-      const step = steps.find((s) => s.id === stepId);
-      if (count) {
-        setNotice({ kind: "completion", taskId, stepId, count, label: step?.title ?? "this step" });
-      }
+    setStepDone,
+    /** Done state of a block: its step's, its task's for that day if it repeats, else its task's. */
+    isBlockDone: (b: Pick<TimeBlock, "task_id" | "step_id" | "start">) => {
+      const task = taskById.get(b.task_id);
+      if (b.step_id) return !!stepsByTask.get(b.task_id)?.find((s) => s.id === b.step_id)?.done;
+      if (!task) return false;
+      return isDoneOn(task, blockDay(b));
+    },
+    /** Checks a block off (or back on), keeping it in step with its to-do. */
+    setBlockDone: (b: Pick<TimeBlock, "task_id" | "step_id" | "start">, done: boolean) => {
+      if (b.step_id) return setStepDone(b.task_id, b.step_id, done);
+      setTaskDone(b.task_id, done, undefined, blockDay(b));
     },
     deleteStep: (taskId: string, stepId: string) => {
       deleteStep.mutate(stepId);

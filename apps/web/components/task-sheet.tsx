@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { CalendarPlus, Plus, Sparkles, Trash2, X } from "lucide-react";
 import {
   formatMinutes,
+  isDoneOn,
   isRecurring,
   localDate,
   repeatLabel,
@@ -214,7 +215,8 @@ export function TaskSheet({
   const stepTotal = steps.reduce((sum, s) => sum + (s.estimate_min ?? 0), 0);
   const list = task.list_id ? listById.get(task.list_id) : undefined;
   const c = swatch(taskColor(task, listById));
-  const done = task.status === "done";
+  // A repeating task's checkbox is for today, which is the day it checks off.
+  const done = isDoneOn(task, localDate(new Date(), settings.timezone));
 
   return (
     <Sheet onClose={onClose} label={`Task: ${task.title}`}>

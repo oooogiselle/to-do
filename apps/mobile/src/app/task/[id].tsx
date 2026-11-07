@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { router, useLocalSearchParams } from "expo-router";
 import {
   formatMinutes,
+  isDoneOn,
   linkLabel,
   localDate,
   normalizeLink,
@@ -81,7 +82,8 @@ export default function TaskSheet() {
     !saving && updateTask.mutate({ id: task.id, patch: patch as never });
   const stepTotal = steps.reduce((sum, s) => sum + (s.estimate_min ?? 0), 0);
   const listColor = (task.list_id && listById.get(task.list_id)?.color) || NO_COLOR;
-  const done = task.status === "done";
+  // A repeating task's checkbox is for today, which is the day it checks off.
+  const done = isDoneOn(task, localDate(new Date(), settings.timezone));
 
   const confirmDelete = () =>
     Alert.alert(`Delete “${task.title}”?`, "Its blocks are removed from your calendar too.", [
