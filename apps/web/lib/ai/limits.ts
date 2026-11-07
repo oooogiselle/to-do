@@ -13,7 +13,7 @@ import { adminClient } from "@/lib/supabase/admin";
  * Every failure is a 429 with a message the UI can show as is.
  */
 
-export type AiFeature = "breakdown" | "extract" | "suggest" | "research";
+export type AiFeature = "breakdown" | "extract" | "suggest" | "research" | "assistant";
 type Tier = "free" | "owner"; // add "pro" here when subscriptions exist
 
 type FeatureLimit = { perMinute: number; perHour: number };
@@ -25,6 +25,7 @@ const LIMITS: Record<Tier, Record<AiFeature, FeatureLimit>> = {
     extract: { perMinute: 3, perHour: 20 }, // imports from text and from a syllabus
     suggest: { perMinute: 10, perHour: 120 },
     research: { perMinute: 6, perHour: 40 }, // web research for someday items, runs on every add
+    assistant: { perMinute: 8, perHour: 60 }, // Ask tt. replies
   },
   // The app's owner, so using the app yourself isn't held to the free tier.
   owner: {
@@ -32,6 +33,7 @@ const LIMITS: Record<Tier, Record<AiFeature, FeatureLimit>> = {
     extract: { perMinute: 10, perHour: 200 },
     suggest: { perMinute: 30, perHour: 600 },
     research: { perMinute: 20, perHour: 400 },
+    assistant: { perMinute: 30, perHour: 600 },
   },
 };
 

@@ -62,19 +62,23 @@ export async function runStructured<S extends z.ZodType>(opts: {
  * `runStructured` with server tools (e.g. web search). Resumes paused turns, and also returns
  * every content block, so callers can check the output against the tool results.
  */
-export async function runStructuredWithTools<S extends z.ZodType>(opts: {
-  userId: string;
-  system: string;
-  content: Content;
-  schema: S;
-  effort: "low" | "medium" | "high";
-  maxTokens?: number;
-  tools?: Anthropic.Beta.Messages.BetaToolUnion[];
-}): Promise<{ output: z.infer<S>; content: Anthropic.Beta.Messages.BetaContentBlock[] }> {
+export async function runStructuredWithTools<S extends z.ZodType>(
+  opts: {
+    userId: string;
+    system: string;
+    schema: S;
+    effort: "low" | "medium" | "high";
+    maxTokens?: number;
+    tools?: Anthropic.Beta.Messages.BetaToolUnion[];
+  } & (
+    | { content: Content }
+    /** A whole conversation (starting and ending with a user turn), for chat. */
+    | { messages: Anthropic.Beta.Messages.BetaMessageParam[] }
+  ),
+): Promise<{ output: z.infer<S>; content: Anthropic.Beta.Messages.BetaContentBlock[] }> {
   const api = anthropic();
-  const messages: Anthropic.Beta.Messages.BetaMessageParam[] = [
-    { role: "user", content: opts.content },
-  ];
+  const messages: Anthropic.Beta.Messages.BetaMessageParam[] =
+    "messages" in opts ? [...opts.messages] : [{ role: "user", content: opts.content }];
   const blocks: Anthropic.Beta.Messages.BetaContentBlock[] = [];
   let response: ParsedBetaMessage<z.infer<S>> | undefined;
   for (let attempt = 0; attempt <= MAX_RESUMES; attempt++) {
@@ -97,6 +101,7 @@ export async function runStructuredWithTools<S extends z.ZodType>(opts: {
         throw new HttpError(429, "The AI service is busy. Try again in a minute.");
       }
       if (err instanceof Anthropic.BadRequestError) {
+        console.error("Claude rejected the request:", err.message);
         throw new HttpError(
           422,
           "The AI couldn't read that input. Check the file or text and try again.",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, Pencil, Plus, Sun } from "lucide-react";
+import { Check, MessageCircle, Pencil, Plus, Sun } from "lucide-react";
 import { localDate, splitLink, swatch, type Horizon, type IdeaKind, type List } from "@tt/shared";
 import {
   endPosition,
@@ -20,6 +20,7 @@ import {
   type SomedayItem,
 } from "@tt/client";
 import { useOpenTask } from "@/components/app-shell";
+import { useAssistant } from "@/components/assistant/assistant-context";
 import { ListEditor, NewListForm } from "@/components/inbox";
 import { PageHeader } from "@/components/page-header";
 import { Segmented } from "@/components/ui/segmented";
@@ -189,6 +190,7 @@ function Capture({
 }) {
   const addSomeday = useAddSomeday();
   const research = useResearchTask();
+  const { ask } = useAssistant();
   const [text, setText] = useState("");
   const [researchNote, setResearchNote] = useState<string | null>(null);
   const [kind, setKind] = useState<IdeaKind | null>(null);
@@ -316,9 +318,25 @@ function Capture({
           </>
         )}
         <button
+          type="button"
+          onClick={() => {
+            if (!text.trim()) return;
+            // Not sure how to frame it? tt. suggests a type, timeframe and first steps.
+            ask(`Help me shape this idea: ${text.trim()}`);
+            setText("");
+            setKind(null);
+          }}
+          disabled={!text.trim()}
+          title="Not sure yet? tt. suggests a type, timeframe and first steps"
+          className="ml-auto flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-1.5 text-[13px] font-bold text-ink hover:bg-row disabled:opacity-40"
+        >
+          <MessageCircle className="h-3.5 w-3.5 text-muted" />
+          Ask tt.
+        </button>
+        <button
           type="submit"
           disabled={!parsed.title || busy}
-          className="ml-auto rounded-xl bg-ink px-4 py-1.5 text-[13px] font-bold text-white disabled:opacity-40"
+          className="rounded-xl bg-ink px-4 py-1.5 text-[13px] font-bold text-white disabled:opacity-40"
         >
           Add
         </button>
@@ -334,6 +352,7 @@ function IdeaCard({ item }: { item: SomedayItem }) {
   const { setTaskDone } = useCompletion();
   const addToPlan = useAddToPlan();
   const updateTask = useUpdateTask();
+  const { ask } = useAssistant();
   const done = task.status === "done";
   const saving = isTemp(task.id);
   const c = swatch(task.color ?? list.color);
@@ -419,6 +438,16 @@ function IdeaCard({ item }: { item: SomedayItem }) {
           >
             {onToday ? <Check className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
             {onToday ? "On My day" : "Add to My day"}
+          </button>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => ask(`Help me get started on ${task.title}`, { taskId: task.id })}
+            title="Ask tt. for first steps and places to start"
+            aria-label={`Ask tt. how to start “${task.title}”`}
+            className="grid h-7 w-7 place-items-center rounded-lg text-muted hover:bg-row hover:text-ink disabled:opacity-50"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
           </button>
           {normalLists.length > 0 && (
             <>

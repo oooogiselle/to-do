@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, ClipboardPaste, ListChecks, Plus, Settings, Sparkles, Sun } from "lucide-react";
+import { CalendarDays, ClipboardPaste, ListChecks, MessageCircle, Plus, Settings, Sparkles, Sun } from "lucide-react";
 import { swatch, type List } from "@tt/shared";
 import { useModel, useSync } from "@tt/client";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { AppLogo } from "./app-logo";
+import { useAssistant } from "./assistant/assistant-context";
 
 const NAV = [
   { href: "/", label: "My day", icon: Sun },
@@ -41,6 +42,7 @@ export function Sidebar({ onQuickAdd }: { onQuickAdd: () => void }) {
   const email = useUserEmail();
   const { lists, tasks } = useModel();
   const { isError } = useSync();
+  const assistant = useAssistant();
 
   const count = (l: List) => tasks.filter((t) => t.list_id === l.id && t.status === "open").length;
   const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
@@ -99,6 +101,18 @@ export function Sidebar({ onQuickAdd }: { onQuickAdd: () => void }) {
           linkClass={linkClass}
         />
       </div>
+
+      <button
+        type="button"
+        onClick={assistant.toggle}
+        aria-pressed={assistant.open}
+        title="Ask tt. (⌘J)"
+        className={`${linkClass(assistant.open)} order-last grid h-8 w-8 place-items-center p-0 md:order-none md:mb-2 md:flex md:h-auto md:w-auto md:px-2 md:py-1.5`}
+      >
+        <MessageCircle className="h-4 w-4 shrink-0 text-muted" strokeWidth={1.75} />
+        <span className="hidden md:inline">Ask tt.</span>
+        <kbd className="ml-auto hidden text-[11px] text-faint md:inline">⌘J</kbd>
+      </button>
 
       <div className="hidden border-t border-line-soft pt-3 md:block">
         <Link

@@ -37,7 +37,7 @@ const KIND_LABEL: Record<ResourceKind, string> = {
   other: "Link",
 };
 
-function ResourceLink({ r, compact }: { r: ResearchResource; compact?: boolean }) {
+export function ResourceLink({ r, compact }: { r: ResearchResource; compact?: boolean }) {
   const Icon = KIND_ICON[r.kind];
   return (
     <a
@@ -63,7 +63,7 @@ function ResourceLink({ r, compact }: { r: ResearchResource; compact?: boolean }
   );
 }
 
-function Pulse({ label }: { label: string }) {
+export function Pulse({ label }: { label: string }) {
   return (
     <p className="flex items-center gap-1.5 text-[12px] font-semibold text-muted">
       <Sparkles className="h-3.5 w-3.5 animate-pulse" aria-hidden />

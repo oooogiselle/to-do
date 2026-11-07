@@ -18,9 +18,10 @@ export function useRealtimeInvalidation(supabase: SupabaseClient) {
       if (pending.has("sync") && !blockMovesPending(qc))
         qc.invalidateQueries({ queryKey: keys.sync });
       if (pending.has("events")) qc.invalidateQueries({ queryKey: ["events"] });
+      if (pending.has("assistant")) qc.invalidateQueries({ queryKey: ["assistant"] });
       pending.clear();
     };
-    const queue = (what: "sync" | "events") => {
+    const queue = (what: "sync" | "events" | "assistant") => {
       pending.add(what);
       clearTimeout(timer);
       timer = setTimeout(flush, 400);
@@ -31,6 +32,9 @@ export function useRealtimeInvalidation(supabase: SupabaseClient) {
     }
     channel.on("postgres_changes", { event: "*", schema: "public", table: "calendar_events" }, () =>
       queue("events"),
+    );
+    channel.on("postgres_changes", { event: "*", schema: "public", table: "assistant_messages" }, () =>
+      queue("assistant"),
     );
 
     // Realtime must carry the user's JWT or RLS filters out every change. The session is
