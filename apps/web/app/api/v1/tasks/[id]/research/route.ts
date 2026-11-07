@@ -25,6 +25,7 @@ export const POST = route<{ id: string }>(async (_req, { supabase, user, params 
     ? (await supabase.from("lists").select("name, kind").eq("id", task.list_id).maybeSingle()).data
     : null;
   if (list?.kind !== "someday") throw new HttpError(400, "Research is only for Someday items");
+  if (task.idea_kind === "people") throw new HttpError(400, "People items don't need research");
 
   const current = task.research as TaskResearch | null;
   if (current?.status === "pending" && Date.now() - Date.parse(current.requested_at) < STALE_MS) {

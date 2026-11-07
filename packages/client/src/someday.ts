@@ -2,18 +2,28 @@
 
 import { useMemo } from "react";
 import {
+  addDays,
   formatMinutes,
   type Horizon,
   type IdeaKind,
   type List,
   type Task,
   type TaskResearch,
+  toggleDoneDate,
 } from "@tt/shared";
 import type { ApiClient } from "./api-context";
-import { isTemp, PALETTE, tempId, useCreateList, useCreateTask, useModel } from "./data";
+import {
+  isTemp,
+  PALETTE,
+  tempId,
+  useCreateList,
+  useCreateTask,
+  useModel,
+  useUpdateTask,
+} from "./data";
 
 /**
- * Someday: long-term goals and things to learn later. They're ordinary tasks in "someday"
+ * Someday: long-term goals, things to learn later and people to keep in touch with. They're ordinary tasks in "someday"
  * lists, kept out of the To-dos page and the Due rail.
  */
 export const isSomedayList = (list: List | undefined) => list?.kind === "someday";
@@ -27,7 +37,33 @@ export const HORIZON_LABEL: Record<Horizon, string> = {
   year: "This year",
   someday: "Someday",
 };
-export const IDEA_KIND_LABEL: Record<IdeaKind, string> = { goal: "Goal", learn: "Learn" };
+export const IDEA_KIND_LABEL: Record<IdeaKind, string> = {
+  goal: "Goal",
+  learn: "Learn",
+  people: "People",
+};
+
+/** Most recent day the user logged connecting with this person ("YYYY-MM-DD"), or null. */
+export const lastContact = (task: Pick<Task, "done_dates">): string | null =>
+  task.done_dates.length ? [...task.done_dates].sort().at(-1)! : null;
+
+/** "today", "yesterday", "Nov 3" for a logged contact date. */
+export function contactLabel(date: string, today: string): string {
+  if (date === today) return "today";
+  if (date === addDays(today, -1)) return "yesterday";
+  return new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+/** Logs a day the user connected with someone; the free-time suggestions read it back. */
+export function useLogContact() {
+  const updateTask = useUpdateTask();
+  return (task: Pick<Task, "id" | "done_dates">, date: string) =>
+    updateTask.mutate({ id: task.id, patch: { done_dates: toggleDoneDate(task.done_dates, date, true) } });
+}
 
 /** Section order on the Someday page: soonest timeframe first, unsorted ideas last. */
 export const HORIZON_ORDER: (Horizon | null)[] = ["month", "year", "someday", null];

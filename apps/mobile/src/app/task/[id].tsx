@@ -49,6 +49,7 @@ const IDEA_KINDS = [
   { value: "none", label: "—" },
   { value: "goal", label: "Goal" },
   { value: "learn", label: "Learn" },
+  { value: "people", label: "People" },
 ] as const;
 const HORIZONS = [
   { value: "none", label: "—" },

@@ -3,6 +3,7 @@ export * from "./time";
 export * from "./slots/freeSlots";
 export * from "./slots/rankSlots";
 export * from "./slots/normalizePicks";
+export * from "./slots/focus";
 export * from "./slots/fitPicks";
 export * from "./parse/quickAdd";
 export * from "./parse/link";
