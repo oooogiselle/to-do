@@ -412,11 +412,8 @@ function BlockItem(props: {
   });
   const removeBlock = useRemoveBlockWithUndo();
   const moveBlock = useMoveBlock();
-  const { setTaskDone, setStepDone } = useCompletion();
-  const toggleDone = () =>
-    b.step_id
-      ? setStepDone(b.task_id, b.step_id, !label.done)
-      : setTaskDone(b.task_id, !label.done);
+  const { setBlockDone } = useCompletion();
+  const toggleDone = () => setBlockDone(b, !label.done);
 
   // Dragging the bottom edge changes the end time; it's only on the day the block ends.
   const endsHere = localDate(new Date(Date.parse(b.end) - 1), tz) === day;

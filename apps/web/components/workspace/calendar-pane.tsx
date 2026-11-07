@@ -10,7 +10,7 @@ import {
   zonedInstant,
   type TimeBlock,
 } from "@tt/shared";
-import { fmtDay, HOUR_PX, taskColor, useEvents, useModel } from "@tt/client";
+import { fmtDay, HOUR_PX, taskColor, useCompletion, useEvents, useModel } from "@tt/client";
 import { Grid } from "@/components/timeline/grid";
 import { useZoom } from "@/components/timeline/zoom";
 import { dayLabel, useCalendarAnchor } from "./calendar-dates";
@@ -24,6 +24,7 @@ const btn =
 export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: number }) {
   const isWeek = pane === "week";
   const { settings, blocks, taskById, stepsByTask, listById, isLoading } = useModel();
+  const { isBlockDone } = useCompletion();
   const tz = settings.timezone;
   const today = localDate(new Date(now), tz);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -75,7 +76,7 @@ export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: numbe
     return {
       title: eventTitle(null, task?.title ?? "Task", s?.title),
       color: taskColor(task, listById),
-      done: s ? s.done : task?.status === "done",
+      done: isBlockDone(b),
       listName: task?.list_id ? listById.get(task.list_id)?.name : undefined,
       dueAt: task?.due_at ?? null,
     };

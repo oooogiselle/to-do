@@ -42,7 +42,7 @@ export function DayTimeline(props: {
 }) {
   const { day, now } = props;
   const { blocks, taskById, stepsByTask, listById, settings } = useModel();
-  const { setTaskDone, setStepDone } = useCompletion();
+  const { isBlockDone, setBlockDone } = useCompletion();
   const colors = useColors();
   const { refreshing, refresh } = useRefresh();
   const [width, setWidth] = useState(0);
@@ -98,9 +98,8 @@ export function DayTimeline(props: {
     return {
       title: eventTitle(null, task?.title ?? "Task", step?.title),
       color: taskColor(task, listById),
-      done: step ? step.done : task?.status === "done",
-      toggle: (done: boolean) =>
-        step ? setStepDone(b.task_id, step.id, done) : setTaskDone(b.task_id, done),
+      done: isBlockDone(b),
+      toggle: (done: boolean) => setBlockDone(b, done),
     };
   };
 
