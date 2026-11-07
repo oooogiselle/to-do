@@ -1,7 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { formatMinutes, type Horizon, type IdeaKind, type List, type Task, type TaskResearch } from "@tt/shared";
+import {
+  formatMinutes,
+  type Horizon,
+  type IdeaKind,
+  type List,
+  type Task,
+  type TaskResearch,
+} from "@tt/shared";
 import type { ApiClient } from "./api-context";
 import { isTemp, PALETTE, tempId, useCreateList, useCreateTask, useModel } from "./data";
 
@@ -128,3 +135,4 @@ export function effortLabel(r: Pick<TaskResearch, "total_min" | "span" | "sessio
   const session = r.session_min ? `${formatMinutes(r.session_min)} sessions` : null;
   return [total, session].filter(Boolean).join(" · ") || null;
 }
+

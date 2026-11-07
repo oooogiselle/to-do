@@ -37,6 +37,26 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"assistant_messages": {
+                  Row: {
+                    "blocks": NonNullable<Json>,"content": string,"created_at": string,"deleted_at": string | null,"error": string | null,"focus_task_id": string | null,"follow_ups": NonNullable<Json>,"id": string,"requested_at": string | null,"resolved": NonNullable<Json>,"role": string,"status": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "blocks"?: NonNullable<Json>,"content"?: string,"created_at"?: string,"deleted_at"?: string | null,"error"?: string | null,"focus_task_id"?: string | null,"follow_ups"?: NonNullable<Json>,"id"?: string,"requested_at"?: string | null,"resolved"?: NonNullable<Json>,"role": string,"status"?: string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "blocks"?: NonNullable<Json>,"content"?: string,"created_at"?: string,"deleted_at"?: string | null,"error"?: string | null,"focus_task_id"?: string | null,"follow_ups"?: NonNullable<Json>,"id"?: string,"requested_at"?: string | null,"resolved"?: NonNullable<Json>,"role"?: string,"status"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "assistant_messages_focus_task_id_fkey"
+      columns: ["focus_task_id"]
+isOneToOne: false
+      referencedRelation: "tasks"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"calendar_events": {
                   Row: {
                     "all_day": boolean,"busy": boolean,"calendar_id": string,"color": string | null,"end": string,"gcal_event_id": string,"start": string,"title": string,"updated_at": string,"user_id": string
@@ -181,14 +201,14 @@ isOneToOne: false
                   ]
                 },"settings": {
                   Row: {
-                    "created_at": string,"default_block_min": number,"timezone": string,"updated_at": string,"user_id": string,"working_hours": NonNullable<Json>
+                    "created_at": string,"default_block_min": number,"someday_assistant": NonNullable<Json>,"timezone": string,"updated_at": string,"user_id": string,"working_hours": NonNullable<Json>
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"default_block_min"?: number,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"working_hours"?: NonNullable<Json>
+                    "created_at"?: string,"default_block_min"?: number,"someday_assistant"?: NonNullable<Json>,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"working_hours"?: NonNullable<Json>
                   }
                   Update: {
-                    "created_at"?: string,"default_block_min"?: number,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"working_hours"?: NonNullable<Json>
+                    "created_at"?: string,"default_block_min"?: number,"someday_assistant"?: NonNullable<Json>,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"working_hours"?: NonNullable<Json>
                   }
                   Relationships: [
                     
@@ -215,14 +235,14 @@ isOneToOne: false
                   ]
                 },"tasks": {
                   Row: {
-                    "color": string | null,"created_at": string,"deleted_at": string | null,"done_dates": (string)[],"due_at": string | null,"estimate_min": number | null,"horizon": string | null,"id": string,"idea_kind": string | null,"import_id": string | null,"link_url": string | null,"list_id": string | null,"notes": string,"priority": Database["public"]['Enums']["priority"],"repeat": string,"repeat_days": (number)[],"research": Json | null,"source_quote": string | null,"start_date": string | null,"status": Database["public"]['Enums']["task_status"],"title": string,"updated_at": string,"user_id": string
+                    "assistant_note": string | null,"color": string | null,"created_at": string,"deleted_at": string | null,"done_dates": (string)[],"due_at": string | null,"estimate_min": number | null,"horizon": string | null,"id": string,"idea_kind": string | null,"import_id": string | null,"link_url": string | null,"list_id": string | null,"notes": string,"priority": Database["public"]['Enums']["priority"],"repeat": string,"repeat_days": (number)[],"research": Json | null,"source_quote": string | null,"start_date": string | null,"status": Database["public"]['Enums']["task_status"],"title": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "color"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"done_dates"?: (string)[],"due_at"?: string | null,"estimate_min"?: number | null,"horizon"?: string | null,"id"?: string,"idea_kind"?: string | null,"import_id"?: string | null,"link_url"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"repeat"?: string,"repeat_days"?: (number)[],"research"?: Json | null,"source_quote"?: string | null,"start_date"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title": string,"updated_at"?: string,"user_id"?: string
+                    "assistant_note"?: string | null,"color"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"done_dates"?: (string)[],"due_at"?: string | null,"estimate_min"?: number | null,"horizon"?: string | null,"id"?: string,"idea_kind"?: string | null,"import_id"?: string | null,"link_url"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"repeat"?: string,"repeat_days"?: (number)[],"research"?: Json | null,"source_quote"?: string | null,"start_date"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title": string,"updated_at"?: string,"user_id"?: string
                   }
                   Update: {
-                    "color"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"done_dates"?: (string)[],"due_at"?: string | null,"estimate_min"?: number | null,"horizon"?: string | null,"id"?: string,"idea_kind"?: string | null,"import_id"?: string | null,"link_url"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"repeat"?: string,"repeat_days"?: (number)[],"research"?: Json | null,"source_quote"?: string | null,"start_date"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title"?: string,"updated_at"?: string,"user_id"?: string
+                    "assistant_note"?: string | null,"color"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"done_dates"?: (string)[],"due_at"?: string | null,"estimate_min"?: number | null,"horizon"?: string | null,"id"?: string,"idea_kind"?: string | null,"import_id"?: string | null,"link_url"?: string | null,"list_id"?: string | null,"notes"?: string,"priority"?: Database["public"]['Enums']["priority"],"repeat"?: string,"repeat_days"?: (number)[],"research"?: Json | null,"source_quote"?: string | null,"start_date"?: string | null,"status"?: Database["public"]['Enums']["task_status"],"title"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {

@@ -67,6 +67,7 @@ const FALLBACK_SETTINGS: Settings = {
   working_hours: {},
   default_block_min: 60,
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  someday_assistant: {},
   updated_at: "",
 };
 
@@ -222,6 +223,7 @@ export function useCreateTask() {
           horizon: v.body.horizon ?? null,
           start_date: v.body.start_date ?? null,
           research: null,
+          assistant_note: v.body.assistant_note ?? null,
         }),
         id: v.tempId,
       }),

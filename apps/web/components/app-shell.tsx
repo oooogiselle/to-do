@@ -6,6 +6,8 @@ import { Sidebar } from "./sidebar";
 import { NoticeBanner } from "./notice-banner";
 import { QuickAdd } from "./quick-add";
 import { TaskSheet } from "./task-sheet";
+import { AssistantProvider } from "./assistant/assistant-context";
+import { AssistantPanel } from "./assistant/assistant-panel";
 
 /**
  * Opens a task's detail sheet by setting ?task=<id> on the current page; `panel` opens it
@@ -59,16 +61,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="h-dvh w-full bg-surface">
-      <div className="flex h-full w-full flex-col overflow-hidden md:flex-row">
-        <Sidebar onQuickAdd={() => setQuickAdd(true)} />
-        <main className="min-h-0 min-w-0 flex-1 bg-surface">{children}</main>
+    <AssistantProvider>
+      <div className="h-dvh w-full bg-surface">
+        <div className="flex h-full w-full flex-col overflow-hidden md:flex-row">
+          <Sidebar onQuickAdd={() => setQuickAdd(true)} />
+          <main className="min-h-0 min-w-0 flex-1 bg-surface">{children}</main>
+          <Suspense>
+            <AssistantPanel />
+          </Suspense>
+        </div>
+        <QuickAdd open={quickAdd} onClose={closeQuickAdd} />
+        <NoticeBanner />
+        <Suspense>
+          <OpenTaskSheet />
+        </Suspense>
       </div>
-      <QuickAdd open={quickAdd} onClose={closeQuickAdd} />
-      <NoticeBanner />
-      <Suspense>
-        <OpenTaskSheet />
-      </Suspense>
-    </div>
+    </AssistantProvider>
   );
 }

@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
-import { formatMinutes, swatch, type WorkingHours } from "@tt/shared";
+import { formatMinutes, swatch, type AssistantNotes, type WorkingHours } from "@tt/shared";
 import { api } from "@/lib/client/api";
 import { keys, useCalendars, useDeleteAccount, useSettings, useUpdateSettings } from "@tt/client";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
@@ -86,7 +86,7 @@ export function SettingsView() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-3xl space-y-5 p-4 md:p-8">
-        <PageHeader title="Settings" description="Calendar, time zone and working hours." />
+        <PageHeader title="Settings" description="Calendar, time zone, working hours and the Someday assistant." />
         {googleStatus && (
           <p
             className={`rounded-xl px-4 py-3 text-sm font-semibold ${googleStatus === "connected" ? "bg-open text-open-ink" : "bg-risk-bg text-risk"}`}
@@ -158,6 +158,11 @@ export function SettingsView() {
             onChange={(timezone) => updateSettings.mutate({ timezone })}
           />
         </section>
+        <AssistantSection
+          value={settings.someday_assistant ?? {}}
+          onChange={(someday_assistant) => updateSettings.mutate({ someday_assistant })}
+        />
+
         {updateSettings.isError && (
           <p className="text-sm font-semibold text-risk">
             Couldn&apos;t save: {updateSettings.error.message}
@@ -181,6 +186,116 @@ export function SettingsView() {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+const NOTE_MAX = 1000;
+
+const ASSISTANT_FIELDS: { key: keyof AssistantNotes; label: string; hint: string; placeholder: string }[] = [
+  {
+    key: "about",
+    label: "About you",
+    hint: "Every item's assistant reads this.",
+    placeholder: "e.g. Busy university student in Boston. Free or cheap options first.",
+  },
+  {
+    key: "goal",
+    label: "Goal items (coach)",
+    hint: "Plans, milestones and check-ins.",
+    placeholder: "e.g. Keep plans to 3 hours a week. Be direct when I fall behind.",
+  },
+  {
+    key: "learn",
+    label: "Learn items (tutor)",
+    hint: "Explanations, resources and study plans.",
+    placeholder: "e.g. I learn best from videos and projects. I already know Python.",
+  },
+  {
+    key: "idea",
+    label: "Idea items (scout)",
+    hint: "Options, costs and ways to try it.",
+    placeholder: "e.g. Budget under $50. I don't have a car.",
+  },
+];
+
+/** What the Someday assistant should know about the user, overall and per item type. */
+function AssistantSection({
+  value,
+  onChange,
+}: {
+  value: AssistantNotes;
+  onChange: (notes: AssistantNotes) => void;
+}) {
+  return (
+    <Section
+      title="Someday assistant"
+      description="Tell each Someday assistant how to help you. Built-in safety rules always apply: links only come from real search results, and the assistant stays on the item."
+    >
+      <div className="space-y-4">
+        {ASSISTANT_FIELDS.map((f) => (
+          <NoteField
+            key={f.key}
+            id={`assistant-${f.key}`}
+            label={f.label}
+            hint={f.hint}
+            placeholder={f.placeholder}
+            value={value[f.key] ?? ""}
+            onCommit={(text) => {
+              const next = { ...value, [f.key]: text || undefined };
+              if (!text) delete next[f.key];
+              onChange(next);
+            }}
+          />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+/** A note that saves on blur. */
+function NoteField({
+  id,
+  label,
+  hint,
+  placeholder,
+  value,
+  onCommit,
+}: {
+  id: string;
+  label: string;
+  hint: string;
+  placeholder: string;
+  value: string;
+  onCommit: (text: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value]);
+  return (
+    <div>
+      <div className="mb-1 flex items-baseline justify-between gap-2">
+        <label htmlFor={id} className="text-sm font-bold text-ink">
+          {label} <span className="font-medium text-muted">· {hint}</span>
+        </label>
+        {draft.length > NOTE_MAX * 0.8 && (
+          <span className="text-[12px] text-muted">
+            {draft.length}/{NOTE_MAX}
+          </span>
+        )}
+      </div>
+      <textarea
+        id={id}
+        value={draft}
+        rows={2}
+        maxLength={NOTE_MAX}
+        placeholder={placeholder}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => {
+          const text = draft.trim();
+          if (text !== value) onCommit(text);
+        }}
+        className={`${field} block w-full resize-y font-medium`}
+      />
     </div>
   );
 }

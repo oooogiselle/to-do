@@ -16,6 +16,7 @@ import type {
   ListPatch,
   Settings,
   SettingsPatch,
+  AssistantMessage,
   Step,
   StepCreate,
   StepPatch,
@@ -124,6 +125,18 @@ export function createApiClient({ baseUrl, getToken, fetch: f = fetch }: Opts) {
       call<{ steps: ProposedStep[] }>("POST", `/tasks/${taskId}/breakdown`, { mode }),
     /** Starts web research for a someday item; returns the task marked pending. */
     research: (taskId: string) => call<Task>("POST", `/tasks/${taskId}/research`, {}),
+    /** The Ask tt. conversation, oldest first. */
+    assistant: () => call<AssistantMessage[]>("GET", "/assistant"),
+    /** Sends a message; returns it and the pending reply, which fills in through realtime. */
+    sendAssistant: (text: string, focusTaskId?: string | null) =>
+      call<AssistantMessage[]>("POST", "/assistant", { text, focus_task_id: focusTaskId ?? null }),
+    /** Asks again for the last reply, when it failed. Returns the new pending reply. */
+    retryAssistant: () => call<AssistantMessage[]>("POST", "/assistant", { retry: true }),
+    /** Marks card actions as done, so the cards stay resolved. */
+    resolveAssistantCard: (messageId: string, entries: Record<string, string>) =>
+      call<AssistantMessage>("PATCH", `/assistant/${messageId}`, { entries }),
+    /** Starts a new chat. */
+    clearAssistant: () => call<void>("DELETE", "/assistant"),
     suggest: (body: SuggestRequest) => call<SuggestResponse>("POST", "/suggest", body),
     extractText: (text: string) =>
       call<TextExtractionResult>("POST", "/imports/extract-text", { text }),

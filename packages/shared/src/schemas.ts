@@ -80,6 +80,119 @@ export const TaskResearch = z.object({
 });
 export type TaskResearch = z.infer<typeof TaskResearch>;
 
+/** Which assistant a someday item gets: its idea_kind, or "idea" when it has none. */
+export const AssistantType = z.enum(["goal", "learn", "idea"]);
+export type AssistantType = z.infer<typeof AssistantType>;
+
+const AssistantNote = z.string().max(1000);
+
+/** What the user tells the Someday assistant (settings.someday_assistant). */
+export const AssistantNotes = z.object({
+  /** About the user; applies to every type. */
+  about: AssistantNote.optional(),
+  goal: AssistantNote.optional(),
+  learn: AssistantNote.optional(),
+  idea: AssistantNote.optional(),
+});
+export type AssistantNotes = z.infer<typeof AssistantNotes>;
+
+/** A proposed time block for a task (or one of its steps), inside a free slot. */
+export const AssistantPick = z.object({
+  task_id: z.string(),
+  step_id: z.string().nullable(),
+  start: z.string(),
+  end: z.string(),
+  reason: z.string(),
+});
+
+/**
+ * One card in an Ask tt. reply. The server checks every id and time before saving, and nothing
+ * changes until the user acts on a card.
+ */
+export const AssistantBlock = z.discriminatedUnion("kind", [
+  /** Copy; **phrases** render in medium-weight ink. */
+  z.object({ kind: z.literal("text"), text: z.string() }),
+  /** Blocks to put on the calendar, for one local date. */
+  z.object({ kind: z.literal("schedule"), date: PlainDate, picks: z.array(AssistantPick) }),
+  /** A short list of real tasks, with quick actions. */
+  z.object({ kind: z.literal("tasks"), label: z.string(), task_ids: z.array(z.string()) }),
+  /** A to-do the assistant parsed from a sentence. */
+  z.object({
+    kind: z.literal("draft"),
+    draft: z.object({
+      title: z.string(),
+      list_id: z.string().nullable(),
+      due_at: z.string().nullable(),
+      estimate_min: z.number().int().positive().nullable(),
+      priority: Priority,
+      repeat: Repeat,
+    }),
+  }),
+  /** Steps to add to a task. */
+  z.object({
+    kind: z.literal("steps"),
+    task_id: z.string(),
+    steps: z.array(z.object({ title: z.string(), estimate_min: z.number().int().positive().nullable() })),
+  }),
+  /** Free time on a local date. */
+  z.object({
+    kind: z.literal("slots"),
+    date: PlainDate,
+    slots: z.array(z.object({ start: z.string(), end: z.string() })),
+  }),
+  /** Sources or resources, e.g. for an explanation. */
+  z.object({ kind: z.literal("links"), label: z.string(), resources: z.array(ResearchResource) }),
+  /** A shaped Someday idea: type, timeframe, first steps and places to start. */
+  z.object({
+    kind: z.literal("idea"),
+    plan: z.object({
+      /** Set when the plan is for an item already in Someday. */
+      task_id: z.string().nullable(),
+      title: z.string(),
+      link_url: z.string().nullable(),
+      idea_kind: IdeaKind.nullable(),
+      horizon: Horizon,
+      estimate_min: z.number().int().positive().nullable(),
+      steps: z.array(z.string()),
+      resources: z.array(ResearchResource),
+    }),
+  }),
+]);
+export type AssistantBlock = z.infer<typeof AssistantBlock>;
+
+/** One message in the Ask tt. conversation. Replies are "pending" while they run. */
+export const AssistantMessage = z.object({
+  id: z.string(),
+  role: z.enum(["user", "assistant"]),
+  content: z.string(),
+  blocks: z.array(AssistantBlock),
+  follow_ups: z.array(z.string()),
+  focus_task_id: z.string().nullable(),
+  /** Card actions already taken, keyed by "<block index>:<part>". */
+  resolved: z.record(z.string(), z.string()),
+  status: z.enum(["pending", "done", "error"]),
+  error: z.string().nullable(),
+  requested_at: z.string().nullable(),
+  created_at: z.string(),
+});
+export type AssistantMessage = z.infer<typeof AssistantMessage>;
+
+/** A new message (optionally about one task), or a retry of the last reply when it failed. */
+export const AssistantSend = z.union([
+  z.object({
+    text: z.string().trim().min(1).max(2000),
+    focus_task_id: z.string().uuid().nullable().optional(),
+  }),
+  z.object({ retry: z.literal(true) }),
+]);
+
+/** Records card actions on a reply ("<block>:<part>" -> e.g. the new row's id). */
+export const AssistantResolve = z.object({
+  entries: z
+    .record(z.string().min(1).max(40), z.string().max(200))
+    .refine((e) => Object.keys(e).length >= 1 && Object.keys(e).length <= 20, "1 to 20 entries"),
+});
+
 export const List = z.object({
   ...syncFields,
   name: z.string().min(1),
@@ -117,6 +230,8 @@ export const Task = z.object({
   start_date: PlainDate.nullable(),
   /** Someday research: web resources and an effort estimate. */
   research: TaskResearch.nullable(),
+  /** Extra instructions for this item's Someday assistant. */
+  assistant_note: z.string().nullable(),
 });
 export type Task = z.infer<typeof Task>;
 
@@ -188,6 +303,7 @@ export const Settings = z.object({
   working_hours: WorkingHours,
   default_block_min: z.number().int().positive(),
   timezone: z.string(),
+  someday_assistant: AssistantNotes,
   updated_at: z.string(),
 });
 export type Settings = z.infer<typeof Settings>;
@@ -214,6 +330,7 @@ export const TaskCreate = z.object({
   idea_kind: IdeaKind.nullable().optional(),
   horizon: Horizon.nullable().optional(),
   start_date: PlainDate.nullable().optional(),
+  assistant_note: AssistantNote.nullable().optional(),
 });
 export const TaskPatch = TaskCreate.partial().extend({
   status: TaskStatus.optional(),

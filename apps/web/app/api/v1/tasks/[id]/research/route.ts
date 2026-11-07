@@ -3,6 +3,8 @@ import type { Json, TaskResearch } from "@tt/shared";
 import { HttpError, route, unwrap } from "@/lib/api";
 import { researchIdea } from "@/lib/ai/research";
 import { assertAiAllowed } from "@/lib/ai/limits";
+import { assistantNotes } from "@/lib/ai/someday/load";
+import { assistantTypeOf } from "@/lib/ai/someday/prompts";
 import { adminClient } from "@/lib/supabase/admin";
 
 export const maxDuration = 300;
@@ -30,6 +32,7 @@ export const POST = route<{ id: string }>(async (_req, { supabase, user, params 
   }
 
   await assertAiAllowed(user.id, "research");
+  const notes = await assistantNotes(supabase);
 
   const requestedAt = new Date().toISOString();
   const pending: TaskResearch = {
@@ -66,10 +69,11 @@ export const POST = route<{ id: string }>(async (_req, { supabase, user, params 
       const found = await researchIdea(user.id, {
         title: task.title,
         notes: task.notes,
-        kind: task.idea_kind === "goal" || task.idea_kind === "learn" ? task.idea_kind : null,
+        type: assistantTypeOf(task.idea_kind),
         horizon: task.horizon,
         link_url: task.link_url,
         list: list.name,
+        assistant: { settings: notes, item: task.assistant_note },
       });
       await save({ ...found, status: "done", requested_at: requestedAt, finished_at: new Date().toISOString() });
       // The session length sizes My day blocks, but never replaces a time the user set.
