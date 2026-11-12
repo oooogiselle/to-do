@@ -10,7 +10,15 @@ import {
   zonedInstant,
   type TimeBlock,
 } from "@tt/shared";
-import { fmtDay, HOUR_PX, taskColor, useCompletion, useEvents, useModel } from "@tt/client";
+import {
+  fmtDay,
+  HOUR_PX,
+  taskColor,
+  useCompletion,
+  useEvents,
+  useModel,
+  usePrefetchEvents,
+} from "@tt/client";
 import { Grid } from "@/components/timeline/grid";
 import { useZoom } from "@/components/timeline/zoom";
 import { dayLabel, useCalendarAnchor } from "./calendar-dates";
@@ -43,6 +51,7 @@ export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: numbe
   const from = zonedInstant(days[0]!, "00:00", tz).getTime();
   const to = zonedInstant(addDays(days.at(-1)!, 1), "00:00", tz).getTime();
   const { data: eventsData } = useEvents(from, to);
+  usePrefetchEvents(from, to);
   const events = useMemo(() => eventsData?.events ?? [], [eventsData]);
 
   const step = (dir: -1 | 1) => setAnchor(addDays(current, dir * (isWeek ? 7 : 1)));
