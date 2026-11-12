@@ -1,9 +1,21 @@
 "use client";
 
-import { useMemo } from "react";
-import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo } from "react";
 import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+  type UseQueryResult,
+} from "@tanstack/react-query";
+import {
+  EVENT_BUCKET_MS,
+  eventBucketOf,
+  eventBuckets,
+  mergeEvents,
   HUES,
+  type EventsResponse,
   toggleDoneDate,
   type DayPlanItem,
   type List,
@@ -35,7 +47,8 @@ export const keys = {
   sync: ["sync"] as const,
   settings: ["settings"] as const,
   calendars: ["calendars"] as const,
-  events: (from: number, to: number) => ["events", from, to] as const,
+  /** One 7-day bucket of calendar events (see eventBuckets); every view shares these. */
+  events: (bucket: number) => ["events", bucket] as const,
 };
 
 /** Everything the app owns (lists, tasks, steps, blocks, settings) in one cached snapshot. */
@@ -44,13 +57,52 @@ export function useSync() {
   return useQuery({ queryKey: keys.sync, queryFn: () => api.sync() });
 }
 
+// Realtime invalidates events whenever calendar_events changes, so they can stay fresh longer.
+const EVENTS_STALE_MS = 5 * 60_000;
+const EVENTS_GC_MS = 30 * 60_000;
+
+function eventsQuery(api: ApiClient, bucket: number) {
+  return {
+    queryKey: keys.events(bucket),
+    queryFn: () => api.events(new Date(bucket), new Date(bucket + EVENT_BUCKET_MS)),
+    staleTime: EVENTS_STALE_MS,
+    gcTime: EVENTS_GC_MS,
+  };
+}
+
+/**
+ * Calendar events overlapping [from, to). Fetched in shared 7-day buckets rather than per
+ * range, so the calendar, My day, the Due rail and slot suggestions reuse each other's cache
+ * and switching pages doesn't refetch. `data` is set once every bucket has loaded.
+ */
 export function useEvents(from: number, to: number) {
   const api = useApi();
-  return useQuery({
-    queryKey: keys.events(from, to),
-    queryFn: () => api.events(new Date(from), new Date(to)),
-    placeholderData: (prev) => prev,
-  });
+  const buckets = eventBuckets(from, to);
+  const combine = useCallback(
+    (results: UseQueryResult<EventsResponse>[]) => {
+      const lists = results.map((r) => r.data?.events);
+      const ready = lists.every((l) => l !== undefined);
+      return {
+        data: ready ? { events: mergeEvents(lists as EventsResponse["events"][], from, to) } : undefined,
+        isLoading: results.some((r) => r.isLoading),
+        error: results.find((r) => r.error)?.error ?? null,
+      };
+    },
+    [from, to],
+  );
+  return useQueries({ queries: buckets.map((b) => eventsQuery(api, b)), combine });
+}
+
+/** Loads the weeks either side of [from, to) in the background, so stepping weeks doesn't wait. */
+export function usePrefetchEvents(from: number, to: number) {
+  const api = useApi();
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (to <= from) return;
+    const before = eventBucketOf(from) - EVENT_BUCKET_MS;
+    const after = eventBucketOf(to - 1) + EVENT_BUCKET_MS;
+    for (const b of [before, after]) void qc.prefetchQuery(eventsQuery(api, b));
+  }, [api, qc, from, to]);
 }
 
 export function useSettings() {

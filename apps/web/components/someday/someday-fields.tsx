@@ -35,6 +35,7 @@ export function SomedayFields({ task, onChange }: { task: Task; onChange: (patch
               { value: "none", label: "Idea" },
               { value: "goal", label: "Goal" },
               { value: "learn", label: "Learn" },
+              { value: "people", label: "People" },
             ]}
           />
         </fieldset>
@@ -55,7 +56,7 @@ export function SomedayFields({ task, onChange }: { task: Task; onChange: (patch
         </fieldset>
       </div>
       <LinkField value={task.link_url} onCommit={(link_url) => onChange({ link_url })} />
-      <ResearchSection task={task} />
+      {task.idea_kind !== "people" && <ResearchSection task={task} />}
       <TtNote task={task} />
     </section>
   );

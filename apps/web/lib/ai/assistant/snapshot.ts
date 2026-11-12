@@ -227,7 +227,14 @@ export async function buildSnapshot(
     const repeating = t.repeat !== "none";
     const facts = [
       list && `list ${list.name}`,
-      someday && (t.idea_kind === "goal" ? "Goal" : t.idea_kind === "learn" ? "Learn" : "Idea"),
+      someday &&
+        (t.idea_kind === "goal"
+          ? "Goal"
+          : t.idea_kind === "learn"
+            ? "Learn"
+            : t.idea_kind === "people"
+              ? "People (keep in touch)"
+              : "Idea"),
       someday && t.horizon && `timeframe ${HORIZON[t.horizon] ?? t.horizon}`,
       t.link_url && `link ${linkLabel(t.link_url)}`,
       !someday && (t.due_at ? `due ${fmtWhen(Date.parse(t.due_at))}` : "no due date"),

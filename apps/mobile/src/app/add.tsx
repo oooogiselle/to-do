@@ -23,6 +23,7 @@ const KINDS = [
   { value: "none", label: "Idea" },
   { value: "goal", label: "Goal" },
   { value: "learn", label: "Learn" },
+  { value: "people", label: "People" },
 ] as const;
 
 /**

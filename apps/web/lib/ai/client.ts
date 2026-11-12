@@ -7,8 +7,10 @@ import { HttpError } from "@/lib/api";
 import { adminClient } from "@/lib/supabase/admin";
 
 const MODEL = "claude-opus-5-5";
-// USD per million tokens (input, output) for MODEL; thinking tokens bill as output.
-const PRICE = { input: 4, output: 20 };
+// USD per million tokens for MODEL; thinking tokens bill as output. Cache writes (5-minute TTL)
+// cost 1.25x input; cache reads are billed separately from `input_tokens`.
+const PRICE = { input: 4, output: 20, cacheWrite: 5, cacheRead: 0.2 };
+const EPHEMERAL = { type: "ephemeral" } as const;
 
 type Content = Anthropic.Beta.Messages.BetaMessageParam["content"];
 
@@ -29,17 +31,49 @@ const MAX_RESUMES = 2;
 type Response = Anthropic.Beta.Messages.BetaMessage;
 
 async function logUsage(userId: string, response: Response) {
-  const searches = response.usage.server_tool_use?.web_search_requests ?? 0;
+  const u = response.usage;
+  const searches = u.server_tool_use?.web_search_requests ?? 0;
+  const written = u.cache_creation_input_tokens ?? 0;
+  const read = u.cache_read_input_tokens ?? 0;
   const cost =
-    (response.usage.input_tokens * PRICE.input + response.usage.output_tokens * PRICE.output) / 1e6 +
+    (u.input_tokens * PRICE.input +
+      written * PRICE.cacheWrite +
+      read * PRICE.cacheRead +
+      u.output_tokens * PRICE.output) /
+      1e6 +
     searches * SEARCH_PRICE;
+  if (process.env.NODE_ENV !== "production") {
+    console.info(`AI usage: ${u.input_tokens} in, ${written} cache write, ${read} cache read, ${u.output_tokens} out`);
+  }
   await adminClient().from("ai_usage").insert({
     user_id: userId,
     model: response.model,
-    input_tokens: response.usage.input_tokens,
+    // All input the request processed, cached or not; cost_usd has the real price.
+    input_tokens: u.input_tokens + written + read,
     output_tokens: response.usage.output_tokens,
     cost_usd: cost,
   });
+}
+
+/**
+ * Marks a cache breakpoint at the end of the history before the final user turn. That turn
+ * carries fresh per-request context (the planner snapshot), so the next turn reads everything
+ * up to here from cache. A breakpoint on the final turn would only ever be written, never read.
+ */
+function withHistoryBreakpoint(
+  input: Anthropic.Beta.Messages.BetaMessageParam[],
+): Anthropic.Beta.Messages.BetaMessageParam[] {
+  const messages = [...input];
+  const i = messages.length - 2;
+  const m = messages[i];
+  if (!m) return messages;
+  const content: Anthropic.Beta.Messages.BetaContentBlockParam[] =
+    typeof m.content === "string" ? [{ type: "text", text: m.content }] : [...m.content];
+  const last = content[content.length - 1];
+  if (last?.type !== "text") return messages;
+  content[content.length - 1] = { ...last, cache_control: EPHEMERAL };
+  messages[i] = { ...m, content };
+  return messages;
 }
 
 /**
@@ -78,7 +112,7 @@ export async function runStructuredWithTools<S extends z.ZodType>(
 ): Promise<{ output: z.infer<S>; content: Anthropic.Beta.Messages.BetaContentBlock[] }> {
   const api = anthropic();
   const messages: Anthropic.Beta.Messages.BetaMessageParam[] =
-    "messages" in opts ? [...opts.messages] : [{ role: "user", content: opts.content }];
+    "messages" in opts ? withHistoryBreakpoint(opts.messages) : [{ role: "user", content: opts.content }];
   const blocks: Anthropic.Beta.Messages.BetaContentBlock[] = [];
   let response: ParsedBetaMessage<z.infer<S>> | undefined;
   for (let attempt = 0; attempt <= MAX_RESUMES; attempt++) {
@@ -91,7 +125,8 @@ export async function runStructuredWithTools<S extends z.ZodType>(
           betas: ["server-side-fallback-2026-07-01"],
           fallbacks: "default",
           output_config: { effort: opts.effort, format: betaZodOutputFormat(opts.schema) },
-          system: opts.system,
+          // Tools, output schema and system prompt are fixed per feature, so they cache together.
+          system: [{ type: "text", text: opts.system, cache_control: EPHEMERAL }],
           messages,
           ...(opts.tools ? { tools: opts.tools } : {}),
         })

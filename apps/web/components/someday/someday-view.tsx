@@ -2,18 +2,29 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Check, MessageCircle, Pencil, Plus, Sun, Trash2 } from "lucide-react";
-import { localDate, splitLink, swatch, type Horizon, type IdeaKind, type List } from "@tt/shared";
+import {
+  localDate,
+  splitLink,
+  swatch,
+  type Horizon,
+  type IdeaKind,
+  type List,
+  type Task,
+} from "@tt/shared";
 import {
   endPosition,
   HORIZON_LABEL,
+  contactLabel,
   IDEA_KIND_LABEL,
   isTemp,
+  lastContact,
   setNotice,
   tempId,
   useAddSomeday,
   useAddToPlan,
   useCompletion,
   useDeleteTaskWithUndo,
+  useLogContact,
   useModel,
   useResearchTask,
   useSomeday,
@@ -82,7 +93,7 @@ export function SomedayView() {
       <div className="mx-auto max-w-6xl p-4 md:p-8">
         <PageHeader
           title="Someday"
-          description={`Long-term goals and things you want to learn, for when there's time. ${openCount} open.`}
+          description={`Long-term goals, things you want to learn and people to keep in touch with, for when there's time. ${openCount} open.`}
         >
           <Segmented<KindFilter>
             label="Show"
@@ -92,6 +103,7 @@ export function SomedayView() {
               { value: "all", label: "All" },
               { value: "goal", label: "Goals" },
               { value: "learn", label: "Learn" },
+              { value: "people", label: "People" },
             ]}
           />
           <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-chip-ink">
@@ -223,6 +235,8 @@ function Capture({
           onAdded: (task) => {
             setNotice({ kind: "added", taskId: task.id, label: task.title, listName: "Someday" });
             // Every new item gets web resources and a time estimate; the card fills in when done.
+            // People items don't need a web search.
+            if (effectiveKind === "people") return;
             research.mutate(task.id, {
               onError: (e) => setResearchNote(`Added, but couldn't find resources: ${e.message}`),
             });
@@ -253,7 +267,11 @@ function Capture({
         id="someday-capture"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="A goal, or paste a link to something you want to learn…"
+        placeholder={
+          effectiveKind === "people"
+            ? "Someone to keep in touch with, e.g. Call Grandma…"
+            : "A goal, or paste a link to something you want to learn…"
+        }
         className="w-full bg-transparent px-1 py-1.5 text-[15px] font-medium text-ink outline-none placeholder:text-faint"
       />
       {parsed.link_url && (
@@ -282,6 +300,7 @@ function Capture({
             { value: "none", label: "Idea" },
             { value: "goal", label: "Goal" },
             { value: "learn", label: "Learn" },
+            { value: "people", label: "People" },
           ]}
         />
         <label className="sr-only" htmlFor="someday-horizon">
@@ -403,7 +422,11 @@ function IdeaCard({ item }: { item: SomedayItem }) {
           {task.idea_kind && (
             <span
               className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold ${
-                task.idea_kind === "goal" ? "bg-warn-bg text-warn" : "bg-grape-bg text-grape-ink"
+                task.idea_kind === "goal"
+                  ? "bg-warn-bg text-warn"
+                  : task.idea_kind === "people"
+                    ? "bg-open text-open-ink"
+                    : "bg-grape-bg text-grape-ink"
               }`}
             >
               {IDEA_KIND_LABEL[task.idea_kind]}
@@ -415,7 +438,10 @@ function IdeaCard({ item }: { item: SomedayItem }) {
 
       {task.notes && <p className="line-clamp-2 pl-8 text-[12px] text-muted">{task.notes}</p>}
 
-      {!done && <ResearchSummary task={task} onMore={() => openTask(task.id)} className="pl-8" />}
+      {!done && task.idea_kind === "people" && <ContactLine task={task} today={today} disabled={saving} />}
+      {!done && task.idea_kind !== "people" && (
+        <ResearchSummary task={task} onMore={() => openTask(task.id)} className="pl-8" />
+      )}
 
       {progress.total > 0 && (
         <div className="flex items-center gap-2 pl-8" title={`${progress.done} of ${progress.total} steps done`}>
@@ -488,6 +514,57 @@ function IdeaCard({ item }: { item: SomedayItem }) {
         </div>
       )}
     </li>
+  );
+}
+
+/** "Last connected Nov 3 · Log": when you last saw or talked to someone, and a way to log it. */
+function ContactLine({ task, today, disabled }: { task: Task; today: string; disabled: boolean }) {
+  const logContact = useLogContact();
+  const [logging, setLogging] = useState(false);
+  const [date, setDate] = useState(today);
+  const last = lastContact(task);
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 pl-8 text-[12px] text-muted">
+      <span>{last ? `Last connected ${contactLabel(last, today)}` : "No contact logged yet"}</span>
+      {logging ? (
+        <form
+          className="flex items-center gap-1"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (date && date <= today) logContact(task, date);
+            setLogging(false);
+          }}
+        >
+          <label className="sr-only" htmlFor={`contact-${task.id}`}>
+            Day you connected
+          </label>
+          <input
+            id={`contact-${task.id}`}
+            type="date"
+            value={date}
+            max={today}
+            onChange={(e) => setDate(e.target.value)}
+            className="rounded-md border border-line bg-surface px-1.5 py-0.5 text-[12px] text-ink"
+          />
+          <button type="submit" className="rounded-md px-1.5 py-0.5 font-bold text-ink hover:bg-row">
+            Save
+          </button>
+        </form>
+      ) : (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => {
+            setDate(today);
+            setLogging(true);
+          }}
+          className="rounded-md px-1.5 py-0.5 font-bold text-chip-ink hover:bg-row disabled:opacity-50"
+        >
+          Log
+        </button>
+      )}
+    </div>
   );
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import {
   addDays,
@@ -10,7 +10,6 @@ import {
   isRecurring,
   localDate,
   occursOn,
-  parseQuickAdd,
   zonedInstant,
   type ComingUpReason,
   type Task,
@@ -30,6 +29,7 @@ import {
 import { useOpenTask } from "@/components/app-shell";
 import { DailySection } from "./daily-section";
 import { useCalendarAnchor, dayLabel } from "./calendar-dates";
+import { PlanAddModal } from "./plan-add-modal";
 import { PlanItem } from "./plan-item";
 import { useDragState } from "./workspace-dnd";
 
@@ -47,7 +47,7 @@ const navBtn =
  * that day. The date follows the Day pane, so stepping one steps the other.
  */
 export function PlanPane({ pane, now }: { pane: string; now: number }) {
-  const { tasks, taskById, stepsByTask, blocks, lists, planByDate, settings } = useModel();
+  const { tasks, taskById, stepsByTask, blocks, planByDate, settings } = useModel();
   const tz = settings.timezone;
   const today = localDate(new Date(now), tz);
   const [anchor, setAnchor] = useCalendarAnchor("today");
@@ -146,16 +146,20 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
       },
     });
 
+  // Enter opens the details modal, prefilled from the typed text; the modal adds the to-do.
+  const [adding, setAdding] = useState<string | null>(null);
+  const closeAdd = useCallback(() => setAdding(null), []);
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = parseQuickAdd(draft, { lists, now: new Date(now), timezone: tz });
-    if (!parsed.title) return;
-    createTask.mutate(
-      { tempId: tempId(), body: parsed },
-      { onSuccess: (task) => parsed.repeat === "none" && plan(task) },
-    );
+    if (!draft.trim()) return;
+    setAdding(draft);
     setDraft("");
   };
+  const addTask = (body: Parameters<typeof createTask.mutate>[0]["body"]) =>
+    createTask.mutate(
+      { tempId: tempId(), body },
+      { onSuccess: (task) => (body.repeat ?? "none") === "none" && plan(task) },
+    );
 
   const dropAt = planTarget?.date === date ? planTarget.index : null;
   const dropLine = <li aria-hidden="true" className="h-[3px] rounded-full bg-sun" />;
@@ -346,6 +350,12 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
           )}
         </div>
       </div>
+      <PlanAddModal
+        initial={adding}
+        dayLabel={date === today ? "My day" : "this day"}
+        onClose={closeAdd}
+        onAdd={addTask}
+      />
     </div>
   );
 }

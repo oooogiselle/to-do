@@ -2,12 +2,15 @@ import { useState } from "react";
 import { Pressable, RefreshControl, SectionList, StyleSheet, Switch, Text, View } from "react-native";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import { linkLabel, type IdeaKind } from "@tt/shared";
+import { linkLabel, localDate, type IdeaKind } from "@tt/shared";
 import {
+  contactLabel,
   HORIZON_LABEL,
   IDEA_KIND_LABEL,
   isTemp,
+  lastContact,
   useCompletion,
+  useModel,
   useSomeday,
   type SomedayItem,
 } from "@tt/client";
@@ -22,9 +25,10 @@ const KINDS = [
   { value: "all", label: "All" },
   { value: "goal", label: "Goals" },
   { value: "learn", label: "Learn" },
+  { value: "people", label: "People" },
 ] as const;
 
-/** Long-term goals and things to learn later, grouped by rough timeframe. */
+/** Long-term goals, things to learn later and people to keep in touch with, by rough timeframe. */
 export default function Someday() {
   const colors = useColors();
   const { refreshing, refresh } = useRefresh();
@@ -75,7 +79,7 @@ export default function Someday() {
         ListEmptyComponent={
           <Text style={[styles.empty, { color: colors.muted }]}>
             {kind === "all"
-              ? "Nothing parked yet. Tap + to save a goal, or a link to something you want to learn later."
+              ? "Nothing parked yet. Tap + to save a goal, someone to keep in touch with, or a link to something you want to learn later."
               : "Nothing here with this filter."}
           </Text>
         }
@@ -89,7 +93,10 @@ export default function Someday() {
 function IdeaRow({ item }: { item: SomedayItem }) {
   const colors = useColors();
   const { setTaskDone } = useCompletion();
+  const { settings } = useModel();
   const { task, list, progress } = item;
+  const people = task.idea_kind === "people";
+  const last = people ? lastContact(task) : null;
   const done = task.status === "done";
   const temp = isTemp(task.id);
   const color = task.color ?? list.color;
@@ -128,9 +135,18 @@ function IdeaRow({ item }: { item: SomedayItem }) {
                 style={[
                   styles.tag,
                   {
-                    color: task.idea_kind === "goal" ? colors.warn : colors.now,
+                    color:
+                      task.idea_kind === "goal"
+                        ? colors.warn
+                        : people
+                          ? colors.openInk
+                          : colors.now,
                     backgroundColor:
-                      task.idea_kind === "goal" ? colors.warnBg : tint(colors.now, 0.12),
+                      task.idea_kind === "goal"
+                        ? colors.warnBg
+                        : people
+                          ? colors.open
+                          : tint(colors.now, 0.12),
                   },
                 ]}
               >
@@ -150,6 +166,13 @@ function IdeaRow({ item }: { item: SomedayItem }) {
             {progress.total > 0 && (
               <Text style={{ color: colors.muted, fontSize: 13 }}>
                 {progress.done}/{progress.total} steps
+              </Text>
+            )}
+            {people && !done && (
+              <Text style={{ color: colors.muted, fontSize: 13 }}>
+                {last
+                  ? `Last connected ${contactLabel(last, localDate(new Date(), settings.timezone))}`
+                  : "No contact logged"}
               </Text>
             )}
           </View>

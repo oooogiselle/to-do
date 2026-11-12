@@ -6,7 +6,7 @@ import { assistantSystemPrompt } from "./prompts";
 import type { Snapshot } from "./snapshot";
 import { ReplyOut, validateReply } from "./validate";
 
-/** How many earlier messages the model sees. */
+/** How many earlier messages the model sees, at least (up to HISTORY + 9; see assistantTurn). */
 const HISTORY = 20;
 
 export type PastMessage = {
@@ -56,7 +56,10 @@ function describeReply(m: PastMessage, snap: Snapshot): string {
  */
 export async function assistantTurn(userId: string, history: PastMessage[], snap: Snapshot) {
   const turns: { role: "user" | "assistant"; text: string }[] = [];
-  for (const m of history.slice(-HISTORY)) {
+  // Keep 20-29 messages, trimming 10 at a time, so the start of the conversation (and with it
+  // the cached prefix) only moves every 10 messages instead of every turn.
+  const start = Math.max(0, Math.floor((history.length - HISTORY) / 10) * 10);
+  for (const m of history.slice(start)) {
     const text = m.role === "user" ? m.content : describeReply(m, snap);
     if (!text) continue;
     const prev = turns[turns.length - 1];
