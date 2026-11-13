@@ -32,6 +32,7 @@ import {
 } from "@tt/client";
 import {
   formatMinutes,
+  isRecurring,
   linkLabel,
   localDate,
   swatch,
@@ -86,8 +87,9 @@ const Dot = ({ color }: { color: string }) => (
 
 /** Proposed time blocks. Each can be added on its own, or all at once. */
 export function ScheduleCard({ messageId, index, resolved, block }: CardProps<"schedule">) {
-  const { taskById, listById, stepsByTask, settings } = useModel();
+  const { taskById, listById, stepsByTask, planByDate, settings } = useModel();
   const createBlock = useCreateBlock();
+  const addToPlan = useAddToPlan();
   const resolve = useResolveCard();
   const tz = settings.timezone;
   const keyOf = (j: number) => `${index}:pick:${j}`;
@@ -108,9 +110,35 @@ export function ScheduleCard({ messageId, index, resolved, block }: CardProps<"s
     const p = block.picks[j]!;
     createBlock.mutate({ tempId: tempId(), body: { task_id: p.task_id, step_id: p.step_id, start: p.start, end: p.end } });
   };
+  /**
+   * Each block's to-do (or step) also goes on that day's plan in My day, after what's there,
+   * unless it's already planned that day. Routines aren't planned; they show every day anyway.
+   */
+  const plan = (js: number[]) => {
+    const queued = new Map<string, number>();
+    const seen = new Set<string>();
+    for (const j of js) {
+      const p = block.picks[j]!;
+      const task = live[j];
+      if (!task || isRecurring(task)) continue;
+      const date = dayOfPick[j]!;
+      const items = planByDate.get(date) ?? [];
+      const key = `${date}:${p.task_id}:${p.step_id ?? ""}`;
+      const planned = items.some((i) => i.task_id === p.task_id && (i.step_id ?? null) === p.step_id);
+      if (planned || seen.has(key)) continue;
+      seen.add(key);
+      const n = queued.get(date) ?? 0;
+      queued.set(date, n + 1);
+      addToPlan.mutate({
+        tempId: tempId(),
+        body: { task_id: p.task_id, step_id: p.step_id, plan_date: date, position: endPosition(items) + n },
+      });
+    }
+  };
   const accept = (js: number[]) => {
     resolve.mutate({ messageId, entries: Object.fromEntries(js.map((j) => [keyOf(j), "added"])) });
     js.forEach(create);
+    plan(js);
   };
 
   return (
@@ -181,7 +209,7 @@ export function ScheduleCard({ messageId, index, resolved, block }: CardProps<"s
           <button type="button" onClick={() => accept(pending)} className={primaryBtn}>
             Add all {pending.length}
           </button>
-          <span className="text-[11px] text-faint">Blocks go on your calendar</span>
+          <span className="text-[11px] text-faint">Blocks go on your calendar and My day</span>
         </div>
       )}
     </div>
