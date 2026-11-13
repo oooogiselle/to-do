@@ -18,6 +18,11 @@ export type PastMessage = {
 
 const time = (iso: string, tz: string) =>
   new Date(iso).toLocaleTimeString("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit" });
+/** "Thu 2026-11-19", matching how the snapshot names days. */
+const day = (iso: string, tz: string) => {
+  const d = new Date(iso);
+  return `${d.toLocaleDateString("en-US", { timeZone: tz, weekday: "short" })} ${d.toLocaleDateString("en-CA", { timeZone: tz })}`;
+};
 
 /**
  * A past reply as text. Codes change every turn, so tasks are named by title; the model also
@@ -32,7 +37,7 @@ function describeReply(m: PastMessage, snap: Snapshot): string {
       case "text":
         return b.text;
       case "schedule":
-        return `[Schedule for ${b.date}: ${b.picks.map((p) => `${time(p.start, snap.timezone)}-${time(p.end, snap.timezone)} ${title(p.task_id)}`).join("; ")}]${tag}`;
+        return `[Schedule: ${b.picks.map((p) => `${day(p.start, snap.timezone)} ${time(p.start, snap.timezone)}-${time(p.end, snap.timezone)} ${title(p.task_id)}`).join("; ")}]${tag}`;
       case "tasks":
         return `[${b.label}: ${b.task_ids.map(title).join(", ")}]`;
       case "draft":

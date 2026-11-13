@@ -227,14 +227,14 @@ isOneToOne: false
                   ]
                 },"settings": {
                   Row: {
-                    "created_at": string,"default_block_min": number,"someday_assistant": NonNullable<Json>,"timezone": string,"updated_at": string,"user_id": string,"working_hours": NonNullable<Json>
+                    "created_at": string,"default_block_min": number,"scheduling": NonNullable<Json>,"someday_assistant": NonNullable<Json>,"timezone": string,"updated_at": string,"user_id": string,"working_hours": NonNullable<Json>
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"default_block_min"?: number,"someday_assistant"?: NonNullable<Json>,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"working_hours"?: NonNullable<Json>
+                    "created_at"?: string,"default_block_min"?: number,"scheduling"?: NonNullable<Json>,"someday_assistant"?: NonNullable<Json>,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"working_hours"?: NonNullable<Json>
                   }
                   Update: {
-                    "created_at"?: string,"default_block_min"?: number,"someday_assistant"?: NonNullable<Json>,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"working_hours"?: NonNullable<Json>
+                    "created_at"?: string,"default_block_min"?: number,"scheduling"?: NonNullable<Json>,"someday_assistant"?: NonNullable<Json>,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"working_hours"?: NonNullable<Json>
                   }
                   Relationships: [
                     

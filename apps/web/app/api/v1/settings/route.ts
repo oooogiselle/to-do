@@ -2,7 +2,7 @@ import { SettingsPatch } from "@tt/shared";
 import { parseBody, route, unwrap } from "@/lib/api";
 import { adminClient } from "@/lib/supabase/admin";
 
-const COLUMNS = "working_hours, default_block_min, timezone, someday_assistant, updated_at";
+const COLUMNS = "working_hours, default_block_min, timezone, someday_assistant, scheduling, updated_at";
 
 /** Settings plus Google connection status (the token table itself is server-only). */
 export const GET = route(async (_req, { supabase, user }) => {

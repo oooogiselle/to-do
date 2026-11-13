@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import {
   ArrowUpRight,
   CalendarClock,
@@ -93,8 +93,16 @@ export function ScheduleCard({ messageId, index, resolved, block }: CardProps<"s
   const keyOf = (j: number) => `${index}:pick:${j}`;
   const live = block.picks.map((p) => taskById.get(p.task_id));
   const pending = block.picks.map((_, j) => j).filter((j) => !resolved[keyOf(j)] && live[j]?.status === "open");
-  const total = block.picks.reduce((sum, p) => sum + (Date.parse(p.end) - Date.parse(p.start)) / 60_000, 0);
+  const minutes = (p: (typeof block.picks)[number]) => (Date.parse(p.end) - Date.parse(p.start)) / 60_000;
+  const total = block.picks.reduce((sum, p) => sum + minutes(p), 0);
   const today = localDate(new Date(), tz);
+  // A week plan spans days: picks are grouped under a heading per day.
+  const dayOfPick = block.picks.map((p) => localDate(new Date(p.start), tz));
+  const dates = [...new Set(dayOfPick)];
+  const multiDay = dates.length > 1;
+  const dayTotal = (date: string) => block.picks.reduce((n, p, j) => (dayOfPick[j] === date ? n + minutes(p) : n), 0);
+  const dayLabel = (date: string, style: "short" | "long") =>
+    date === today ? "Today" : style === "long" ? fmtDay(date, tz, "long").split(",")[0] : fmtDay(date, tz);
 
   const create = (j: number) => {
     const p = block.picks[j]!;
@@ -109,7 +117,7 @@ export function ScheduleCard({ messageId, index, resolved, block }: CardProps<"s
     <div className={cardShell}>
       <div className={cardHeader}>
         <CalendarClock className="h-3 w-3" />
-        Suggested · {block.date === today ? "Today" : fmtDay(block.date, tz, "long").split(",")[0]}
+        Suggested · {multiDay ? `${dates.length} days` : dayLabel(dayOfPick[0] ?? block.date, "long")}
         <span className="ml-auto tracking-normal tabular-nums normal-case">{formatMinutes(total)}</span>
       </div>
       <ol>
@@ -118,41 +126,53 @@ export function ScheduleCard({ messageId, index, resolved, block }: CardProps<"s
           const step = p.step_id ? stepsByTask.get(p.task_id)?.find((s) => s.id === p.step_id) : undefined;
           const done = !!resolved[keyOf(j)];
           const gone = !task || task.status !== "open";
+          const firstOfDay = multiDay && dayOfPick[j] !== dayOfPick[j - 1];
           return (
-            <li key={j} className={`flex items-start gap-3 px-3 py-2.5 ${j ? "border-t border-line-soft" : ""}`}>
-              <span className="w-[58px] shrink-0 pt-px text-[12px] leading-tight text-ink tabular-nums">
-                {fmtTime(p.start, tz)}
-                <span className="block text-faint">{fmtTime(p.end, tz)}</span>
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1.5 text-[13px] text-ink">
-                  <Dot color={taskColor(task, listById)} />
-                  <span className={`truncate ${done || gone ? "text-faint" : ""}`}>
-                    {task?.title ?? "A task that's gone"}
-                    {step && <span className="text-muted"> · {step.title}</span>}
-                  </span>
-                </p>
-                <p className="mt-0.5 pl-3 text-[12px] leading-snug text-muted">{p.reason}</p>
-              </div>
-              {done ? (
-                <span className={doneNote}>
-                  <Check className="h-3.5 w-3.5" />
-                  Added
-                </span>
-              ) : (
-                !gone && (
-                  <button
-                    type="button"
-                    onClick={() => accept([j])}
-                    disabled={isTemp(p.task_id)}
-                    className={secondaryBtn}
-                    aria-label={`Add ${task.title} at ${fmtTime(p.start, tz)}`}
-                  >
-                    Add
-                  </button>
-                )
+            <Fragment key={j}>
+              {firstOfDay && (
+                <li
+                  aria-hidden="true"
+                  className={`flex items-center bg-row px-3 py-1 text-[11px] font-medium text-muted ${j ? "border-t border-line-soft" : ""}`}
+                >
+                  {dayLabel(dayOfPick[j]!, "short")}
+                  <span className="ml-auto tabular-nums text-faint">{formatMinutes(dayTotal(dayOfPick[j]!))}</span>
+                </li>
               )}
-            </li>
+              <li className={`flex items-start gap-3 px-3 py-2.5 ${j || firstOfDay ? "border-t border-line-soft" : ""}`}>
+                <span className="w-[58px] shrink-0 pt-px text-[12px] leading-tight text-ink tabular-nums">
+                  {fmtTime(p.start, tz)}
+                  <span className="block text-faint">{fmtTime(p.end, tz)}</span>
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-1.5 text-[13px] text-ink">
+                    <Dot color={taskColor(task, listById)} />
+                    <span className={`truncate ${done || gone ? "text-faint" : ""}`}>
+                      {task?.title ?? "A task that's gone"}
+                      {step && <span className="text-muted"> · {step.title}</span>}
+                    </span>
+                  </p>
+                  <p className="mt-0.5 pl-3 text-[12px] leading-snug text-muted">{p.reason}</p>
+                </div>
+                {done ? (
+                  <span className={doneNote}>
+                    <Check className="h-3.5 w-3.5" />
+                    Added
+                  </span>
+                ) : (
+                  !gone && (
+                    <button
+                      type="button"
+                      onClick={() => accept([j])}
+                      disabled={isTemp(p.task_id)}
+                      className={secondaryBtn}
+                      aria-label={`Add ${task.title} at ${fmtTime(p.start, tz)}${multiDay ? ` on ${dayLabel(dayOfPick[j]!, "short")}` : ""}`}
+                    >
+                      Add
+                    </button>
+                  )
+                )}
+              </li>
+            </Fragment>
           );
         })}
       </ol>

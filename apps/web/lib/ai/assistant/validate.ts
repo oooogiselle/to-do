@@ -1,12 +1,16 @@
 import "server-only";
 import { z } from "zod/v4";
 import {
-  fitPicksToSlots,
+  localDate,
+  localWeekday,
+  placePicks,
   normalizeLink,
   urlKey,
   verifyResources,
   zonedInstant,
   type AssistantBlock,
+  type FittedPick,
+  type Unplaced,
 } from "@tt/shared";
 import type { Snapshot } from "./snapshot";
 
@@ -14,13 +18,11 @@ import type { Snapshot } from "./snapshot";
 // the API compiles (and it caps union-typed fields at 16). "Nothing" is an empty string, an empty
 // list, 0, or "none", and the model fills every field.
 // Plain strings rather than enums, normalized below: the model has returned "" for an enum.
-const NoDay = z.string().describe("One of 'none', 'today', 'tomorrow', 'later'");
+const Day = z.string().describe("A day from the snapshot as 'YYYY-MM-DD'");
 const oneOf = <T extends string>(v: string, allowed: readonly T[], fallback: T): T => {
   const x = v.trim().toLowerCase() as T;
   return allowed.includes(x) ? x : fallback;
 };
-const DAYS = ["today", "tomorrow", "later"] as const;
-const asDay = (v: string) => oneOf<(typeof DAYS)[number] | "none">(v, [...DAYS, "none"], "none");
 const Code = z.string().describe("A task code from the latest snapshot, e.g. 't3'");
 
 const Resource = z.object({
@@ -34,18 +36,20 @@ const Resource = z.object({
 /** What the model returns: a text reply, then the cards it wants, which name tasks by code. */
 export const ReplyOut = z.object({
   text: z.string().describe("Your reply: usually 1 to 3 sentences"),
-  schedule_day: NoDay.describe("The day of a schedule card, or 'none' for no schedule"),
   schedule: z
     .array(
       z.object({
         task: Code,
         step: z.string().describe("A step code of that task, e.g. 't3.s2', or ''"),
-        start: z.string().describe("Local start time, 'HH:MM' (24h), inside a free slot"),
-        duration_min: z.number().int(),
+        day: Day.describe("The day for this block as 'YYYY-MM-DD', or '' for the earliest day that works"),
+        when: z
+          .string()
+          .describe("'morning', 'afternoon', 'evening', 'HH:MM' (24h) only for a time they asked for, or 'any'"),
+        duration_min: z.number().int().describe("Minutes for this block"),
         reason: z.string().describe("Short and specific, under 60 characters"),
       }),
     )
-    .describe("Schedule picks, up to 4; empty for no schedule"),
+    .describe("Blocks to schedule, most pressing first, up to 8; empty for no schedule. The app fits exact times."),
   tasks_label: z.string().describe("Heading for a task list card, e.g. 'Due this week'; '' for none"),
   tasks: z.array(Code).describe("Tasks for the task list card, up to 8; empty for none"),
   draft: z
@@ -65,7 +69,7 @@ export const ReplyOut = z.object({
   steps: z
     .array(z.object({ title: z.string(), estimate_min: z.number().int() }))
     .describe("Steps to add to that task, 3 to 7; empty for none"),
-  slots_day: NoDay.describe("Show their free time that day, or 'none'"),
+  slots_day: z.string().describe("Show their free time on this day ('YYYY-MM-DD'), or ''"),
   idea: z
     .array(
       z.object({
@@ -106,21 +110,19 @@ export function validateReply(
   ctx: { toolBlocks: unknown[]; userText: string; trusted: string[] },
 ): { blocks: AssistantBlock[]; follow_ups: string[]; title: string } {
   const task = (code: string | null) => (code ? (snap.taskByCode.get(code.trim()) ?? null) : null);
-  const dayOf = (d: "today" | "tomorrow" | "later") =>
-    d === "today" ? snap.today : d === "tomorrow" ? snap.tomorrow : snap.later;
+  const dayOf = (v: string) => dayIn(snap, v);
   const blocks: AssistantBlock[] = [];
+  /** Said after the reply's text, e.g. what couldn't be fitted before its due date. */
+  const notes: string[] = [];
   const draft = out.draft[0];
   const idea = out.idea[0];
-  const scheduleDay = asDay(out.schedule_day);
-  const slotsDay = asDay(out.slots_day);
+  const slotsDay = out.slots_day.trim();
   const parts = [
     { kind: "text" as const, text: out.text },
-    scheduleDay !== "none" &&
-      out.schedule.length > 0 && {
-        kind: "schedule" as const,
-        day: scheduleDay,
-        picks: out.schedule.slice(0, 6).map((p) => ({ ...p, step: orNull(p.step) })),
-      },
+    out.schedule.length > 0 && {
+      kind: "schedule" as const,
+      picks: out.schedule.slice(0, 12).map((p) => ({ ...p, step: orNull(p.step) })),
+    },
     out.tasks.length > 0 && { kind: "tasks" as const, label: out.tasks_label, tasks: out.tasks.slice(0, 8) },
     draft && {
       kind: "draft" as const,
@@ -134,7 +136,7 @@ export function validateReply(
     },
     out.steps_task.trim() &&
       out.steps.length > 0 && { kind: "steps" as const, task: out.steps_task, steps: out.steps.slice(0, 7) },
-    slotsDay !== "none" && { kind: "slots" as const, day: slotsDay },
+    !!slotsDay && slotsDay.toLowerCase() !== "none" && { kind: "slots" as const, day: slotsDay },
     idea && {
       kind: "idea" as const,
       ...idea,
@@ -156,27 +158,36 @@ export function validateReply(
         break;
       }
       case "schedule": {
-        const day = dayOf(b.day);
-        if (!day) break;
-        const raw = b.picks.flatMap((p) => {
+        const requests = b.picks.flatMap((p) => {
           const task_id = task(p.task);
-          if (!task_id || !HHMM.test(p.start.trim())) return [];
-          const start = zonedInstant(day.date, p.start.trim(), snap.timezone).getTime();
-          // Work booked after the deadline doesn't help (overdue tasks are fine: they're late anyway).
-          const due = snap.dueOf.get(task_id);
-          if (due && due > Date.now() && start >= due) return [];
+          if (!task_id) return [];
+          const day = p.day.trim();
           return [
             {
               task_id,
               step_id: p.step ? (snap.stepByCode.get(p.step.trim()) ?? null) : null,
-              start,
+              // A day the snapshot doesn't have stays as given, so it's reported as not placed.
+              date: day ? (dayOf(day)?.date ?? day) : null,
+              when: p.when,
               duration_min: p.duration_min,
               reason: p.reason,
             },
           ];
         });
-        const picks = fitPicksToSlots(raw, day.slots, snap.known);
-        if (picks.length) blocks.push({ kind: "schedule", date: day.date, picks });
+        const { placed, unplaced } = placePicks({
+          picks: requests,
+          days: snap.days,
+          known: snap.known,
+          dueOf: snap.dueOf,
+          prefs: snap.prefs,
+          now: Date.now(),
+          timezone: snap.timezone,
+        });
+        if (placed.length) {
+          const date = placed[0]!.start;
+          blocks.push({ kind: "schedule", date: localDay(snap, date), picks: placed });
+        }
+        notes.push(...unplacedNote(unplaced, placed, snap));
         break;
       }
       case "tasks": {
@@ -219,7 +230,7 @@ export function validateReply(
         blocks.push({
           kind: "slots",
           date: day.date,
-          slots: day.slots.map((s) => ({ start: new Date(s.start).toISOString(), end: new Date(s.end).toISOString() })),
+          slots: day.shown.map((s) => ({ start: new Date(s.start).toISOString(), end: new Date(s.end).toISOString() })),
         });
         break;
       }
@@ -264,6 +275,11 @@ export function validateReply(
     }
   }
 
+  if (notes.length) {
+    const first = blocks.find((b) => b.kind === "text");
+    if (first) first.text = `${first.text}\n\n${notes.join(" ")}`;
+    else blocks.unshift({ kind: "text", text: notes.join(" ") });
+  }
   if (!blocks.length) {
     blocks.push({ kind: "text", text: "I couldn't put that together. Try asking another way." });
   }
@@ -280,4 +296,39 @@ export function cleanTitle(raw: string): string {
     .trim()
     .slice(0, 60)
     .trim();
+}
+
+const WEEKDAY_NAMES = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+/** A day of the snapshot from what the model wrote: 'YYYY-MM-DD', 'today', 'tomorrow' or a weekday. */
+export function dayIn(snap: Pick<Snapshot, "days" | "timezone">, raw: string) {
+  const v = raw.trim().toLowerCase();
+  if (v === "today") return snap.days[0] ?? null;
+  if (v === "tomorrow") return snap.days[1] ?? null;
+  if (DATE.test(v)) return snap.days.find((d) => d.date === v) ?? null;
+  const wd = WEEKDAY_NAMES.indexOf(v.slice(0, 3));
+  if (wd < 0) return null;
+  return snap.days.find((d) => localWeekday(zonedInstant(d.date, "12:00", snap.timezone), snap.timezone) === wd) ?? null;
+}
+
+const localDay = (snap: Pick<Snapshot, "timezone">, iso: string) => localDate(new Date(iso), snap.timezone);
+
+const listOf = (items: string[]) =>
+  items.length <= 1 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+
+/** One honest line on work that didn't fit, so the text never promises more than the card holds. */
+function unplacedNote(unplaced: Unplaced[], placed: FittedPick[], snap: Pick<Snapshot, "titleOf">): string[] {
+  const title = (id: string) => `**${snap.titleOf.get(id) ?? "a task"}**`;
+  const placedIds = new Set(placed.map((p) => p.task_id));
+  const late = [...new Set(unplaced.filter((u) => u.reason === "no_time_before_due").map((u) => u.task_id))];
+  const noRoom = [
+    ...new Set(unplaced.filter((u) => u.reason === "no_time" && !placedIds.has(u.task_id)).map((u) => u.task_id)),
+  ].filter((id) => !late.includes(id));
+  const out: string[] = [];
+  if (late.length) {
+    const names = late.map((id) => (placedIds.has(id) ? `all of ${title(id)}` : title(id)));
+    out.push(`I couldn't fit ${listOf(names)} before ${late.length > 1 ? "they're" : "it's"} due. Want to move something else, or ask for more time?`);
+  }
+  if (noRoom.length) out.push(`There wasn't room for ${listOf(noRoom.map(title))} in the days I can plan.`);
+  return out;
 }
