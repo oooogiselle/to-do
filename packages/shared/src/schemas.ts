@@ -401,6 +401,9 @@ export const TimeBlockPatch = z
   })
   .refine((b) => Date.parse(b.end) > Date.parse(b.start), "end must be after start");
 
+/** Ends a block early (its to-do was checked off); it can only get shorter. */
+export const TimeBlockTrim = z.object({ end: z.string().datetime({ offset: true }) });
+
 export const BreakdownMode = z.enum(["default", "more_detailed"]);
 export const BreakdownRequest = z.object({ mode: BreakdownMode.default("default") });
 

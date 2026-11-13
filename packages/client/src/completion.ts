@@ -1,11 +1,20 @@
 "use client";
 
 import { useCallback } from "react";
-import { isDoneOn, isRecurring, localDate, toggleDoneDate, type TimeBlock } from "@tt/shared";
+import {
+  isDoneOn,
+  isRecurring,
+  localDate,
+  toggleDoneDate,
+  trimmedEnd,
+  type TimeBlock,
+} from "@tt/shared";
 import {
   useDeleteStep,
   useModel,
+  useMoveBlock,
   useRemoveUpcomingBlocks,
+  useTrimBlock,
   useUpdateStep,
   useUpdateTask,
 } from "./data";
@@ -13,10 +22,63 @@ import { setNotice, type Notice } from "./notice";
 
 type Completion = Extract<Notice, { kind: "completion" }>;
 
+/**
+ * Blocks ended early because their to-do was checked off while they ran, by block id, so
+ * unchecking can give back the time. Kept for this session only.
+ */
+const trimmed = new Map<
+  string,
+  { taskId: string; stepId: string | null; trimmedEnd: string; originalEnd: string }
+>();
+
+/**
+ * Checking a to-do off while its block is running ends the block then (at least 5 minutes in);
+ * unchecking it restores the original end if that's still ahead and the block wasn't changed.
+ */
+function useBlockTrims() {
+  const { blocks, settings, stepsByTask } = useModel();
+  const trimBlock = useTrimBlock();
+  const moveBlock = useMoveBlock();
+
+  /** `day`: for a repeating task, only the block of that local date. */
+  const trimRunning = (taskId: string, stepId?: string, day?: string) => {
+    const now = new Date();
+    for (const b of blocks) {
+      // Already trimmed: checking the last step off trims its block, then the task's blocks.
+      if (b.task_id !== taskId || b.id.startsWith("temp-") || trimmed.has(b.id)) continue;
+      if (stepId && b.step_id !== stepId) continue;
+      if (day && localDate(new Date(b.start), settings.timezone) !== day) continue;
+      const end = trimmedEnd(b, now);
+      if (!end) continue;
+      trimmed.set(b.id, { taskId, stepId: b.step_id, trimmedEnd: end, originalEnd: b.end });
+      trimBlock.mutate({ id: b.id, end });
+    }
+  };
+
+  /** Without `stepId`, the blocks of steps that are still done stay trimmed. */
+  const restoreTrimmed = (taskId: string, stepId?: string) => {
+    const doneSteps = new Set(
+      (stepsByTask.get(taskId) ?? []).filter((s) => s.done).map((s) => s.id),
+    );
+    for (const [id, t] of trimmed) {
+      if (t.taskId !== taskId) continue;
+      if (stepId ? t.stepId !== stepId : t.stepId && doneSteps.has(t.stepId)) continue;
+      trimmed.delete(id);
+      const b = blocks.find((x) => x.id === id);
+      if (!b || Date.parse(b.end) !== Date.parse(t.trimmedEnd)) continue;
+      if (Date.parse(t.originalEnd) <= Date.now()) continue;
+      moveBlock.mutate({ id, start: b.start, end: t.originalEnd });
+    }
+  };
+
+  return { trimRunning, restoreTrimmed };
+}
+
 /** Actions for a completion notice: remove the blocks, or undo the automatic status change. */
 export function useCompletionActions(n: Completion) {
   const remove = useRemoveUpcomingBlocks();
   const updateTask = useUpdateTask();
+  const { trimRunning, restoreTrimmed } = useBlockTrims();
   return {
     accept: () => {
       remove.mutate({ task_id: n.taskId, ...(n.stepId && { step_id: n.stepId }) });
@@ -27,6 +89,8 @@ export function useCompletionActions(n: Completion) {
       if (!n.auto) return;
       const status = n.auto === "done" ? "open" : "done";
       updateTask.mutate({ id: n.taskId, patch: { status } });
+      if (status === "open") restoreTrimmed(n.taskId);
+      else trimRunning(n.taskId);
       setNotice(null);
     },
   };
@@ -42,14 +106,16 @@ export function useCompletion() {
   const updateTask = useUpdateTask();
   const updateStep = useUpdateStep();
   const deleteStep = useDeleteStep();
+  const { trimRunning, restoreTrimmed } = useBlockTrims();
 
+  // Blocks that haven't started; a running one is trimmed instead of offered for removal.
   const upcoming = useCallback(
     (taskId: string, stepId?: string) =>
       blocks.filter(
         (b) =>
           b.task_id === taskId &&
           (!stepId || b.step_id === stepId) &&
-          Date.parse(b.end) > Date.now(),
+          Date.parse(b.start) > Date.now(),
       ).length,
     [blocks],
   );
@@ -69,9 +135,13 @@ export function useCompletion() {
         id: taskId,
         patch: { done_dates: toggleDoneDate(routine.done_dates, day, done) },
       });
+      if (done) trimRunning(taskId, undefined, day);
+      else restoreTrimmed(taskId);
       return;
     }
     updateTask.mutate({ id: taskId, patch: { status: done ? "done" : "open" } });
+    if (done) trimRunning(taskId);
+    else restoreTrimmed(taskId);
     const count = done ? upcoming(taskId) : 0;
     const label = taskById.get(taskId)?.title ?? "this task";
     if (count || auto) setNotice({ kind: "completion", taskId, count, label, auto });
@@ -89,6 +159,8 @@ export function useCompletion() {
 
   const setStepDone = (taskId: string, stepId: string, done: boolean) => {
     updateStep.mutate({ id: stepId, patch: { done } });
+    if (done) trimRunning(taskId, stepId);
+    else restoreTrimmed(taskId, stepId);
     const steps = (stepsByTask.get(taskId) ?? []).map((s) =>
       s.id === stepId ? { ...s, done } : s,
     );
