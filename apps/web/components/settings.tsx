@@ -5,7 +5,14 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
-import { formatMinutes, swatch, type AssistantNotes, type WorkingHours } from "@tt/shared";
+import {
+  SCHEDULING_DEFAULTS,
+  formatMinutes,
+  swatch,
+  type AssistantNotes,
+  type SchedulingPrefs,
+  type WorkingHours,
+} from "@tt/shared";
 import { api } from "@/lib/client/api";
 import { keys, useCalendars, useDeleteAccount, useSettings, useUpdateSettings } from "@tt/client";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
@@ -75,6 +82,98 @@ function SyncButton() {
   );
 }
 
+const chip = (active: boolean) =>
+  `rounded-lg px-3 py-1.5 text-sm font-bold transition-colors ${active ? "bg-grape text-white" : "bg-chip text-chip-ink hover:bg-line"}`;
+
+/** One row of choices; `undefined` is "no preference". */
+function ChoiceRow<T extends string | number>({
+  legend,
+  options,
+  value,
+  onPick,
+}: {
+  legend: string;
+  options: { value: T | undefined; label: string }[];
+  value: T | undefined;
+  onPick: (v: T | undefined) => void;
+}) {
+  return (
+    <fieldset>
+      <legend className="mb-2 text-sm font-bold text-ink">{legend}</legend>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((o) => (
+          <button
+            key={o.label}
+            type="button"
+            aria-pressed={value === o.value}
+            onClick={() => onPick(o.value)}
+            className={chip(value === o.value)}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+/** How Ask tt. places blocks: focus time, longest session, breaks and a daily cap. */
+function SchedulingSection({
+  value,
+  onChange,
+}: {
+  value: SchedulingPrefs;
+  onChange: (v: SchedulingPrefs) => void;
+}) {
+  // The whole object is saved, so a choice of "no preference" drops its key.
+  const set = <K extends keyof SchedulingPrefs>(key: K, v: SchedulingPrefs[K]) => {
+    const next = { ...value };
+    if (v === undefined) delete next[key];
+    else next[key] = v;
+    onChange(next);
+  };
+  const session = value.max_session_min ?? SCHEDULING_DEFAULTS.max_session_min;
+  const pause = value.break_min ?? SCHEDULING_DEFAULTS.break_min;
+  return (
+    <Section title="Scheduling" description="Ask tt. follows these when it plans your time.">
+      <div className="grid gap-5 sm:grid-cols-2">
+        <ChoiceRow
+          legend="Focus time"
+          value={value.focus}
+          onPick={(v) => set("focus", v)}
+          options={[
+            { value: undefined, label: "Any" },
+            { value: "morning", label: "Morning" },
+            { value: "afternoon", label: "Afternoon" },
+            { value: "evening", label: "Evening" },
+          ]}
+        />
+        <ChoiceRow
+          legend="Longest session"
+          value={session}
+          onPick={(v) => set("max_session_min", v)}
+          options={[45, 60, 90, 120, 180].map((m) => ({ value: m, label: formatMinutes(m) }))}
+        />
+        <ChoiceRow
+          legend="Break between blocks"
+          value={pause}
+          onPick={(v) => set("break_min", v)}
+          options={[0, 5, 10, 15].map((m) => ({ value: m, label: m ? formatMinutes(m) : "None" }))}
+        />
+        <ChoiceRow
+          legend="Planned work per day"
+          value={value.daily_cap_min}
+          onPick={(v) => set("daily_cap_min", v)}
+          options={[
+            { value: undefined, label: "No cap" },
+            ...[240, 360, 480].map((m) => ({ value: m, label: `Up to ${formatMinutes(m)}` })),
+          ]}
+        />
+      </div>
+    </Section>
+  );
+}
+
 export function SettingsView() {
   const googleStatus = useSearchParams().get("google");
   const { data, isLoading } = useSettings();
@@ -86,7 +185,7 @@ export function SettingsView() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-3xl space-y-5 p-4 md:p-8">
-        <PageHeader title="Settings" description="Calendar, time zone, working hours and the Someday assistant." />
+        <PageHeader title="Settings" description="Calendar, time zone, working hours, scheduling and the Someday assistant." />
         {googleStatus && (
           <p
             className={`rounded-xl px-4 py-3 text-sm font-semibold ${googleStatus === "connected" ? "bg-open text-open-ink" : "bg-risk-bg text-risk"}`}
@@ -158,6 +257,11 @@ export function SettingsView() {
             onChange={(timezone) => updateSettings.mutate({ timezone })}
           />
         </section>
+
+        <SchedulingSection
+          value={settings.scheduling ?? {}}
+          onChange={(scheduling) => updateSettings.mutate({ scheduling })}
+        />
         <AssistantSection
           value={settings.someday_assistant ?? {}}
           onChange={(someday_assistant) => updateSettings.mutate({ someday_assistant })}

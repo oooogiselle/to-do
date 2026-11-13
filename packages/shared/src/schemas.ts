@@ -194,7 +194,7 @@ export type AssistantChat = z.infer<typeof AssistantChat>;
  */
 export const AssistantSend = z.union([
   z.object({
-    text: z.string().trim().min(1).max(2000),
+    text: z.string().trim().min(1).max(8000),
     chat_id: z.string().uuid().nullable().optional(),
     focus_task_id: z.string().uuid().nullable().optional(),
   }),
@@ -316,11 +316,30 @@ export const WorkingHours = z.record(
 );
 export type WorkingHours = z.infer<typeof WorkingHours>;
 
+/**
+ * How the user likes their time planned (settings.scheduling). Every key is optional: a missing
+ * one means "no preference" (see SCHEDULING_DEFAULTS). Ask tt. follows these when placing blocks.
+ */
+export const SchedulingPrefs = z.object({
+  /** When focused work goes best. */
+  focus: z.enum(["morning", "afternoon", "evening"]).optional(),
+  /** Longest single block. */
+  max_session_min: z.number().int().min(30).max(240).optional(),
+  /** Gap kept between a placed block and anything next to it. */
+  break_min: z.number().int().min(0).max(30).optional(),
+  /** Most planned work (time blocks) on one day; no cap when missing. */
+  daily_cap_min: z.number().int().min(60).max(720).optional(),
+});
+export type SchedulingPrefs = z.infer<typeof SchedulingPrefs>;
+
+export const SCHEDULING_DEFAULTS = { max_session_min: 120, break_min: 10 } as const;
+
 export const Settings = z.object({
   working_hours: WorkingHours,
   default_block_min: z.number().int().positive(),
   timezone: z.string(),
   someday_assistant: AssistantNotes,
+  scheduling: SchedulingPrefs,
   updated_at: z.string(),
 });
 export type Settings = z.infer<typeof Settings>;

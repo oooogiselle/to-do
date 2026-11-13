@@ -230,6 +230,10 @@ function Welcome({ onPick }: { onPick: (text: string) => void }) {
   );
 }
 
+/** Longest message (matches AssistantSend); the count shows once a message gets close. */
+const MAX_TEXT = 8000;
+const COUNT_FROM = 7000;
+
 function Composer({ disabled, onSend }: { disabled: boolean; onSend: (text: string) => void }) {
   const [text, setText] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -269,7 +273,7 @@ function Composer({ disabled, onSend }: { disabled: boolean; onSend: (text: stri
         ref={ref}
         rows={1}
         value={text}
-        maxLength={2000}
+        maxLength={MAX_TEXT}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -282,11 +286,19 @@ function Composer({ disabled, onSend }: { disabled: boolean; onSend: (text: stri
       />
       <div className="flex items-center gap-2 px-2 pt-1 pb-2 pl-3">
         <span className="text-[11px] text-faint">↵ send · ⇧↵ new line</span>
+        {text.length > COUNT_FROM && (
+          <span
+            className={`ml-auto text-[11px] tabular-nums ${text.length >= MAX_TEXT ? "text-risk" : "text-faint"}`}
+            aria-live="polite"
+          >
+            {text.length.toLocaleString()} / {MAX_TEXT.toLocaleString()}
+          </span>
+        )}
         <button
           type="submit"
           disabled={!text.trim() || disabled}
           aria-label="Send"
-          className="ml-auto grid h-7 w-7 place-items-center rounded-lg bg-ink text-white transition-colors hover:bg-[#27272A] focus:outline-none focus-visible:ring-2 focus-visible:ring-line-strong disabled:bg-line disabled:text-faint"
+          className={`${text.length > COUNT_FROM ? "" : "ml-auto "}grid h-7 w-7 place-items-center rounded-lg bg-ink text-white transition-colors hover:bg-[#27272A] focus:outline-none focus-visible:ring-2 focus-visible:ring-line-strong disabled:bg-line disabled:text-faint`}
         >
           <ArrowUp className="h-3.5 w-3.5" />
         </button>

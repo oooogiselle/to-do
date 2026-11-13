@@ -120,6 +120,7 @@ const FALLBACK_SETTINGS: Settings = {
   default_block_min: 60,
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   someday_assistant: {},
+  scheduling: {},
   updated_at: "",
 };
 

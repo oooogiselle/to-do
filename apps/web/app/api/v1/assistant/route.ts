@@ -13,7 +13,7 @@ export const maxDuration = 300;
 /** A reply still pending this long is treated as dead, and a new message can be sent. */
 const STALE_MS = 4 * 60 * 1000;
 /** Messages before the chat has to be started over. */
-const MAX_MESSAGES = 80;
+const MAX_MESSAGES = 200;
 /** Longest chat title taken from the first message, when the model doesn't name the chat. */
 const FALLBACK_TITLE = 60;
 

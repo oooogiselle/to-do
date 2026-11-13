@@ -21,7 +21,7 @@ export const GET = route(async (req, { supabase }) => {
   );
   let settingsQ = supabase
     .from("settings")
-    .select("working_hours, default_block_min, timezone, someday_assistant, updated_at");
+    .select("working_hours, default_block_min, timezone, someday_assistant, scheduling, updated_at");
   if (since) settingsQ = settingsQ.gte("updated_at", since);
   const { data: settings } = await settingsQ.maybeSingle<{ updated_at: string }>();
 
