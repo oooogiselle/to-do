@@ -33,9 +33,9 @@ export function useRealtimeInvalidation(supabase: SupabaseClient) {
     channel.on("postgres_changes", { event: "*", schema: "public", table: "calendar_events" }, () =>
       queue("events"),
     );
-    channel.on("postgres_changes", { event: "*", schema: "public", table: "assistant_messages" }, () =>
-      queue("assistant"),
-    );
+    for (const table of ["assistant_messages", "assistant_chats"]) {
+      channel.on("postgres_changes", { event: "*", schema: "public", table }, () => queue("assistant"));
+    }
 
     // Realtime must carry the user's JWT or RLS filters out every change. The session is
     // restored from storage asynchronously, so authorize before subscribing.

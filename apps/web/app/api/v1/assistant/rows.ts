@@ -2,10 +2,11 @@ import { z } from "zod";
 import { AssistantBlock, type AssistantMessage, type Json } from "@tt/shared";
 
 export const COLUMNS =
-  "id, role, content, blocks, follow_ups, focus_task_id, resolved, status, error, requested_at, created_at";
+  "id, chat_id, role, content, blocks, follow_ups, focus_task_id, resolved, status, error, requested_at, created_at";
 
 export type Row = {
   id: string;
+  chat_id: string | null;
   role: string;
   content: string;
   blocks: Json;
@@ -33,6 +34,7 @@ const Resolved = z.record(z.string(), z.string()).catch({});
 
 export const toMessage = (r: Row): AssistantMessage => ({
   id: r.id,
+  chat_id: r.chat_id,
   role: r.role === "assistant" ? "assistant" : "user",
   content: r.content,
   blocks: parseBlocks(r.blocks),
@@ -44,3 +46,5 @@ export const toMessage = (r: Row): AssistantMessage => ({
   requested_at: r.requested_at,
   created_at: r.created_at,
 });
+
+export const CHAT_COLUMNS = "id, title, focus_task_id, last_message_at, created_at";

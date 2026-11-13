@@ -42,7 +42,8 @@ How to answer:
 - "How am I doing": a sentence on today's plan (done of planned, work left) and a tasks card of what's left on it.
 - Someday ("Help me shape this idea: ...", "Help me get started on X", or anything about a goal, something to learn, or an idea): an idea card with a type, a timeframe, 3 to 5 first steps (the first one small enough for a free half hour), an effort estimate, and 2 to 4 places to start from your searches. Use the persona for its type, below. For an item already in Someday, set the card's task to its code and leave out steps it already has. Give the card right away with reasonable assumptions (say them in a sentence), and put the coach's or scout's questions in follow-ups to refine it. For a quick question about a Someday item, answer in text, with a links card for sources.
 - When it's unclear which task they mean, ask, with the likely options as follow-ups.
-- Follow-ups: up to 3 short things they might say next, written as they'd say them ("Plan tomorrow", "Break down Essay 2").`;
+- Follow-ups: up to 3 short things they might say next, written as they'd say them ("Plan tomorrow", "Break down Essay 2").
+- Title: on your first reply in a chat (no earlier replies from you), a 2 to 5 word title for the chat in sentence case, naming what it's about ("Plan Thursday", "Start learning Spanish"). On later replies, ''.`;
 
 const SOMEDAY = `When the conversation is about a Someday item, also follow the persona for its type: its voice for what you write about that item, and its guardrails always. An untyped Someday item is an Idea.`;
 

@@ -3,22 +3,20 @@
 import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
+  ArrowLeft,
   ArrowUp,
   CalendarClock,
   Clock,
+  History,
   Sparkles,
   SquarePen,
   X,
   type LucideIcon,
 } from "lucide-react";
-import {
-  ASSISTANT_STARTERS,
-  messageState,
-  useAssistantMessages,
-  useClearAssistant,
-} from "@tt/client";
+import { ASSISTANT_STARTERS, messageState, useAssistantChats, useAssistantMessages } from "@tt/client";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { useAssistant } from "./assistant-context";
+import { ChatHistory, chatTitle } from "./chat-history";
 import { AssistantAvatar, ChatMessage } from "./message";
 
 const headerBtn =
@@ -33,28 +31,42 @@ const STARTER_ICON: Record<(typeof ASSISTANT_STARTERS)[number]["icon"], LucideIc
 
 /** "Ask tt.": docked beside the page on wide screens, a floating sheet below that, full screen on phones. */
 export function AssistantPanel() {
-  const { open, setOpen, send } = useAssistant();
-  const messagesQ = useAssistantMessages(open);
-  const clear = useClearAssistant();
+  const { open, setOpen, chatId, openChat, newChat, sendMessage, retry, send } = useAssistant();
+  const [showHistory, setShowHistory] = useState(false);
+  const messagesQ = useAssistantMessages(chatId ?? null, open && chatId !== undefined);
+  const chatsQ = useAssistantChats(open);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const messages = messagesQ.data ?? [];
   const last = messages[messages.length - 1];
   const thinking = !!last && last.role === "assistant" && messageState(last).state === "pending";
   const lastAssistantId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
+  const chat = chatId ? chatsQ.data?.find((c) => c.id === chatId) : undefined;
+  const loading = chatId === undefined || (!!chatId && messagesQ.isLoading);
 
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [messages.length, last?.status, open]);
+    if (el && !showHistory) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [messages.length, last?.status, open, chatId, showHistory]);
+
+  // A message sent from elsewhere ("Ask tt." on a Someday item) brings the chat back into view.
+  useEffect(() => {
+    if (send.isPending) setShowHistory(false);
+  }, [send.isPending]);
 
   if (!open) return null;
 
   const submit = (text: string) => {
     const t = text.trim();
-    if (!t || thinking || send.isPending) return;
-    send.mutate({ text: t });
+    if (!t || thinking || send.isPending || chatId === undefined) return;
+    sendMessage(t);
   };
+
+  const subtitle = showHistory
+    ? "Pick up where you left off"
+    : messages.length
+      ? chatTitle(chat)
+      : "Sees your lists, calendar and My day";
 
   return (
     <aside
@@ -63,15 +75,40 @@ export function AssistantPanel() {
       className="fixed inset-0 z-40 flex flex-col bg-surface md:inset-y-2.5 md:right-2.5 md:left-auto md:w-[400px] md:rounded-2xl md:border md:border-line md:shadow-[-12px_0_40px_rgba(0,0,0,0.08)] xl:static xl:z-auto xl:w-[380px] xl:shrink-0 xl:rounded-none xl:border-0 xl:border-l xl:shadow-none"
     >
       <header className="flex h-14 shrink-0 items-center gap-2.5 border-b border-line-soft px-4">
-        <AssistantAvatar />
+        {showHistory ? (
+          <button
+            type="button"
+            onClick={() => setShowHistory(false)}
+            className={`${headerBtn} -ml-1.5`}
+            title="Back to chat"
+            aria-label="Back to chat"
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
+          </button>
+        ) : (
+          <AssistantAvatar />
+        )}
         <div className="min-w-0 flex-1">
-          <h2 className="text-[14px] leading-tight font-medium text-ink">Ask tt.</h2>
-          <p className="truncate text-[11px] text-faint">Sees your lists, calendar and My day</p>
+          <h2 className="text-[14px] leading-tight font-medium text-ink">{showHistory ? "Chats" : "Ask tt."}</h2>
+          <p className="truncate text-[11px] text-faint">{subtitle}</p>
         </div>
         <button
           type="button"
-          onClick={() => clear.mutate()}
-          disabled={!messages.length || clear.isPending || thinking}
+          onClick={() => setShowHistory((h) => !h)}
+          className={`${headerBtn} ${showHistory ? "bg-row-hover text-ink" : ""}`}
+          title="Chats"
+          aria-label="Chats"
+          aria-pressed={showHistory}
+        >
+          <History className="h-4 w-4" strokeWidth={1.75} />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            newChat();
+            setShowHistory(false);
+          }}
+          disabled={!showHistory && chatId === null}
           className={headerBtn}
           title="New chat"
           aria-label="New chat"
@@ -90,7 +127,18 @@ export function AssistantPanel() {
       </header>
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-5" aria-live="polite">
-        {messagesQ.isLoading ? (
+        {showHistory ? (
+          <ChatHistory
+            activeId={chatId}
+            onOpen={(id) => {
+              openChat(id);
+              setShowHistory(false);
+            }}
+            onDeleted={(id) => {
+              if (id === chatId) newChat();
+            }}
+          />
+        ) : loading ? (
           <p className="text-[13px] text-faint">Loading…</p>
         ) : messagesQ.isError ? (
           <p className="text-[13px] text-risk">Couldn&apos;t load the chat.</p>
@@ -105,22 +153,24 @@ export function AssistantPanel() {
                 isLast={m.id === last?.id}
                 showFollowUps={!thinking && m.id === lastAssistantId}
                 onFollowUp={submit}
-                onRetry={() => send.mutate({ retry: true })}
+                onRetry={retry}
                 retrying={send.isPending}
               />
             ))}
           </div>
         )}
-        {send.error && (
+        {!showHistory && send.error && (
           <p role="alert" className="mt-3 text-[12px] text-risk">
             {send.error.message}
           </p>
         )}
       </div>
 
-      <div className="shrink-0 px-3 pb-3">
-        <Composer disabled={thinking || send.isPending} onSend={submit} />
-      </div>
+      {!showHistory && (
+        <div className="shrink-0 px-3 pb-3">
+          <Composer disabled={thinking || send.isPending || chatId === undefined} onSend={submit} />
+        </div>
+      )}
     </aside>
   );
 }
