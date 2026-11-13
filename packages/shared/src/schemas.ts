@@ -163,6 +163,7 @@ export type AssistantBlock = z.infer<typeof AssistantBlock>;
 /** One message in the Ask tt. conversation. Replies are "pending" while they run. */
 export const AssistantMessage = z.object({
   id: z.string(),
+  chat_id: z.string().nullable(),
   role: z.enum(["user", "assistant"]),
   content: z.string(),
   blocks: z.array(AssistantBlock),
@@ -177,14 +178,30 @@ export const AssistantMessage = z.object({
 });
 export type AssistantMessage = z.infer<typeof AssistantMessage>;
 
-/** A new message (optionally about one task), or a retry of the last reply when it failed. */
+/** One saved Ask tt. chat. `title` is '' until the first reply names it. */
+export const AssistantChat = z.object({
+  id: z.string(),
+  title: z.string(),
+  focus_task_id: z.string().nullable(),
+  last_message_at: z.string(),
+  created_at: z.string(),
+});
+export type AssistantChat = z.infer<typeof AssistantChat>;
+
+/**
+ * A new message (optionally about one task) to a chat, or to a new chat when `chat_id` is null;
+ * or a retry of a chat's last reply when it failed.
+ */
 export const AssistantSend = z.union([
   z.object({
     text: z.string().trim().min(1).max(2000),
+    chat_id: z.string().uuid().nullable().optional(),
     focus_task_id: z.string().uuid().nullable().optional(),
   }),
-  z.object({ retry: z.literal(true) }),
+  z.object({ retry: z.literal(true), chat_id: z.string().uuid() }),
 ]);
+
+export const AssistantChatPatch = z.object({ title: z.string().trim().min(1).max(80) });
 
 /** Records card actions on a reply ("<block>:<part>" -> e.g. the new row's id). */
 export const AssistantResolve = z.object({

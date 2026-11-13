@@ -37,19 +37,45 @@ export type Database = {
                   Relationships: [
                     
                   ]
-                },"assistant_messages": {
+                },"assistant_chats": {
                   Row: {
-                    "blocks": NonNullable<Json>,"content": string,"created_at": string,"deleted_at": string | null,"error": string | null,"focus_task_id": string | null,"follow_ups": NonNullable<Json>,"id": string,"requested_at": string | null,"resolved": NonNullable<Json>,"role": string,"status": string,"updated_at": string,"user_id": string
+                    "created_at": string,"deleted_at": string | null,"focus_task_id": string | null,"id": string,"last_message_at": string,"title": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "blocks"?: NonNullable<Json>,"content"?: string,"created_at"?: string,"deleted_at"?: string | null,"error"?: string | null,"focus_task_id"?: string | null,"follow_ups"?: NonNullable<Json>,"id"?: string,"requested_at"?: string | null,"resolved"?: NonNullable<Json>,"role": string,"status"?: string,"updated_at"?: string,"user_id": string
+                    "created_at"?: string,"deleted_at"?: string | null,"focus_task_id"?: string | null,"id"?: string,"last_message_at"?: string,"title"?: string,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "blocks"?: NonNullable<Json>,"content"?: string,"created_at"?: string,"deleted_at"?: string | null,"error"?: string | null,"focus_task_id"?: string | null,"follow_ups"?: NonNullable<Json>,"id"?: string,"requested_at"?: string | null,"resolved"?: NonNullable<Json>,"role"?: string,"status"?: string,"updated_at"?: string,"user_id"?: string
+                    "created_at"?: string,"deleted_at"?: string | null,"focus_task_id"?: string | null,"id"?: string,"last_message_at"?: string,"title"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "assistant_chats_focus_task_id_fkey"
+      columns: ["focus_task_id"]
+isOneToOne: false
+      referencedRelation: "tasks"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"assistant_messages": {
+                  Row: {
+                    "blocks": NonNullable<Json>,"chat_id": string | null,"content": string,"created_at": string,"deleted_at": string | null,"error": string | null,"focus_task_id": string | null,"follow_ups": NonNullable<Json>,"id": string,"requested_at": string | null,"resolved": NonNullable<Json>,"role": string,"status": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "blocks"?: NonNullable<Json>,"chat_id"?: string | null,"content"?: string,"created_at"?: string,"deleted_at"?: string | null,"error"?: string | null,"focus_task_id"?: string | null,"follow_ups"?: NonNullable<Json>,"id"?: string,"requested_at"?: string | null,"resolved"?: NonNullable<Json>,"role": string,"status"?: string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "blocks"?: NonNullable<Json>,"chat_id"?: string | null,"content"?: string,"created_at"?: string,"deleted_at"?: string | null,"error"?: string | null,"focus_task_id"?: string | null,"follow_ups"?: NonNullable<Json>,"id"?: string,"requested_at"?: string | null,"resolved"?: NonNullable<Json>,"role"?: string,"status"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "assistant_messages_chat_id_fkey"
+      columns: ["chat_id"]
+isOneToOne: false
+      referencedRelation: "assistant_chats"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "assistant_messages_focus_task_id_fkey"
       columns: ["focus_task_id"]
 isOneToOne: false

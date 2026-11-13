@@ -16,6 +16,7 @@ import type {
   ListPatch,
   Settings,
   SettingsPatch,
+  AssistantChat,
   AssistantMessage,
   Step,
   StepCreate,
@@ -128,18 +129,30 @@ export function createApiClient({ baseUrl, getToken, fetch: f = fetch }: Opts) {
       call<{ steps: ProposedStep[] }>("POST", `/tasks/${taskId}/breakdown`, { mode }),
     /** Starts web research for a someday item; returns the task marked pending. */
     research: (taskId: string) => call<Task>("POST", `/tasks/${taskId}/research`, {}),
-    /** The Ask tt. conversation, oldest first. */
-    assistant: () => call<AssistantMessage[]>("GET", "/assistant"),
-    /** Sends a message; returns it and the pending reply, which fills in through realtime. */
-    sendAssistant: (text: string, focusTaskId?: string | null) =>
-      call<AssistantMessage[]>("POST", "/assistant", { text, focus_task_id: focusTaskId ?? null }),
-    /** Asks again for the last reply, when it failed. Returns the new pending reply. */
-    retryAssistant: () => call<AssistantMessage[]>("POST", "/assistant", { retry: true }),
+    /** Ask tt. chats, most recent first. */
+    assistantChats: () => call<AssistantChat[]>("GET", "/assistant/chats"),
+    /** One Ask tt. chat's messages, oldest first. */
+    assistant: (chatId: string) =>
+      call<AssistantMessage[]>("GET", `/assistant?chat_id=${encodeURIComponent(chatId)}`),
+    /**
+     * Sends a message to a chat, or starts a new one when `chatId` is null. Returns the message
+     * and the pending reply (both carry the chat's id); the reply fills in through realtime.
+     */
+    sendAssistant: (text: string, opts: { chatId: string | null; focusTaskId?: string | null }) =>
+      call<AssistantMessage[]>("POST", "/assistant", {
+        text,
+        chat_id: opts.chatId,
+        focus_task_id: opts.focusTaskId ?? null,
+      }),
+    /** Asks again for a chat's last reply, when it failed. Returns the new pending reply. */
+    retryAssistant: (chatId: string) =>
+      call<AssistantMessage[]>("POST", "/assistant", { retry: true, chat_id: chatId }),
     /** Marks card actions as done, so the cards stay resolved. */
     resolveAssistantCard: (messageId: string, entries: Record<string, string>) =>
       call<AssistantMessage>("PATCH", `/assistant/${messageId}`, { entries }),
-    /** Starts a new chat. */
-    clearAssistant: () => call<void>("DELETE", "/assistant"),
+    renameAssistantChat: (chatId: string, title: string) =>
+      call<AssistantChat>("PATCH", `/assistant/chats/${chatId}`, { title }),
+    deleteAssistantChat: (chatId: string) => call<void>("DELETE", `/assistant/chats/${chatId}`),
     suggest: (body: SuggestRequest) => call<SuggestResponse>("POST", "/suggest", body),
     extractText: (text: string) =>
       call<TextExtractionResult>("POST", "/imports/extract-text", { text }),

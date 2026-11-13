@@ -83,6 +83,7 @@ export const ReplyOut = z.object({
   links_label: z.string().describe("Heading for a links card, e.g. 'Sources'; '' for none"),
   links: z.array(Resource).describe("Sources for something you explained, up to 5; empty for none"),
   follow_ups: z.array(z.string()).describe("Up to 3 short things they might say next"),
+  title: z.string().describe("On your first reply in a chat only: a 2 to 5 word title for the chat; otherwise ''"),
 });
 export type ReplyOut = z.infer<typeof ReplyOut>;
 
@@ -103,7 +104,7 @@ export function validateReply(
   out: ReplyOut,
   snap: Snapshot,
   ctx: { toolBlocks: unknown[]; userText: string; trusted: string[] },
-): { blocks: AssistantBlock[]; follow_ups: string[] } {
+): { blocks: AssistantBlock[]; follow_ups: string[]; title: string } {
   const task = (code: string | null) => (code ? (snap.taskByCode.get(code.trim()) ?? null) : null);
   const dayOf = (d: "today" | "tomorrow" | "later") =>
     d === "today" ? snap.today : d === "tomorrow" ? snap.tomorrow : snap.later;
@@ -267,5 +268,16 @@ export function validateReply(
     blocks.push({ kind: "text", text: "I couldn't put that together. Try asking another way." });
   }
   const follow_ups = [...new Set(out.follow_ups.map((f) => f.trim().slice(0, 60)).filter(Boolean))].slice(0, 3);
-  return { blocks, follow_ups };
+  return { blocks, follow_ups, title: cleanTitle(out.title) };
+}
+
+/** The model's chat title, one line without wrapping quotes or a final period; '' for none. */
+export function cleanTitle(raw: string): string {
+  return raw
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^["'“‘]+|["'”’.]+$/g, "")
+    .trim()
+    .slice(0, 60)
+    .trim();
 }
