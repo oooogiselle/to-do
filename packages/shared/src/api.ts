@@ -117,6 +117,9 @@ export function createApiClient({ baseUrl, getToken, fetch: f = fetch }: Opts) {
     }) => call<TimeBlock>("POST", "/time-blocks", body),
     moveTimeBlock: (id: string, body: { start: string; end: string }) =>
       call<TimeBlock>("PATCH", `/time-blocks/${id}`, body),
+    /** Ends a running block early; unlike a move, the new end may already be past. */
+    trimTimeBlock: (id: string, body: { end: string }) =>
+      call<TimeBlock>("POST", `/time-blocks/${id}/trim`, body),
     deleteTimeBlock: (id: string) => call<void>("DELETE", `/time-blocks/${id}`),
     removeUpcomingBlocks: (body: { task_id: string; step_id?: string }) =>
       call<{ removed: number }>("DELETE", "/time-blocks/upcoming", body),

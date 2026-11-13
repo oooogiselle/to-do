@@ -516,6 +516,29 @@ export function useMoveBlock() {
   });
 }
 
+/** Ends a block early. Queued with moves, so a trim and a restore can't land out of order. */
+export function useTrimBlock() {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationKey: MOVE_BLOCK,
+    scope: { id: "move-block" },
+    onSettled: () => {
+      if (qc.isMutating({ mutationKey: MOVE_BLOCK }) <= 1)
+        qc.invalidateQueries({ queryKey: keys.sync });
+    },
+    mutationFn: (v: { id: string; end: string }) => api.trimTimeBlock(v.id, { end: v.end }),
+    onMutate: (v) => {
+      return {
+        prev: optimistic(qc, (s) =>
+          updateBlocks(s, (b) => b.map((x) => (x.id === v.id ? { ...x, end: v.end } : x))),
+        ),
+      };
+    },
+    onError: (_e, _v, ctx) => ctx?.prev && qc.setQueryData(keys.sync, ctx.prev),
+  });
+}
+
 export function useDeleteBlock() {
   const api = useApi();
   const qc = useQueryClient();

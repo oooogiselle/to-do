@@ -103,6 +103,21 @@ export async function moveTimeBlock(
   );
 }
 
+/** Ends a block early, when its to-do is checked off while it's running. It can only shrink. */
+export async function trimTimeBlock(
+  db: UserDb,
+  userId: string,
+  id: string,
+  end: string,
+): Promise<TimeBlock> {
+  const block = await ownBlock(db, id);
+  const e = Date.parse(end);
+  if (!(e > Date.parse(block.start) && e < Date.parse(block.end))) {
+    throw new HttpError(400, "A trimmed block has to end between its start and its current end");
+  }
+  return moveTimeBlock(db, userId, id, block.start, end);
+}
+
 export async function removeTimeBlock(db: UserDb, userId: string, id: string): Promise<void> {
   const block = await ownBlock(db, id);
   await deleteBlockEvent(userId, block.gcal_event_id);
