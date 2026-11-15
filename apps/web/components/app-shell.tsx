@@ -63,7 +63,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <AssistantProvider>
       <div className="h-dvh w-full bg-surface">
-        <div className="flex h-full w-full flex-col overflow-hidden md:flex-row">
+        <div className="relative flex h-full w-full flex-col overflow-hidden md:flex-row">
           <Sidebar onQuickAdd={() => setQuickAdd(true)} />
           <main className="min-h-0 min-w-0 flex-1 bg-surface">{children}</main>
           <Suspense>
