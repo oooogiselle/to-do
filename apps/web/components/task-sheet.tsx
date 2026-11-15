@@ -27,6 +27,7 @@ import {
   useUpdateTask,
 } from "@tt/client";
 import { DuePicker } from "./due-picker";
+import { ListPicker } from "./list-picker";
 import { ColorPicker } from "./color-picker";
 import { Segmented } from "./ui/segmented";
 import { TaskCheck } from "./ui/task-check";
@@ -261,22 +262,14 @@ export function TaskSheet({
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="task-list" className={label}>
-              List
-            </label>
-            <select
-              id="task-list"
-              value={task.list_id && lists.some((l) => l.id === task.list_id) ? task.list_id : ""}
-              onChange={(e) => update({ list_id: e.target.value || null })}
-              className={field}
-            >
-              <option value="">No list</option>
-              {lists.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name}
-                </option>
-              ))}
-            </select>
+            <span className={label}>List</span>
+            <ListPicker
+              value={task.list_id && lists.some((l) => l.id === task.list_id) ? task.list_id : null}
+              onChange={(list_id) => update({ list_id })}
+              lists={lists}
+              emptyLabel="No list"
+              className="w-full rounded-xl px-3 py-2 text-left text-sm"
+            />
           </div>
           <div>
             <span className={label}>Due</span>
