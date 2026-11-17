@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { CalendarDays, ClipboardPaste, ListChecks, MessageCircle, Plus, Settings, Sparkles, Sun } from "lucide-react";
 import { swatch, type List } from "@tt/shared";
 import { useModel, useSync } from "@tt/client";
@@ -37,7 +37,26 @@ function useUserEmail() {
   return email;
 }
 
-export function Sidebar({ onQuickAdd }: { onQuickAdd: () => void }) {
+type SidebarProps = { onQuickAdd: () => void };
+
+/**
+ * The open list (?list=<id>) comes from the search params, which need a Suspense boundary;
+ * until they're read, the sidebar renders with no list highlighted.
+ */
+export function Sidebar(props: SidebarProps) {
+  return (
+    <Suspense fallback={<SidebarBody {...props} activeList={null} />}>
+      <SidebarWithParams {...props} />
+    </Suspense>
+  );
+}
+
+function SidebarWithParams(props: SidebarProps) {
+  const activeList = useSearchParams().get("list");
+  return <SidebarBody {...props} activeList={activeList} />;
+}
+
+function SidebarBody({ onQuickAdd, activeList }: SidebarProps & { activeList: string | null }) {
   const path = usePathname();
   const email = useUserEmail();
   const { lists, tasks } = useModel();
@@ -46,6 +65,8 @@ export function Sidebar({ onQuickAdd }: { onQuickAdd: () => void }) {
 
   const count = (l: List) => tasks.filter((t) => t.list_id === l.id && t.status === "open").length;
   const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+  // A list's own row is highlighted instead of its page when one is open.
+  const listOpen = (href: string) => !!activeList && lists.some((l) => l.id === activeList) && path.startsWith(href);
   const linkClass = (active: boolean) =>
     `${itemBase} ${active ? "bg-active text-ink" : "text-chip-ink hover:bg-row-hover hover:text-ink"}`;
 
@@ -69,7 +90,7 @@ export function Sidebar({ onQuickAdd }: { onQuickAdd: () => void }) {
 
       <nav aria-label="Main" className="order-first flex gap-0.5 md:order-none md:flex-col">
         {NAV.map(({ href, label, icon: Icon }) => {
-          const active = isActive(href);
+          const active = isActive(href) && !listOpen(href);
           return (
             <Link
               key={href}
@@ -89,14 +110,16 @@ export function Sidebar({ onQuickAdd }: { onQuickAdd: () => void }) {
         <ListLinks
           title="Lists"
           lists={lists.filter((l) => l.kind !== "someday")}
-          href={(l) => `/to-dos#${l.id}`}
+          href={(l) => `/to-dos?list=${l.id}`}
+          isActive={(l) => path.startsWith("/to-dos") && l.id === activeList}
           count={count}
           linkClass={linkClass}
         />
         <ListLinks
           title="Someday"
           lists={lists.filter((l) => l.kind === "someday")}
-          href={(l) => `/someday#${l.id}`}
+          href={(l) => `/someday?list=${l.id}`}
+          isActive={(l) => path.startsWith("/someday") && l.id === activeList}
           count={count}
           linkClass={linkClass}
         />
@@ -153,12 +176,14 @@ function ListLinks({
   title,
   lists,
   href,
+  isActive,
   count,
   linkClass,
 }: {
   title: string;
   lists: List[];
   href: (l: List) => string;
+  isActive: (l: List) => boolean;
   count: (l: List) => number;
   linkClass: (active: boolean) => string;
 }) {
@@ -169,7 +194,11 @@ function ListLinks({
       <ul className="space-y-0.5">
         {lists.map((l) => (
           <li key={l.id}>
-            <Link href={href(l)} className={linkClass(false)}>
+            <Link
+              href={href(l)}
+              aria-current={isActive(l) ? "page" : undefined}
+              className={linkClass(isActive(l))}
+            >
               <span className="grid h-4 w-4 place-items-center">
                 <span className="h-2 w-2 rounded-full" style={{ background: swatch(l.color).solid }} />
               </span>
