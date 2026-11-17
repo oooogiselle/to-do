@@ -3,7 +3,6 @@ import { z } from "zod/v4";
 import {
   localDate,
   localWeekday,
-  placePicks,
   normalizeLink,
   urlKey,
   verifyResources,
@@ -12,6 +11,7 @@ import {
   type FittedPick,
   type Unplaced,
 } from "@tt/shared";
+import { buildChanges, placeTimes } from "./changes";
 import type { Snapshot } from "./snapshot";
 
 // The output schema has no unions or optional fields: each one multiplies the size of the grammar
@@ -41,6 +41,11 @@ export const ReplyOut = z.object({
       z.object({
         task: Code,
         step: z.string().describe("A step code of that task, e.g. 't3.s2', or ''"),
+        new_step: z
+          .string()
+          .describe(
+            "When the task has no step for this session: a short name for what it works on ('Outline', 'Read ch. 3', 'Revise draft'), under 60 characters. Otherwise ''",
+          ),
         day: Day.describe("The day for this block as 'YYYY-MM-DD', or '' for the earliest day that works"),
         when: z
           .string()
@@ -62,9 +67,28 @@ export const ReplyOut = z.object({
         estimate_min: z.number().int().describe("Minutes, or 0 if unknown"),
         priority: z.string().describe("One of 'none', 'low', 'med', 'high'"),
         repeat: z.string().describe("One of 'none', 'daily', 'weekdays'"),
+        book: z
+          .string()
+          .describe("When to do it, if they said: 'YYYY-MM-DD HH:MM' (24h) or 'YYYY-MM-DD morning|afternoon|evening'; '' to not book"),
       }),
     )
-    .describe("A new to-do to add: one item, or empty"),
+    .describe("New to-dos to add, up to 5; empty for none"),
+  // One generic list on purpose: the API caps how large the compiled output grammar can be
+  // (web search's own grammar counts too), and separate edit/move/remove lists went over.
+  changes: z
+    .array(
+      z.object({
+        op: z.string().describe("'edit', 'move' or 'remove'"),
+        code: z.string().describe("edit: a task or step code; move: a block code ('b3'); remove: a block, task or step code"),
+        field: z
+          .string()
+          .describe("edit: 'title', 'due', 'estimate', 'priority', 'list' or 'done'; move: 'to' or 'length'; remove: 'block', 'task', 'step' or 'plan'"),
+        value: z
+          .string()
+          .describe("edit: the new value (due as 'YYYY-MM-DD HH:MM', 'YYYY-MM-DD' or 'none'; estimate in minutes; done: 'yes'); move to: 'YYYY-MM-DD HH:MM', 'YYYY-MM-DD morning|afternoon|evening' or just a time that day; length: minutes; remove: ''"),
+      }),
+    )
+    .describe("Changes to things that exist, one row per field; empty for none"),
   steps_task: Code.describe("The task a steps card is for, or ''"),
   steps: z
     .array(z.object({ title: z.string(), estimate_min: z.number().int() }))
@@ -80,12 +104,13 @@ export const ReplyOut = z.object({
         horizon: z.string().describe("One of 'month', 'year', 'someday'"),
         estimate_min: z.number().int().describe("Total effort in minutes, or 0 if unknown"),
         steps: z.array(z.string()).describe("3 to 5 first steps"),
-        resources: z.array(Resource).describe("2 to 4 places to start, from your searches"),
       }),
     )
-    .describe("A shaped Someday idea: one item, or empty"),
+    .describe("A shaped Someday idea: one item, or empty. Its 2 to 4 places to start go in links."),
   links_label: z.string().describe("Heading for a links card, e.g. 'Sources'; '' for none"),
-  links: z.array(Resource).describe("Sources for something you explained, up to 5; empty for none"),
+  links: z
+    .array(Resource)
+    .describe("With an idea: its 2 to 4 places to start. Otherwise sources for something you explained, up to 5. Empty for none"),
   follow_ups: z.array(z.string()).describe("Up to 3 short things they might say next"),
   title: z.string().describe("On your first reply in a chat only: a 2 to 5 word title for the chat; otherwise ''"),
 });
@@ -114,26 +139,27 @@ export function validateReply(
   const blocks: AssistantBlock[] = [];
   /** Said after the reply's text, e.g. what couldn't be fitted before its due date. */
   const notes: string[] = [];
-  const draft = out.draft[0];
+  // Every time in the reply (new blocks, moves, draft bookings) is worked out together.
+  const times = placeTimes(out, snap);
+  const changes = buildChanges(out, snap, times);
   const idea = out.idea[0];
   const slotsDay = out.slots_day.trim();
   const parts = [
     { kind: "text" as const, text: out.text },
-    out.schedule.length > 0 && {
-      kind: "schedule" as const,
-      picks: out.schedule.slice(0, 12).map((p) => ({ ...p, step: orNull(p.step) })),
-    },
+    changes.length > 0 && { kind: "changes" as const },
+    out.schedule.length > 0 && { kind: "schedule" as const },
     out.tasks.length > 0 && { kind: "tasks" as const, label: out.tasks_label, tasks: out.tasks.slice(0, 8) },
-    draft && {
+    ...out.draft.slice(0, 5).map((draft, i) => ({
       kind: "draft" as const,
       ...draft,
+      book: times.drafts.get(i) ?? null,
       list: orNull(draft.list),
       due_date: orNull(draft.due_date),
       due_time: orNull(draft.due_time),
       estimate_min: draft.estimate_min > 0 ? draft.estimate_min : null,
       priority: oneOf(draft.priority, ["none", "low", "med", "high"] as const, "none"),
       repeat: oneOf(draft.repeat, ["none", "daily", "weekdays"] as const, "none"),
-    },
+    })),
     out.steps_task.trim() &&
       out.steps.length > 0 && { kind: "steps" as const, task: out.steps_task, steps: out.steps.slice(0, 7) },
     !!slotsDay && slotsDay.toLowerCase() !== "none" && { kind: "slots" as const, day: slotsDay },
@@ -145,9 +171,10 @@ export function validateReply(
       estimate_min: idea.estimate_min > 0 ? idea.estimate_min : null,
       idea_kind: oneOf(idea.idea_kind, ["goal", "learn", "idea"] as const, "idea"),
       horizon: oneOf(idea.horizon, ["month", "year", "someday"] as const, "someday"),
-      resources: resources(idea.resources),
+      resources: resources(out.links),
     },
-    out.links.length > 0 && { kind: "links" as const, label: out.links_label, resources: resources(out.links) },
+    // With an idea, the links are its places to start, not a card of their own.
+    !idea && out.links.length > 0 ? { kind: "links" as const, label: out.links_label, resources: resources(out.links) } : null,
   ].filter((p) => !!p);
 
   for (const b of parts) {
@@ -157,37 +184,14 @@ export function validateReply(
         if (text) blocks.push({ kind: "text", text });
         break;
       }
+      case "changes": {
+        blocks.push({ kind: "changes", changes });
+        break;
+      }
       case "schedule": {
-        const requests = b.picks.flatMap((p) => {
-          const task_id = task(p.task);
-          if (!task_id) return [];
-          const day = p.day.trim();
-          return [
-            {
-              task_id,
-              step_id: p.step ? (snap.stepByCode.get(p.step.trim()) ?? null) : null,
-              // A day the snapshot doesn't have stays as given, so it's reported as not placed.
-              date: day ? (dayOf(day)?.date ?? day) : null,
-              when: p.when,
-              duration_min: p.duration_min,
-              reason: p.reason,
-            },
-          ];
-        });
-        const { placed, unplaced } = placePicks({
-          picks: requests,
-          days: snap.days,
-          known: snap.known,
-          dueOf: snap.dueOf,
-          prefs: snap.prefs,
-          now: Date.now(),
-          timezone: snap.timezone,
-        });
-        if (placed.length) {
-          const date = placed[0]!.start;
-          blocks.push({ kind: "schedule", date: localDay(snap, date), picks: placed });
-        }
-        notes.push(...unplacedNote(unplaced, placed, snap));
+        const placed = times.schedule;
+        if (placed.length) blocks.push({ kind: "schedule", date: localDay(snap, placed[0]!.start), picks: placed });
+        notes.push(...unplacedNote(times.scheduleUnplaced, placed, snap));
         break;
       }
       case "tasks": {
@@ -210,6 +214,8 @@ export function validateReply(
             priority: b.priority,
             repeat: b.repeat,
           },
+          // A repeating to-do is added, not booked.
+          book: b.repeat === "none" ? b.book : null,
         });
         break;
       }
@@ -275,6 +281,9 @@ export function validateReply(
     }
   }
 
+  // The reply may already mention an overlap; don't say it twice.
+  const said = out.text.toLowerCase();
+  notes.push(...times.notes.filter((n) => !(n.includes(" overlaps ") && said.includes("overlap"))));
   if (notes.length) {
     const first = blocks.find((b) => b.kind === "text");
     if (first) first.text = `${first.text}\n\n${notes.join(" ")}`;

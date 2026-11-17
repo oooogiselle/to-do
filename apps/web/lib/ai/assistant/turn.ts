@@ -37,11 +37,25 @@ function describeReply(m: PastMessage, snap: Snapshot): string {
       case "text":
         return b.text;
       case "schedule":
-        return `[Schedule: ${b.picks.map((p) => `${day(p.start, snap.timezone)} ${time(p.start, snap.timezone)}-${time(p.end, snap.timezone)} ${title(p.task_id)}`).join("; ")}]${tag}`;
+        return `[Schedule: ${b.picks.map((p) => `${day(p.start, snap.timezone)} ${time(p.start, snap.timezone)}-${time(p.end, snap.timezone)} ${title(p.task_id)}${p.step_title ? ` · ${p.step_title}` : ""}`).join("; ")}]${tag}`;
       case "tasks":
         return `[${b.label}: ${b.task_ids.map(title).join(", ")}]`;
       case "draft":
-        return `[Draft to-do: "${b.draft.title}"]${tag}`;
+        return `[Draft to-do: "${b.draft.title}"${b.book ? `, booked ${day(b.book.start, snap.timezone)} ${time(b.book.start, snap.timezone)}` : ""}]${tag}`;
+      case "changes": {
+        const applied = Object.entries(m.resolved).filter(([k, v]) => k.startsWith(`${i}:change:`) && v === "applied").length;
+        const name = (taskId: string, stepId: string | null) =>
+          stepId ? `"${snap.stepInfo.get(stepId)?.title ?? "a step"}" of ${title(taskId)}` : title(taskId);
+        const at = (iso: string) => `${day(iso, snap.timezone)} ${time(iso, snap.timezone)}`;
+        const rows = b.changes.map((c) => {
+          if (c.op === "edit") return `edit ${name(c.task_id, c.step_id)}: ${Object.keys(c.patch).join(", ")}`;
+          if (c.op === "move") return `move ${name(c.task_id, c.step_id)} ${at(c.from.start)} → ${at(c.to.start)}`;
+          if (c.what === "plan") return `take ${name(c.task_id, c.step_id)} off My day`;
+          if (c.what === "block") return `remove the ${at(c.span!.start)} block of ${name(c.task_id, c.step_id)}`;
+          return `delete ${name(c.task_id, c.step_id)}`;
+        });
+        return `[Changes: ${rows.join("; ")}]${applied ? ` (they applied ${applied} of ${rows.length})` : ""}`;
+      }
       case "steps":
         return `[Steps for ${title(b.task_id)}: ${b.steps.map((s) => s.title).join("; ")}]${tag}`;
       case "slots":

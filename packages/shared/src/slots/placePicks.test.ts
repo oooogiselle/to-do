@@ -179,4 +179,34 @@ describe("placePicks", () => {
     const picks = Array.from({ length: 12 }, () => pick("a", { duration_min: 30 }));
     expect(run(picks, { max: 2 }).placed).toHaveLength(2);
   });
+
+  it("keeps a new step's name, trimmed, unless the pick has a real step", () => {
+    const r = run([
+      pick("b", { step_title: "  Outline ", date: D1 }),
+      pick("a", { step_id: "a1", step_title: "Ignored", date: D1 }),
+      pick("c", { step_title: "   ", date: D1 }),
+    ]);
+    expect(r.placed.map((p) => [p.task_id, p.step_id, p.step_title])).toEqual([
+      ["b", null, "Outline"],
+      ["a", "a1", undefined],
+      ["c", null, undefined],
+    ]);
+  });
+});
+
+describe("placePicks for moves", () => {
+  it("copies ref onto placed and unplaced picks", () => {
+    const r = run([pick("a", { ref: "m0", date: D1 }), pick("b", { ref: "s1", date: "2026-12-01" })]);
+    expect(r.placed.map((p) => p.ref)).toEqual(["m0"]);
+    expect(r.unplaced.map((u) => u.ref)).toEqual(["s1"]);
+  });
+
+  it("keeps a long length past the longest session, and never trims it", () => {
+    const long = run([pick("a", { duration_min: 180, keep_length: true, date: D1 })]);
+    expect(spans(long)).toEqual([["a", iso(D1, "09:00"), iso(D1, "12:00")]]);
+    const tight = run([pick("a", { duration_min: 180, keep_length: true, date: D1 })], {
+      days: [workday(D1, [["09:00", "11:00"]])],
+    });
+    expect(tight.placed).toEqual([]);
+  });
 });

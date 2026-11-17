@@ -3,7 +3,7 @@
 import { Fragment, type ReactNode } from "react";
 import { messageState } from "@tt/client";
 import type { AssistantBlock, AssistantMessage } from "@tt/shared";
-import { DraftCard, IdeaPlanCard, LinksCard, ScheduleCard, SlotsCard, StepsCard, TaskListCard } from "./cards";
+import { ChangesCard, DraftCard, IdeaPlanCard, LinksCard, ScheduleCard, SlotsCard, StepsCard, TaskListCard } from "./cards";
 
 /** Small monochrome "tt." mark beside replies. */
 export function AssistantAvatar() {
@@ -106,6 +106,8 @@ function BlockView({ block, index, message }: { block: AssistantBlock; index: nu
       return <RichText text={block.text} />;
     case "schedule":
       return <ScheduleCard {...card} block={block} />;
+    case "changes":
+      return <ChangesCard {...card} block={block} />;
     case "tasks":
       return <TaskListCard block={block} />;
     case "draft":

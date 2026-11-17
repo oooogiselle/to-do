@@ -20,6 +20,12 @@ const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 export type PickRequest = {
   task_id: string;
   step_id: string | null;
+  /** A name for a new step this session works on, when it has no step yet. */
+  step_title?: string | null;
+  /** Copied onto the result, so callers can tell their picks apart. */
+  ref?: string;
+  /** Keep the asked length even past the longest session (moving or resizing a block). */
+  keep_length?: boolean;
   /** The local date asked for, or null for the earliest day that works. */
   date: string | null;
   /** "morning" | "afternoon" | "evening" | "HH:MM" | anything else for "whenever". */
@@ -41,14 +47,28 @@ export type PlacePrefs = {
   daily_cap_min?: number;
 };
 
-export type FittedPick = { task_id: string; step_id: string | null; start: string; end: string; reason: string };
-export type Unplaced = { task_id: string; step_id: string | null; reason: "no_time_before_due" | "no_time" };
+export type FittedPick = {
+  task_id: string;
+  step_id: string | null;
+  /** Only when there's no step_id: the name of a step to create for this block. */
+  step_title?: string;
+  start: string;
+  end: string;
+  reason: string;
+  ref?: string;
+};
+export type Unplaced = {
+  task_id: string;
+  step_id: string | null;
+  reason: "no_time_before_due" | "no_time";
+  ref?: string;
+};
 
 const ceilQ = (t: number) => Math.ceil(t / QUARTER) * QUARTER;
 const floorQ = (t: number) => Math.floor(t / QUARTER) * QUARTER;
 
 /** `free` minus `taken`, both sorted lists of intervals. */
-function subtract(free: Interval[], taken: Interval[]): Interval[] {
+export function subtract(free: Interval[], taken: Interval[]): Interval[] {
   let out = free;
   for (const t of taken) {
     out = out.flatMap((f) => {
@@ -123,10 +143,14 @@ export function placePicks(opts: {
     const steps = opts.known.get(p.task_id);
     if (!steps) continue;
     const step_id = p.step_id && steps.has(p.step_id) ? p.step_id : null;
+    const step_title = step_id ? "" : (p.step_title ?? "").trim().slice(0, 120);
     const due = opts.dueOf.get(p.task_id);
     const deadline = due !== undefined && due > now ? due : Infinity;
     // Round up, so a 50-minute task gets an hour rather than losing 5 minutes.
-    const wantMin = Math.min(prefs.max_session_min, Math.max(15, Math.ceil(p.duration_min / 15) * 15));
+    const wantMin = Math.min(
+      p.keep_length ? Infinity : prefs.max_session_min,
+      Math.max(15, Math.ceil(p.duration_min / 15) * 15),
+    );
     const when = p.when.trim().toLowerCase();
     const days = p.date ? opts.days.filter((d) => d.date === p.date) : opts.days;
 
@@ -161,7 +185,7 @@ export function placePicks(opts: {
         if (preferred) start = earliest(gaps, len, ...window(preferred));
         start ??= earliest(gaps, len);
       }
-      if (start === null) {
+      if (start === null && !p.keep_length) {
         // Nothing fits the whole length: offer a shorter block in the longest gap.
         const best = gaps
           .map((g) => ({ start: ceilQ(g.start), len: floorQ(g.end - ceilQ(g.start)) }))
@@ -181,9 +205,11 @@ export function placePicks(opts: {
       placed.push({
         task_id: p.task_id,
         step_id,
+        ...(step_title ? { step_title } : {}),
         start: new Date(start).toISOString(),
         end: new Date(end).toISOString(),
         reason: p.reason.trim().slice(0, 200),
+        ...(p.ref !== undefined ? { ref: p.ref } : {}),
         at: start,
       });
       done = true;
@@ -197,6 +223,7 @@ export function placePicks(opts: {
         task_id: p.task_id,
         step_id,
         reason: deadline < daysEnd ? "no_time_before_due" : "no_time",
+        ...(p.ref !== undefined ? { ref: p.ref } : {}),
       });
     }
   }

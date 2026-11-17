@@ -29,6 +29,7 @@ import { PriorityMark } from "@/components/ui/priority-mark";
 import { Segmented } from "@/components/ui/segmented";
 import { Switch } from "@/components/ui/switch";
 import { TaskCheck } from "@/components/ui/task-check";
+import { useListParam } from "@/components/use-list-param";
 
 export function Inbox() {
   const { lists, listById, tasks: allTasks, settings, isLoading } = useModel();
@@ -39,6 +40,11 @@ export function Inbox() {
   const [showDone, setShowDone] = useState(false);
   const [creating, setCreating] = useState(false);
   const { groups, nextBlock } = useInbox(sort, showDone);
+  // A sidebar list link (?list=<id>) shows just that list.
+  const [listParam, setListParam] = useListParam();
+  const listFilter = groups.some((g) => g.list?.id === listParam) ? listParam : null;
+  const shown = listFilter ? groups.filter((g) => g.list?.id === listFilter) : groups;
+  const filterLists = groups.flatMap((g) => (g.list ? [g.list] : []));
   const openTotal = tasks.filter((t) => t.status === "open").length;
   const doneTotal = tasks.filter((t) => t.status === "done").length;
   const openIn = (list: List | null) =>
@@ -84,13 +90,25 @@ export function Inbox() {
 
         {creating && <NewListForm count={lists.length} onDone={() => setCreating(false)} />}
 
+        {filterLists.length > 1 && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <Segmented<string>
+              label="List"
+              size="sm"
+              value={listFilter ?? "all"}
+              onChange={(v) => setListParam(v === "all" ? null : v)}
+              options={[{ value: "all", label: "All lists" }, ...filterLists.map((l) => ({ value: l.id, label: l.name }))]}
+            />
+          </div>
+        )}
+
         {isLoading ? (
           <p className="font-semibold text-muted">Loading…</p>
         ) : !tasks.length && !lists.length ? (
           <EmptyState />
         ) : (
-          <div className="grid items-start gap-5 lg:grid-cols-2">
-            {groups.map((g) => (
+          <div className={`grid items-start gap-5 ${listFilter ? "" : "lg:grid-cols-2"}`}>
+            {shown.map((g) => (
               <ListCard
                 key={g.list?.id ?? "none"}
                 list={g.list}

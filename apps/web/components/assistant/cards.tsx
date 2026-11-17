@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import {
   ArrowUpRight,
   CalendarClock,
@@ -10,13 +10,17 @@ import {
   Clock,
   Flag,
   ListTree,
+  MoveRight,
+  Pencil,
   Repeat,
   Sun,
+  Trash2,
 } from "lucide-react";
 import {
   HORIZON_LABEL,
   endPosition,
   fmtDay,
+  fmtDue,
   fmtTime,
   isTemp,
   taskColor,
@@ -26,17 +30,31 @@ import {
   useCreateBlock,
   useCreateStep,
   useCreateTask,
+  useCompletion,
+  useDeleteStep,
+  useDeleteTaskWithUndo,
   useModel,
+  useMoveBlock,
+  useRemoveBlockWithUndo,
+  useRemoveFromPlan,
+  useRestoreBlock,
+  usePlanBlocks,
   useResolveCard,
+  useScheduleNew,
+  useUpdateStep,
   useUpdateTask,
 } from "@tt/client";
 import {
+  addDays,
   formatMinutes,
+  isDoneOn,
   isRecurring,
   linkLabel,
   localDate,
   swatch,
   type AssistantBlock,
+  type AssistantChange,
+  type AssistantEditFields,
   type Horizon,
   type IdeaKind,
   type ResearchResource,
@@ -51,9 +69,9 @@ const cardHeader =
   "flex items-center gap-1.5 border-b border-line-soft px-3 py-2 text-[11px] tracking-[0.08em] text-faint uppercase";
 const cardFooter = "flex items-center gap-2 border-t border-line-soft bg-row px-3 py-2";
 const primaryBtn =
-  "inline-flex h-7 items-center gap-1.5 rounded-md bg-ink px-2.5 text-[12px] text-white transition-colors hover:bg-[#27272A] focus:outline-none focus-visible:ring-2 focus-visible:ring-line-strong disabled:opacity-40";
+  "inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-ink px-2.5 text-[12px] text-white transition-colors hover:bg-[#27272A] focus:outline-none focus-visible:ring-2 focus-visible:ring-line-strong disabled:opacity-40";
 const secondaryBtn =
-  "inline-flex h-7 items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12px] text-ink transition-colors hover:bg-row-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-line-strong disabled:opacity-40";
+  "inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-line bg-surface px-2.5 text-[12px] text-ink transition-colors hover:bg-row-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-line-strong disabled:opacity-40";
 const iconBtn =
   "grid h-7 w-7 shrink-0 place-items-center rounded-md border border-line bg-surface text-chip-ink transition-colors hover:bg-row-hover hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-line-strong";
 const doneNote = "inline-flex h-7 items-center gap-1 text-[12px] text-open-ink";
@@ -87,9 +105,10 @@ const Dot = ({ color }: { color: string }) => (
 
 /** Proposed time blocks. Each can be added on its own, or all at once. */
 export function ScheduleCard({ messageId, index, resolved, block }: CardProps<"schedule">) {
-  const { taskById, listById, stepsByTask, planByDate, settings } = useModel();
+  const { taskById, listById, stepsByTask, settings } = useModel();
   const createBlock = useCreateBlock();
-  const addToPlan = useAddToPlan();
+  const createStep = useCreateStep();
+  const planBlocks = usePlanBlocks();
   const resolve = useResolveCard();
   const tz = settings.timezone;
   const keyOf = (j: number) => `${index}:pick:${j}`;
@@ -106,39 +125,69 @@ export function ScheduleCard({ messageId, index, resolved, block }: CardProps<"s
   const dayLabel = (date: string, style: "short" | "long") =>
     date === today ? "Today" : style === "long" ? fmtDay(date, tz, "long").split(",")[0] : fmtDay(date, tz);
 
-  const create = (j: number) => {
-    const p = block.picks[j]!;
-    createBlock.mutate({ tempId: tempId(), body: { task_id: p.task_id, step_id: p.step_id, start: p.start, end: p.end } });
-  };
-  /**
-   * Each block's to-do (or step) also goes on that day's plan in My day, after what's there,
-   * unless it's already planned that day. Routines aren't planned; they show every day anyway.
-   */
-  const plan = (js: number[]) => {
-    const queued = new Map<string, number>();
-    const seen = new Set<string>();
+  /** Books picks j with this step, and puts each block's to-do (or step) on that day's plan in My day. */
+  const book = (js: number[], stepId: (j: number) => string | null) => {
     for (const j of js) {
       const p = block.picks[j]!;
-      const task = live[j];
-      if (!task || isRecurring(task)) continue;
-      const date = dayOfPick[j]!;
-      const items = planByDate.get(date) ?? [];
-      const key = `${date}:${p.task_id}:${p.step_id ?? ""}`;
-      const planned = items.some((i) => i.task_id === p.task_id && (i.step_id ?? null) === p.step_id);
-      if (planned || seen.has(key)) continue;
-      seen.add(key);
-      const n = queued.get(date) ?? 0;
-      queued.set(date, n + 1);
-      addToPlan.mutate({
-        tempId: tempId(),
-        body: { task_id: p.task_id, step_id: p.step_id, plan_date: date, position: endPosition(items) + n },
-      });
+      createBlock.mutate({ tempId: tempId(), body: { task_id: p.task_id, step_id: stepId(j), start: p.start, end: p.end } });
     }
+    planBlocks(js.flatMap((j) => (live[j] ? [{ task: live[j], step_id: stepId(j), start: block.picks[j]!.start }] : [])));
   };
+  /** One step per to-do and name, even across separate Add clicks while the first is saving. */
+  const steps = useRef(new Map<string, Promise<string | null>>());
+  /** The last step order handed out per to-do, since the model's view lags new steps by a render. */
+  const lastOrder = useRef(new Map<string, number>());
+  const stepFor = (key: string, taskId: string, title: string, estimate: number) => {
+    const have = steps.current.get(key);
+    if (have) return have;
+    const existing = stepsByTask.get(taskId) ?? [];
+    const same = existing.find((s) => !s.done && !isTemp(s.id) && s.title.trim().toLowerCase() === title.toLowerCase());
+    const order = Math.max(existing.reduce((max, s) => Math.max(max, s.order), -1), lastOrder.current.get(taskId) ?? -1) + 1;
+    if (!same) lastOrder.current.set(taskId, order);
+    const made = same
+      ? Promise.resolve(same.id)
+      : createStep
+          .mutateAsync({ tempId: tempId(), body: { task_id: taskId, title, estimate_min: estimate, order } })
+          .then((step) => step.id as string | null)
+          .catch(() => null);
+    steps.current.set(key, made);
+    return made;
+  };
+  /**
+   * A pick named for a session the to-do has no step for gets that step first (one per name, or
+   * an open step that already has it), so the block reads "Task · Outline" everywhere.
+   */
   const accept = (js: number[]) => {
     resolve.mutate({ messageId, entries: Object.fromEntries(js.map((j) => [keyOf(j), "added"])) });
-    js.forEach(create);
-    plan(js);
+    const named = new Map<string, number[]>();
+    const plain: number[] = [];
+    for (const j of js) {
+      const p = block.picks[j]!;
+      const title = !p.step_id && p.step_title?.trim();
+      if (!title) plain.push(j);
+      else {
+        const key = `${p.task_id}\n${title.toLowerCase()}`;
+        named.set(key, [...(named.get(key) ?? []), j]);
+      }
+    }
+    book(plain, (j) => block.picks[j]!.step_id);
+    if (!named.size) return;
+    const groups = [...named];
+    // Booked together once every step is saved, so My day gets one run of positions. A step
+    // that couldn't be saved still gets its time, just without the name.
+    void Promise.all(
+      groups.map(([key, group]) => {
+        const p = block.picks[group[0]!]!;
+        const estimate = group.reduce((n, j) => n + minutes(block.picks[j]!), 0);
+        return stepFor(key, p.task_id, p.step_title!.trim(), estimate);
+      }),
+    ).then((ids) => {
+      const stepOf = new Map(groups.flatMap(([, group], g) => group.map((j) => [j, ids[g] ?? null] as const)));
+      book(
+        groups.flatMap(([, group]) => group),
+        (j) => stepOf.get(j) ?? null,
+      );
+    });
   };
 
   return (
@@ -151,7 +200,9 @@ export function ScheduleCard({ messageId, index, resolved, block }: CardProps<"s
       <ol>
         {block.picks.map((p, j) => {
           const task = live[j];
-          const step = p.step_id ? stepsByTask.get(p.task_id)?.find((s) => s.id === p.step_id) : undefined;
+          const stepTitle = p.step_id
+            ? stepsByTask.get(p.task_id)?.find((s) => s.id === p.step_id)?.title
+            : p.step_title?.trim() || undefined;
           const done = !!resolved[keyOf(j)];
           const gone = !task || task.status !== "open";
           const firstOfDay = multiDay && dayOfPick[j] !== dayOfPick[j - 1];
@@ -176,7 +227,7 @@ export function ScheduleCard({ messageId, index, resolved, block }: CardProps<"s
                     <Dot color={taskColor(task, listById)} />
                     <span className={`truncate ${done || gone ? "text-faint" : ""}`}>
                       {task?.title ?? "A task that's gone"}
-                      {step && <span className="text-muted"> · {step.title}</span>}
+                      {stepTitle && <span className="text-muted"> · {stepTitle}</span>}
                     </span>
                   </p>
                   <p className="mt-0.5 pl-3 text-[12px] leading-snug text-muted">{p.reason}</p>
@@ -193,7 +244,7 @@ export function ScheduleCard({ messageId, index, resolved, block }: CardProps<"s
                       onClick={() => accept([j])}
                       disabled={isTemp(p.task_id)}
                       className={secondaryBtn}
-                      aria-label={`Add ${task.title} at ${fmtTime(p.start, tz)}${multiDay ? ` on ${dayLabel(dayOfPick[j]!, "short")}` : ""}`}
+                      aria-label={`Add ${task.title}${stepTitle ? `, ${stepTitle},` : ""} at ${fmtTime(p.start, tz)}${multiDay ? ` on ${dayLabel(dayOfPick[j]!, "short")}` : ""}`}
                     >
                       Add
                     </button>
@@ -210,6 +261,265 @@ export function ScheduleCard({ messageId, index, resolved, block }: CardProps<"s
             Add all {pending.length}
           </button>
           <span className="text-[11px] text-faint">Blocks go on your calendar and My day</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type Change = AssistantChange;
+
+/** Due dates as "Thu 5pm", or "none". */
+const dueLabel = (iso: string | null | undefined, tz: string) => (iso ? fmtDue(iso, tz) : "none");
+
+/**
+ * Edits, moves and removals Ask tt. proposed. Each applies on its own (or all at once) and can be
+ * undone from the card; one made stale by a later change to the same thing can't be applied.
+ */
+export function ChangesCard({ messageId, index, resolved, block }: CardProps<"changes">) {
+  const { taskById, stepsByTask, blocks, planByDate, listById, settings } = useModel();
+  const updateTask = useUpdateTask();
+  const updateStep = useUpdateStep();
+  const completion = useCompletion();
+  const moveBlock = useMoveBlock();
+  const removeBlock = useRemoveBlockWithUndo();
+  const restoreBlock = useRestoreBlock();
+  const deleteTask = useDeleteTaskWithUndo();
+  const deleteStep = useDeleteStep();
+  const createStep = useCreateStep();
+  const removeFromPlan = useRemoveFromPlan();
+  const addToPlan = useAddToPlan();
+  const resolve = useResolveCard();
+  const tz = settings.timezone;
+  const today = localDate(new Date(), tz);
+  const keyOf = (j: number) => `${index}:change:${j}`;
+  const stepOf = (taskId: string, stepId: string | null) =>
+    stepId ? stepsByTask.get(taskId)?.find((s) => s.id === stepId) : undefined;
+  const blockOf = (id: string) => blocks.find((b) => b.id === id);
+  const span = (s: { start: string; end: string }) =>
+    `${dayName(s.start, tz)} ${fmtTime(s.start, tz)}–${fmtTime(s.end, tz)}`;
+  const sameTime = (a: string, b: string) => Date.parse(a) === Date.parse(b);
+
+  const isDone = (c: Extract<Change, { op: "edit" }>) => {
+    const step = stepOf(c.task_id, c.step_id);
+    if (c.step_id) return !!step?.done;
+    const task = taskById.get(c.task_id);
+    return !!task && (isRecurring(task) ? isDoneOn(task, today) : task.status === "done");
+  };
+
+  /** Whether the thing still looks the way it did when this was proposed. */
+  const current = (c: Change): boolean => {
+    const task = taskById.get(c.task_id);
+    if (!task) return false;
+    switch (c.op) {
+      case "edit": {
+        if (c.step_id && !stepOf(c.task_id, c.step_id)) return false;
+        const live = c.step_id ? stepOf(c.task_id, c.step_id)! : task;
+        return Object.keys(c.patch).every((k) => {
+          const key = k as keyof AssistantEditFields;
+          if (key === "done") return isDone(c) === !!c.before.done;
+          if (key === "due_at") {
+            const now = (live as typeof task).due_at ?? null;
+            return (now === null) === (c.before.due_at == null) && (!now || sameTime(now, c.before.due_at!));
+          }
+          return (live as Record<string, unknown>)[key] === (c.before[key] ?? null);
+        });
+      }
+      case "move": {
+        const b = blockOf(c.block_id);
+        return !!b && sameTime(b.start, c.from.start) && sameTime(b.end, c.from.end);
+      }
+      case "remove":
+        if (c.what === "block") return !!blockOf(c.id);
+        if (c.what === "step") return !!stepOf(c.task_id, c.id);
+        if (c.what === "plan") return (planByDate.get(c.plan!.date) ?? []).some((i) => i.id === c.id);
+        return task.status === "open";
+    }
+  };
+
+  /** Whether an applied change is still in place, so undoing it won't clobber something newer. */
+  const undoable = (c: Change): boolean => {
+    switch (c.op) {
+      case "edit":
+        return !!taskById.get(c.task_id);
+      case "move": {
+        const b = blockOf(c.block_id);
+        return !!b && sameTime(b.start, c.to.start) && sameTime(b.end, c.to.end);
+      }
+      case "remove":
+        // A deleted to-do comes back from the toast's Undo, within its few seconds.
+        return c.what !== "task" && !(c.what === "block" && Date.parse(c.span!.end) <= Date.now());
+    }
+  };
+
+  const apply = (c: Change) => {
+    switch (c.op) {
+      case "edit": {
+        const { done, ...fields } = c.patch;
+        if (Object.keys(fields).length) {
+          if (c.step_id) updateStep.mutate({ id: c.step_id, patch: { title: fields.title } });
+          else updateTask.mutate({ id: c.task_id, patch: fields });
+        }
+        if (done) {
+          if (c.step_id) completion.setStepDone(c.task_id, c.step_id, true);
+          else completion.setTaskDone(c.task_id, true);
+        }
+        break;
+      }
+      case "move":
+        moveBlock.mutate({ id: c.block_id, start: c.to.start, end: c.to.end });
+        break;
+      case "remove": {
+        const task = taskById.get(c.task_id)!;
+        if (c.what === "block") {
+          const b = blockOf(c.id);
+          if (b) removeBlock(b, task.title);
+        } else if (c.what === "task") deleteTask(task);
+        else if (c.what === "step") deleteStep.mutate(c.id);
+        else removeFromPlan.mutate(c.id);
+        break;
+      }
+    }
+  };
+
+  const undo = (c: Change) => {
+    switch (c.op) {
+      case "edit": {
+        const { done, ...fields } = c.before;
+        if (Object.keys(fields).length) {
+          if (c.step_id) updateStep.mutate({ id: c.step_id, patch: { title: fields.title } });
+          else updateTask.mutate({ id: c.task_id, patch: fields });
+        }
+        if (c.patch.done && done === false) {
+          if (c.step_id) completion.setStepDone(c.task_id, c.step_id, false);
+          else completion.setTaskDone(c.task_id, false);
+        }
+        break;
+      }
+      case "move":
+        moveBlock.mutate({ id: c.block_id, start: c.from.start, end: c.from.end });
+        break;
+      case "remove":
+        if (c.what === "block") restoreBlock({ task_id: c.task_id, step_id: c.step_id, ...c.span! });
+        else if (c.what === "step")
+          createStep.mutate({ tempId: tempId(), body: { task_id: c.task_id, ...c.step!, estimate_min: c.step!.estimate_min } });
+        else if (c.what === "plan")
+          addToPlan.mutate({
+            tempId: tempId(),
+            body: { task_id: c.task_id, step_id: c.step_id, plan_date: c.plan!.date, position: c.plan!.position },
+          });
+        break;
+    }
+  };
+
+  const state = (j: number) => resolved[keyOf(j)];
+  const pending = block.changes.map((_, j) => j).filter((j) => !state(j) && current(block.changes[j]!));
+  const act = (js: number[], to: "applied" | "undone") => {
+    resolve.mutate({ messageId, entries: Object.fromEntries(js.map((j) => [keyOf(j), to])) });
+    js.forEach((j) => (to === "applied" ? apply : undo)(block.changes[j]!));
+  };
+
+  /** What the row is about, and what changes, in words. */
+  const describe = (c: Change): { icon: typeof Pencil; title: string; detail: string; risk?: boolean } => {
+    const task = taskById.get(c.task_id);
+    const step = c.step_id ? stepOf(c.task_id, c.step_id) : undefined;
+    const name =
+      (task?.title ?? (c.op === "remove" ? c.label : undefined) ?? "A task that's gone") +
+      (c.op === "remove" && c.what === "step" ? "" : step ? ` · ${step.title}` : "");
+    switch (c.op) {
+      case "edit": {
+        const p = c.patch;
+        const b = c.before;
+        const parts = [
+          p.title !== undefined && `rename to “${p.title}”`,
+          p.due_at !== undefined && `due ${dueLabel(b.due_at, tz)} → ${dueLabel(p.due_at, tz)}`,
+          p.estimate_min !== undefined &&
+            `${b.estimate_min ? formatMinutes(b.estimate_min) : "no estimate"} → ${formatMinutes(p.estimate_min!)}`,
+          p.priority !== undefined && `priority ${PRIORITY[b.priority!] || "none"} → ${PRIORITY[p.priority] || "none"}`,
+          p.list_id !== undefined &&
+            `move to ${listById.get(p.list_id ?? "")?.name ?? "no list"}`,
+          p.done && (task && isRecurring(task) && !c.step_id ? "mark done for today" : "mark done"),
+        ].filter(Boolean);
+        return { icon: Pencil, title: name, detail: parts.join(" · ") };
+      }
+      case "move":
+        return {
+          icon: MoveRight,
+          title: name,
+          detail: `${span(c.from)} → ${span(c.to)}${c.reason ? ` · ${c.reason}` : ""}`,
+        };
+      case "remove": {
+        const why = c.reason ? ` · ${c.reason}` : "";
+        if (c.what === "block") return { icon: Trash2, title: name, detail: `Remove ${span(c.span!)}${why}`, risk: true };
+        if (c.what === "plan") return { icon: Sun, title: name, detail: `Take off My day${why}` };
+        if (c.what === "step")
+          return { icon: Trash2, title: name, detail: `Delete step “${c.step!.title}”${why}`, risk: true };
+        return {
+          icon: Trash2,
+          title: name,
+          detail: `Delete to-do${c.blocks ? ` and its ${c.blocks} booked block${c.blocks > 1 ? "s" : ""}` : ""}${why}`,
+          risk: true,
+        };
+      }
+    }
+  };
+
+  return (
+    <div className={cardShell}>
+      <div className={cardHeader}>
+        <Pencil className="h-3 w-3" />
+        Changes · {block.changes.length}
+      </div>
+      <ul>
+        {block.changes.map((c, j) => {
+          const { icon: Icon, title, detail, risk } = describe(c);
+          const s = state(j);
+          const stale = !s && !current(c);
+          return (
+            <li key={j} className={`flex items-start gap-2.5 px-3 py-2.5 ${j ? "border-t border-line-soft" : ""}`}>
+              <Icon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${risk ? "text-risk" : "text-faint"}`} />
+              <div className="min-w-0 flex-1">
+                <p className={`truncate text-[13px] ${s === "applied" && risk ? "text-faint line-through" : "text-ink"}`}>
+                  {title}
+                </p>
+                <p className={`mt-0.5 text-[12px] leading-snug ${risk ? "text-risk" : "text-muted"}`}>{detail}</p>
+              </div>
+              {s === "applied" ? (
+                <span className="flex shrink-0 items-center gap-2">
+                  <span className={doneNote}>
+                    <Check className="h-3.5 w-3.5" />
+                    Done
+                  </span>
+                  {undoable(c) && (
+                    <button type="button" onClick={() => act([j], "undone")} className="text-[12px] text-muted hover:text-ink">
+                      Undo
+                    </button>
+                  )}
+                </span>
+              ) : s === "undone" ? (
+                <span className="inline-flex h-7 shrink-0 items-center text-[12px] text-faint">Undone</span>
+              ) : stale ? (
+                <span className="inline-flex h-7 shrink-0 items-center text-[12px] text-faint">Changed since</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => act([j], "applied")}
+                  disabled={isTemp(c.task_id)}
+                  className={secondaryBtn}
+                  aria-label={`Apply: ${title}, ${detail}`}
+                >
+                  Apply
+                </button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {pending.length > 1 && (
+        <div className={cardFooter}>
+          <button type="button" onClick={() => act(pending, "applied")} className={primaryBtn}>
+            Apply all {pending.length}
+          </button>
         </div>
       )}
     </div>
@@ -285,6 +595,15 @@ export function TaskListCard({ block }: { block: Of<"tasks"> }) {
   );
 }
 
+/** "Today", "Tomorrow", else a short weekday ("Thu"). */
+function dayName(iso: string, tz: string) {
+  const date = localDate(new Date(iso), tz);
+  const today = localDate(new Date(), tz);
+  if (date === today) return "Today";
+  if (date === addDays(today, 1)) return "Tomorrow";
+  return fmtDay(date, tz).split(/[ ,]/)[0];
+}
+
 const PRIORITY = { high: "High", med: "Medium", low: "Low", none: "" } as const;
 const REPEAT = { daily: "Every day", weekdays: "Weekdays", custom: "Custom", none: "" } as const;
 
@@ -295,7 +614,12 @@ export function DraftCard({ messageId, index, resolved, block }: CardProps<"draf
   const resolve = useResolveCard();
   const openTask = useOpenTask();
   const today = usePlanToday();
+  const scheduler = useScheduleNew();
+  const createBlock = useCreateBlock();
+  const planBlocks = usePlanBlocks();
   const d = block.draft;
+  // Ask tt. picked a time from what they said; Schedule books exactly that.
+  const book = block.book && Date.parse(block.book.end) > Date.now() ? block.book : null;
   const normal = lists.filter((l) => l.kind !== "someday" && !isTemp(l.id));
   const [title, setTitle] = useState(d.title);
   const [listId, setListId] = useState<string | null>(
@@ -303,13 +627,21 @@ export function DraftCard({ messageId, index, resolved, block }: CardProps<"draf
   );
   const key = `${index}:draft`;
   const created = resolved[key];
-  const [createdId, where] = created ? created.split("|") : [];
+  // "<task id or pending>|<today|list|schedule>", plus for schedule "|<blocks booked>|<first start>|<failed>".
+  const [createdId, where, bookedStr, firstStart, failedStr] = created ? created.split("|") : [];
+  const tz = settings.timezone;
   const repeating = d.repeat !== "none";
   const list = listId ? listById.get(listId) : undefined;
+  const booked = Number(bookedStr ?? 0);
+  const failed = Number(failedStr ?? 0);
+  const notBooked = where === "schedule" && !!createdId && createdId !== "pending" && booked === 0;
+  const bookedLabel = firstStart
+    ? `${booked > 1 ? `${booked} blocks from ` : ""}${dayName(firstStart, tz)} ${fmtTime(firstStart, tz)}`
+    : "";
 
-  const add = (toToday: boolean) => {
+  const add = (to: "today" | "list" | "schedule") => {
     if (!title.trim() || created) return;
-    resolve.mutate({ messageId, entries: { [key]: `pending|${toToday ? "today" : "list"}` } });
+    resolve.mutate({ messageId, entries: { [key]: `pending|${to}` } });
     createTask.mutate(
       {
         tempId: tempId(),
@@ -323,9 +655,21 @@ export function DraftCard({ messageId, index, resolved, block }: CardProps<"draf
         },
       },
       {
-        onSuccess: (task) => {
-          if (toToday) today.plan(task.id);
-          resolve.mutate({ messageId, entries: { [key]: `${task.id}|${toToday ? "today" : "list"}` } });
+        onSuccess: async (task) => {
+          if (to === "today") today.plan(task.id);
+          let extra = "";
+          if (to === "schedule" && book) {
+            const ok = await createBlock
+              .mutateAsync({ tempId: tempId(), body: { task_id: task.id, step_id: null, ...book } })
+              .then(() => true)
+              .catch(() => false);
+            if (ok) planBlocks([{ task, step_id: null, start: book.start }]);
+            extra = ok ? `|1|${book.start}|0` : "|0||1";
+          } else if (to === "schedule") {
+            const { booked, failed } = await scheduler.schedule(task);
+            extra = `|${booked.length}|${booked[0]?.start ?? ""}|${failed}`;
+          }
+          resolve.mutate({ messageId, entries: { [key]: `${task.id}|${to}${extra}` } });
         },
       },
     );
@@ -365,6 +709,12 @@ export function DraftCard({ messageId, index, resolved, block }: CardProps<"draf
             )}
           </label>
           <DueChip dueAt={d.due_at} tz={settings.timezone} />
+          {book && !repeating && (
+            <span className={chip}>
+              <CalendarClock className="h-3 w-3 text-faint" />
+              {dayName(book.start, tz)} {fmtTime(book.start, tz)}–{fmtTime(book.end, tz)}
+            </span>
+          )}
           {d.estimate_min && (
             <span className={chip}>
               <Clock className="h-3 w-3 text-faint" />
@@ -388,32 +738,62 @@ export function DraftCard({ messageId, index, resolved, block }: CardProps<"draf
       <div className={cardFooter}>
         {created ? (
           <>
-            <span className={doneNote}>
-              <Check className="h-3.5 w-3.5" />
-              Added to {list?.name ?? "your to-dos"}
-              {where === "today" ? " and today's plan" : ""}
+            <span className={`${doneNote} min-w-0`}>
+              <Check className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">
+                {where !== "schedule"
+                  ? `Added to ${list?.name ?? "your to-dos"}${where === "today" ? " and today's plan" : ""}`
+                  : createdId === "pending"
+                    ? "Finding time…"
+                    : booked > 0
+                      ? `Booked ${bookedLabel}`
+                      : failed
+                        ? "Added, but not to your calendar"
+                        : "Added · no free time this week"}
+              </span>
             </span>
             {createdId && createdId !== "pending" && (
-              <button type="button" onClick={() => openTask(createdId)} className={linkBtn}>
-                Open
+              <button
+                type="button"
+                onClick={() => openTask(createdId, notBooked ? { panel: "schedule" } : undefined)}
+                className={`${linkBtn} shrink-0`}
+              >
+                {notBooked ? "Find time" : "Open"}
               </button>
             )}
           </>
         ) : (
           <>
             {!repeating && (
-              <button type="button" onClick={() => add(true)} disabled={!title.trim()} className={primaryBtn}>
+              <button
+                type="button"
+                onClick={() => add("today")}
+                disabled={!title.trim()}
+                className={book ? secondaryBtn : primaryBtn}
+              >
                 <Sun className="h-3.5 w-3.5" />
                 Add to today
               </button>
             )}
+            {!repeating && (
+              <button
+                type="button"
+                onClick={() => add("schedule")}
+                disabled={!title.trim() || (!book && !scheduler.ready)}
+                className={book ? primaryBtn : secondaryBtn}
+                title={book ? "Add it and book that time" : "Add it and book time on your calendar"}
+              >
+                <CalendarPlus className="h-3.5 w-3.5" />
+                {book ? "Book it" : "Schedule"}
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => add(false)}
+              onClick={() => add("list")}
               disabled={!title.trim()}
-              className={repeating ? primaryBtn : secondaryBtn}
+              className={repeating ? primaryBtn : `${linkBtn} whitespace-nowrap`}
             >
-              {repeating ? "Add repeating to-do" : "Just add to list"}
+              {repeating ? "Add repeating to-do" : "Add to list"}
             </button>
           </>
         )}

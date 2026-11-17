@@ -2,9 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   AssistantNotes,
-  SCHEDULING_DEFAULTS,
-  SchedulingPrefs,
   addDays,
+  buildPlanDays,
   dueRisk,
   findFreeSlots,
   formatMinutes,
@@ -12,6 +11,7 @@ import {
   linkLabel,
   localDate,
   localWeekday,
+  schedulingPrefs,
   zonedInstant,
   type AssistantType,
   type Database,
@@ -69,10 +69,35 @@ export type Snapshot = {
   defaultListId: string | null;
   /** Titles of every task seen, for describing past replies. */
   titleOf: Map<string, string>;
+  /** Upcoming and running blocks by code ('b3'), for moving and removing them. */
+  blockByCode: Map<string, SnapBlock>;
+  /** Current values of offered tasks and of every step, for edits and removals. */
+  taskInfo: Map<string, TaskInfo>;
+  stepInfo: Map<string, StepInfo>;
+  /** Today's My day items, by "<task id>:<step id or ''>". */
+  planItemOf: Map<string, { id: string; position: number }>;
+  /** Upcoming blocks per task, for "delete it and its 2 blocks". */
+  upcomingBlocks: Map<string, number>;
+  /** Busy events and blocks, for saying what an exact time overlaps. */
+  busy: { start: number; end: number; label: string; blockId: string | null }[];
+  /** The plan days again, as if these blocks weren't booked (they're being moved). */
+  daysWithout: (blockIds: Set<string>) => PlanDay[];
+  defaultBlockMin: number;
   /** The user's assistant notes, and the item in focus. */
   notes: AssistantNotes | null;
   focus: { type: AssistantType; note: string | null; research: TaskResearch | null } | null;
 };
+
+export type SnapBlock = { id: string; task_id: string; step_id: string | null; start: string; end: string };
+export type TaskInfo = {
+  title: string;
+  due_at: string | null;
+  estimate_min: number | null;
+  priority: "none" | "low" | "med" | "high";
+  list_id: string | null;
+  repeat: string;
+};
+export type StepInfo = { task_id: string; title: string; estimate_min: number | null; order: number; done: boolean };
 
 export async function buildSnapshot(
   db: Db,
@@ -107,17 +132,9 @@ export async function buildSnapshot(
   const tz = settings.timezone;
   const workingHours = settings.working_hours as WorkingHours;
   const lists = new Map(listsRes.data!.map((l) => [l.id, l]));
-  const sched = SchedulingPrefs.safeParse(settings.scheduling ?? {});
-  const userPrefs = sched.success ? sched.data : {};
-  const prefs: PlacePrefs = {
-    focus: userPrefs.focus,
-    max_session_min: userPrefs.max_session_min ?? SCHEDULING_DEFAULTS.max_session_min,
-    break_min: userPrefs.break_min ?? SCHEDULING_DEFAULTS.break_min,
-    daily_cap_min: userPrefs.daily_cap_min,
-  };
+  const prefs = schedulingPrefs(settings.scheduling);
 
   const todayDate = localDate(new Date(nowMs), tz);
-  const dates = Array.from({ length: HORIZON_DAYS }, (_, i) => addDays(todayDate, i));
   const startOf = (date: string) => zonedInstant(date, "00:00", tz).getTime();
   const dayStart = startOf(todayDate);
   const rangeEnd = startOf(addDays(todayDate, HORIZON_DAYS));
@@ -126,7 +143,7 @@ export async function buildSnapshot(
   const [blocksRes, eventsRes, planRes] = await Promise.all([
     db
       .from("time_blocks")
-      .select("task_id, step_id, start, end")
+      .select("id, task_id, step_id, start, end")
       .is("deleted_at", null)
       .gte("end", new Date(dayStart).toISOString()),
     calIds.length
@@ -140,7 +157,7 @@ export async function buildSnapshot(
       : Promise.resolve({ data: [], error: null }),
     db
       .from("day_plan_items")
-      .select("task_id, step_id, position")
+      .select("id, task_id, step_id, position")
       .eq("plan_date", todayDate)
       .is("deleted_at", null)
       .order("position"),
@@ -164,27 +181,28 @@ export async function buildSnapshot(
     ...events.filter((e) => !e.all_day).map((e) => ({ start: e.start, end: e.end, busy: e.busy })),
     ...blocks.map((b) => ({ start: b.start, end: b.end, busy: true })),
   ];
-  const pad = prefs.break_min * 60_000;
-  const padded = busy.map((b) => ({ start: Date.parse(b.start) - pad, end: Date.parse(b.end) + pad, busy: b.busy }));
-  const days: SnapDay[] = dates.map((date) => {
-    const from = date === todayDate ? Math.max(nowMs, dayStart) : startOf(date);
-    const to = startOf(addDays(date, 1));
-    const bookedMin = blocks.reduce((n, b) => {
-      const s = Math.max(Date.parse(b.start), startOf(date));
-      const e = Math.min(Date.parse(b.end), to);
-      return e > s ? n + (e - s) / 60_000 : n;
-    }, 0);
-    return {
-      date,
-      shown: findFreeSlots(busy, { workingHours, timezone: tz, from, to, minMinutes: 30 }),
-      free: findFreeSlots(padded, { workingHours, timezone: tz, from, to, minMinutes: 15 }),
-      bookedMin,
-    };
+  const daysWithout = (blockIds: Set<string>) =>
+    buildPlanDays({
+      events,
+      blocks: blockIds.size ? blocks.filter((b) => !blockIds.has(b.id)) : blocks,
+      workingHours,
+      timezone: tz,
+      now: nowMs,
+      days: HORIZON_DAYS,
+      breakMin: prefs.break_min,
+    });
+  const planDays = daysWithout(new Set());
+  const days: SnapDay[] = planDays.map((d) => {
+    const from = d.date === todayDate ? Math.max(nowMs, dayStart) : startOf(d.date);
+    const to = startOf(addDays(d.date, 1));
+    return { ...d, shown: findFreeSlots(busy, { workingHours, timezone: tz, from, to, minMinutes: 30 }) };
   });
   const freeAhead = days.flatMap((d) => d.free);
 
   const stepsByTask = new Map<string, NonNullable<typeof stepsRes.data>>();
+  const stepInfo = new Map<string, StepInfo>();
   for (const s of stepsRes.data!) {
+    stepInfo.set(s.id, { task_id: s.task_id, title: s.title, estimate_min: s.estimate_min, order: s.order, done: s.done });
     const arr = stepsByTask.get(s.task_id) ?? [];
     arr.push(s);
     stepsByTask.set(s.task_id, arr);
@@ -313,21 +331,39 @@ export async function buildSnapshot(
     (someday ? somedayLines : taskLines).push(line, ...progress, ...stepLines);
   });
 
+  // Blocks that haven't ended get codes, soonest first, so they can be moved or removed.
+  const blockByCode = new Map<string, SnapBlock>();
+  const codeOfBlock = new Map<string, string>();
+  const upcomingBlocks = new Map<string, number>();
+  [...blocks]
+    .filter((b) => Date.parse(b.end) > nowMs && Date.parse(b.start) < rangeEnd)
+    .sort((a, b) => Date.parse(a.start) - Date.parse(b.start))
+    .forEach((b, i) => {
+      blockByCode.set(`b${i + 1}`, b);
+      codeOfBlock.set(b.id, `b${i + 1}`);
+      upcomingBlocks.set(b.task_id, (upcomingBlocks.get(b.task_id) ?? 0) + 1);
+    });
+  const blockLabel = (b: { task_id: string; step_id: string | null }) => {
+    const step = b.step_id ? stepInfo.get(b.step_id)?.title : undefined;
+    return `${titleOf.get(b.task_id) ?? "a task"}${step ? ` · ${step}` : ""}`;
+  };
+
   const agendaFor = (from: number, to: number) => {
     const lines = [
       ...events
         .filter((e) => e.busy && !e.all_day && Date.parse(e.start) < to && Date.parse(e.end) > from)
-        .map((e) => ({ s: Date.parse(e.start), e: Date.parse(e.end), what: e.title || "Busy" })),
+        .map((e) => ({ s: Date.parse(e.start), e: Date.parse(e.end), code: "", what: e.title || "Busy" })),
       ...blocks
         .filter((b) => Date.parse(b.start) < to && Date.parse(b.end) > from)
         .map((b) => ({
           s: Date.parse(b.start),
           e: Date.parse(b.end),
-          what: `work on "${titleOf.get(b.task_id) ?? "a task"}"`,
+          code: codeOfBlock.get(b.id) ?? "",
+          what: `work on "${blockLabel(b)}"`,
         })),
     ]
       .sort((a, b) => a.s - b.s)
-      .map((a) => `- ${hhmm(a.s)}-${hhmm(a.e)} ${a.what}`);
+      .map((a) => `- ${a.code ? `${a.code} ` : ""}${hhmm(a.s)}-${hhmm(a.e)} ${a.what}`);
     return lines.length > MAX_AGENDA
       ? [...lines.slice(0, MAX_AGENDA), `- (${lines.length - MAX_AGENDA} more)`]
       : lines;
@@ -430,6 +466,31 @@ export async function buildSnapshot(
     listByName: new Map(normalLists.map((l) => [l.name.toLowerCase(), l.id])),
     defaultListId: normalLists[0]?.id ?? null,
     titleOf,
+    blockByCode,
+    taskInfo: new Map(
+      candidates.map((t) => [
+        t.id,
+        {
+          title: t.title,
+          due_at: t.due_at,
+          estimate_min: t.estimate_min,
+          priority: t.priority,
+          list_id: t.list_id,
+          repeat: t.repeat,
+        },
+      ]),
+    ),
+    stepInfo,
+    planItemOf: new Map(plan.map((p) => [`${p.task_id}:${p.step_id ?? ""}`, { id: p.id, position: p.position }])),
+    upcomingBlocks,
+    busy: [
+      ...events
+        .filter((e) => e.busy && !e.all_day)
+        .map((e) => ({ start: Date.parse(e.start), end: Date.parse(e.end), label: e.title || "an event", blockId: null })),
+      ...blocks.map((b) => ({ start: Date.parse(b.start), end: Date.parse(b.end), label: blockLabel(b), blockId: b.id })),
+    ],
+    daysWithout,
+    defaultBlockMin: settings.default_block_min,
     notes: notes.success ? notes.data : null,
     focus,
   };

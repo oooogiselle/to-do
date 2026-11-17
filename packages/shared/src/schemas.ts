@@ -100,10 +100,68 @@ export type AssistantNotes = z.infer<typeof AssistantNotes>;
 export const AssistantPick = z.object({
   task_id: z.string(),
   step_id: z.string().nullable(),
+  /** With no step_id: a name for the session; adding the block creates this step first. */
+  step_title: z.string().optional(),
   start: z.string(),
   end: z.string(),
   reason: z.string(),
 });
+
+const Span = z.object({ start: z.string(), end: z.string() });
+/** The fields an Ask tt. edit can change; a step only takes title and done. */
+const AssistantEditFields = z.object({
+  title: z.string().optional(),
+  due_at: z.string().nullable().optional(),
+  estimate_min: z.number().int().positive().nullable().optional(),
+  priority: Priority.optional(),
+  list_id: z.string().nullable().optional(),
+  done: z.boolean().optional(),
+});
+export type AssistantEditFields = z.infer<typeof AssistantEditFields>;
+
+/**
+ * One proposed change to something that exists. Each carries what it needs to be undone, and
+ * what it expects to find, so a change made stale by later edits isn't applied.
+ */
+export const AssistantChange = z.discriminatedUnion("op", [
+  z.object({
+    op: z.literal("edit"),
+    task_id: z.string(),
+    step_id: z.string().nullable(),
+    patch: AssistantEditFields,
+    /** The same fields as they were when proposed. */
+    before: AssistantEditFields,
+  }),
+  z.object({
+    op: z.literal("move"),
+    block_id: z.string(),
+    task_id: z.string(),
+    step_id: z.string().nullable(),
+    from: Span,
+    to: Span,
+    reason: z.string(),
+  }),
+  z.object({
+    op: z.literal("remove"),
+    what: z.enum(["block", "task", "step", "plan"]),
+    /** The block, task, step or day plan item. */
+    id: z.string(),
+    task_id: z.string(),
+    step_id: z.string().nullable(),
+    /** A block's time, so it can be booked again. */
+    span: Span.nullable(),
+    /** A step's estimate and order, so it can be added back. */
+    step: z.object({ title: z.string(), estimate_min: z.number().nullable(), order: z.number() }).nullable(),
+    /** A day plan item's date and position. */
+    plan: z.object({ date: PlainDate, position: z.number() }).nullable(),
+    /** Upcoming blocks that go with a deleted task. */
+    blocks: z.number().int(),
+    /** The task's title when proposed, shown once it's gone. */
+    label: z.string().optional(),
+    reason: z.string(),
+  }),
+]);
+export type AssistantChange = z.infer<typeof AssistantChange>;
 
 /**
  * One card in an Ask tt. reply. The server checks every id and time before saving, and nothing
@@ -127,7 +185,11 @@ export const AssistantBlock = z.discriminatedUnion("kind", [
       priority: Priority,
       repeat: Repeat,
     }),
+    /** A time to book it at, worked out on the server; Schedule books exactly this. */
+    book: Span.nullable().optional(),
   }),
+  /** Edits, moves and removals of things that already exist. */
+  z.object({ kind: z.literal("changes"), changes: z.array(AssistantChange) }),
   /** Steps to add to a task. */
   z.object({
     kind: z.literal("steps"),

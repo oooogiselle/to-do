@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Check, MessageCircle, Pencil, Plus, Sun, Trash2 } from "lucide-react";
 import {
   localDate,
@@ -38,6 +38,7 @@ import { PageHeader } from "@/components/page-header";
 import { Segmented } from "@/components/ui/segmented";
 import { Switch } from "@/components/ui/switch";
 import { TaskCheck } from "@/components/ui/task-check";
+import { useListParam } from "@/components/use-list-param";
 import { LinkChip } from "./link-chip";
 import { ResearchSummary } from "./research";
 
@@ -50,28 +51,16 @@ const SECTION_HINT: Record<Horizon | "none", string> = {
   none: "No timeframe yet",
 };
 
-/** The list a sidebar link (/someday#<id>) points at, if any. */
-function useHashList() {
-  const [hash, setHash] = useState<string | null>(null);
-  useEffect(() => {
-    const read = () => setHash(window.location.hash.slice(1) || null);
-    read();
-    window.addEventListener("hashchange", read);
-    return () => window.removeEventListener("hashchange", read);
-  }, []);
-  return [hash, setHash] as const;
-}
-
 export function SomedayView() {
   const { lists: allLists, isLoading } = useModel();
   const [kind, setKind] = useState<KindFilter>("all");
   const [showDone, setShowDone] = useState(false);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [hashList, setHashList] = useHashList();
+  const [listParam, setListParam] = useListParam();
   const { lists, sections, openCount } = useSomeday({ kind, showDone });
 
-  const listFilter = lists.some((l) => l.id === hashList) ? hashList : null;
+  const listFilter = lists.some((l) => l.id === listParam) ? listParam : null;
   const shown = useMemo(
     () =>
       listFilter
@@ -83,8 +72,7 @@ export function SomedayView() {
   );
   const filteredList = lists.find((l) => l.id === listFilter);
   const pickList = (id: string | null) => {
-    history.replaceState(null, "", id ? `#${id}` : window.location.pathname);
-    setHashList(id);
+    setListParam(id);
     setEditing(false);
   };
 

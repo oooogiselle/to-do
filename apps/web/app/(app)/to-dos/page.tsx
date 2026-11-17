@@ -1,5 +1,10 @@
+import { Suspense } from "react";
 import { Inbox } from "@/components/inbox";
 
 export default function InboxPage() {
-  return <Inbox />;
+  return (
+    <Suspense>
+      <Inbox />
+    </Suspense>
+  );
 }
