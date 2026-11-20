@@ -87,6 +87,16 @@ insert into ai_usage (user_id, model, input_tokens, output_tokens, cost_usd) val
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'm', 1, 1, 0.01),
   ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'm', 1, 1, 0.01);
 
+insert into assistant_chats (id, user_id, title) values
+  ('aaaaaaaa-0000-0000-0000-000000000007', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'A chat'),
+  ('bbbbbbbb-0000-0000-0000-000000000007', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'B chat');
+
+insert into assistant_messages (id, user_id, chat_id, role, content) values
+  ('aaaaaaaa-0000-0000-0000-000000000008', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+   'aaaaaaaa-0000-0000-0000-000000000007', 'user', 'A message'),
+  ('bbbbbbbb-0000-0000-0000-000000000008', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+   'bbbbbbbb-0000-0000-0000-000000000007', 'user', 'B message');
+
 insert into storage.objects (bucket_id, name) values
   ('imports', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/a.pdf');
 
@@ -159,6 +169,18 @@ select throws_ok($$ update calendars set user_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaa
 select is(rls_test.n($$ select count(*) from google_accounts $$), 0, 'B cannot read even own Google tokens');
 select is(rls_test.n($$ select count(*) from calendar_sync_state $$), 0, 'B cannot read even own sync state');
 
+-- Ask tt. chats and messages: written only by the server, readable only by their owner.
+select is(rls_test.n($$ select count(*) from assistant_chats where title = 'B chat' $$), 1, 'B sees own chat');
+select is(rls_test.n($$ select count(*) from assistant_messages where content = 'B message' $$), 1, 'B sees own assistant message');
+select is(rls_test.n($$ select count(*) from assistant_chats where user_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' $$), 0, 'B cannot read A''s chats');
+select is(rls_test.n($$ select count(*) from assistant_messages where user_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' $$), 0, 'B cannot read A''s assistant messages');
+select throws_ok($$ insert into assistant_chats (user_id, title) values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'forged') $$, '42501', null, 'B cannot insert chats (server only)');
+select throws_ok($$ insert into assistant_messages (user_id, role, content) values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'assistant', 'forged reply') $$, '42501', null, 'B cannot forge assistant messages (server only)');
+select is(rls_test.n($$ with u as (update assistant_chats set title = 'pwned' where id = 'aaaaaaaa-0000-0000-0000-000000000007' returning 1) select count(*) from u $$), 0, 'B cannot rename A''s chat');
+select is(rls_test.n($$ with u as (update assistant_messages set content = 'pwned' where id = 'bbbbbbbb-0000-0000-0000-000000000008' returning 1) select count(*) from u $$), 0, 'B cannot edit own assistant messages');
+select is(rls_test.n($$ with d as (delete from assistant_chats where id = 'aaaaaaaa-0000-0000-0000-000000000007' returning 1) select count(*) from d $$), 0, 'B cannot delete A''s chat');
+select is(rls_test.n($$ with d as (delete from assistant_messages where id = 'aaaaaaaa-0000-0000-0000-000000000008' returning 1) select count(*) from d $$), 0, 'B cannot delete A''s assistant messages');
+
 -- Storage: uploads live in a folder named after the user.
 select is(rls_test.n($$ select count(*) from storage.objects where bucket_id = 'imports' and name like 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/%' $$), 0, 'B cannot list A''s uploads');
 select throws_ok($$ insert into storage.objects (bucket_id, name) values ('imports', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/forged.pdf') $$, '42501', null, 'B cannot upload into A''s folder');
@@ -189,6 +211,8 @@ select is(rls_test.n($$ select count(*) from calendar_events $$), 0, 'anon canno
 select is(rls_test.n($$ select count(*) from calendar_sync_state $$), 0, 'anon cannot read sync state');
 select is(rls_test.n($$ select count(*) from google_accounts $$), 0, 'anon cannot read Google tokens');
 select is(rls_test.n($$ select count(*) from ai_usage $$), 0, 'anon cannot read AI usage');
+select is(rls_test.n($$ select count(*) from assistant_chats $$), 0, 'anon cannot read chats');
+select is(rls_test.n($$ select count(*) from assistant_messages $$), 0, 'anon cannot read assistant messages');
 select is(rls_test.n($$ select count(*) from storage.objects where bucket_id = 'imports' $$), 0, 'anon cannot list uploads');
 select throws_ok($$ insert into lists (user_id, name) values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'x') $$, '42501', null, 'anon cannot insert');
 select throws_ok($$ select commit_import('{"kind":"text","name":"x"}'::jsonb) $$, '28000', 'not authenticated', 'anon cannot run commit_import');
