@@ -9,7 +9,7 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Timeline",
+  title: "Tapestry",
   description: "Your calendar and to-dos on one timeline.",
 };
 

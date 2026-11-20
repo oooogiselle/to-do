@@ -11,7 +11,7 @@ export const PATCH = route<{ id: string }>(async (req, { supabase, user, params 
   const cal = unwrap(
     await supabase.from("calendars").select("is_tasks_calendar").eq("id", id).single(),
   ) as { is_tasks_calendar: boolean };
-  if (cal.is_tasks_calendar) throw new HttpError(400, "The Tasks calendar is always synced");
+  if (cal.is_tasks_calendar) throw new HttpError(400, "The Tapestry calendar is always synced");
 
   const updated = unwrap(
     await supabase

@@ -24,7 +24,7 @@ function LoginForm() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-rail p-6">
       <AppLogo size={40} />
-      <h1 className="text-[22px] font-medium tracking-tight">Sign in to tt.</h1>
+      <h1 className="text-[22px] font-medium tracking-tight">Sign in to Tapestry</h1>
       <p className="-mt-2 text-[13px] text-muted">Your calendar and to-dos on one timeline.</p>
       {error && <p className="text-sm text-risk">{ERRORS[error] ?? ERRORS.signin}</p>}
       <button onClick={signIn} className="rounded-lg bg-ink px-4 py-2 text-[13px] text-white hover:opacity-90">

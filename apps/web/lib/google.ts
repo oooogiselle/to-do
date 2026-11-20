@@ -5,7 +5,20 @@ import { env } from "@/lib/env";
 import { decrypt } from "@/lib/crypto";
 import { adminClient } from "@/lib/supabase/admin";
 
-export const GOOGLE_SCOPES = ["openid", "email", "https://www.googleapis.com/auth/calendar"];
+/**
+ * The narrowest scopes that cover what the app does. The callback requires every scope after
+ * openid/email, because Google's consent screen lets users untick them one by one.
+ */
+export const GOOGLE_SCOPES = [
+  "openid",
+  "email",
+  // calendarList.list: show the user's calendars in Settings.
+  "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+  // events.list + events.watch: read events from the calendars the user picks.
+  "https://www.googleapis.com/auth/calendar.events.readonly",
+  // Create the app's own calendar and manage it and its events. Never any other calendar.
+  "https://www.googleapis.com/auth/calendar.app.created",
+];
 
 /** Cookie holding the nonce of an in-progress Google connect (see /api/google/connect). */
 export const GOOGLE_NONCE_COOKIE = "tt_google_nonce";

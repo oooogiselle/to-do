@@ -1,7 +1,7 @@
 import "server-only";
 import { decrypt } from "@/lib/crypto";
 import { isDemo } from "@/lib/demo";
-import { TASKS_CALENDAR_MARKER } from "@/lib/gcal/calendars";
+import { isOurCalendar } from "@/lib/gcal/calendars";
 import { stopWatch } from "@/lib/gcal/watch";
 import { calendarClient, googleStatus, oauthClient } from "@/lib/google";
 import { adminClient } from "@/lib/supabase/admin";
@@ -76,14 +76,14 @@ async function cleanUpGoogle(userId: string, warnings: string[]): Promise<void> 
     try {
       const gcal = await calendarClient(userId);
       const { data } = await gcal.calendars.get({ calendarId: tasksCal.id });
-      if (data.description === TASKS_CALENDAR_MARKER) {
+      if (isOurCalendar(data.description)) {
         await gcal.calendars.delete({ calendarId: tasksCal.id });
       }
     } catch (err) {
       const status = googleStatus(err);
       if (status !== 404 && status !== 410) {
         console.error("deleteAccount: Tasks calendar delete failed", err);
-        warnings.push("Couldn't delete the Tasks calendar from Google Calendar.");
+        warnings.push("Couldn't delete the Tapestry calendar from Google Calendar.");
       }
     }
   }

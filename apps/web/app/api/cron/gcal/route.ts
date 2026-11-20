@@ -3,6 +3,7 @@ import { groupByUser, planCronWork, runWithBudget, type CronSyncState } from "@t
 import { safeEqual } from "@/lib/crypto";
 import { env } from "@/lib/env";
 import { GoogleNotConnectedError, GoogleReconnectError } from "@/lib/google";
+import { discoverCalendars, LEGACY_TASKS_CALENDAR_SUMMARY } from "@/lib/gcal/calendars";
 import { syncCalendar } from "@/lib/gcal/sync";
 import { pushEnabled, startWatch } from "@/lib/gcal/watch";
 import { adminClient } from "@/lib/supabase/admin";
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
   }
   const startedAt = Date.now();
 
-  const [accounts, calendars, states] = await Promise.all([
+  const [accounts, calendars, states, legacy] = await Promise.all([
     loadAll<{ user_id: string }>((db) =>
       db.from("google_accounts").select("user_id").eq("needs_reconnect", false).order("user_id"),
     ),
@@ -48,6 +49,17 @@ export async function GET(req: NextRequest) {
         .order("user_id")
         .order("calendar_id"),
     ),
+    // The app's calendar used to be called "Tasks". Discovery renames it, but only runs on
+    // connect and manual refresh, so do it here for accounts still on the old name. It stops by
+    // itself once each rename has gone through.
+    loadAll<{ user_id: string }>((db) =>
+      db
+        .from("calendars")
+        .select("user_id")
+        .eq("is_tasks_calendar", true)
+        .eq("summary", LEGACY_TASKS_CALENDAR_SUMMARY)
+        .order("user_id"),
+    ),
   ]);
 
   // Accounts waiting for the user to reconnect are skipped: every call would fail.
@@ -59,7 +71,23 @@ export async function GET(req: NextRequest) {
     pushEnabled(),
   );
 
-  const counts = { synced: 0, watched: 0, failed: 0, reconnect: 0 };
+  const counts = { synced: 0, watched: 0, failed: 0, reconnect: 0, renamed: 0 };
+  const deadline = startedAt + BUDGET_MS;
+
+  await runWithBudget(
+    legacy.filter((l) => connected.has(l.user_id)),
+    async ({ user_id: userId }) => {
+      try {
+        await discoverCalendars(userId);
+        counts.renamed++;
+      } catch (e) {
+        if (e instanceof GoogleReconnectError || e instanceof GoogleNotConnectedError) return;
+        console.error("cron gcal: renaming the app calendar failed", userId, e);
+      }
+    },
+    { concurrency: CONCURRENCY, deadline },
+  );
+
   const { started, skipped } = await runWithBudget(
     groupByUser(work),
     async ({ user_id: userId, items }) => {
@@ -85,7 +113,7 @@ export async function GET(req: NextRequest) {
         }
       }
     },
-    { concurrency: CONCURRENCY, deadline: startedAt + BUDGET_MS },
+    { concurrency: CONCURRENCY, deadline },
   );
 
   if (skipped > 0) {

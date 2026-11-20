@@ -21,7 +21,7 @@ import { Switch } from "@/components/ui/switch";
 const GOOGLE_MESSAGES: Record<string, string> = {
   connected: "Google Calendar connected. Your calendars are syncing now.",
   missing_scope:
-    "Calendar access wasn't granted. Connect again and allow access to your calendars.",
+    "Some calendar access wasn't granted. Connect again and leave all three calendar boxes ticked.",
   error: "Connecting Google Calendar didn't finish. Try again.",
 };
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -412,8 +412,8 @@ function DeleteAccountSection() {
     <section className="rounded-2xl border border-line bg-surface p-5">
       <h2 className="text-base font-extrabold text-ink">Delete account</h2>
       <p className="mt-1 text-sm font-semibold text-muted">
-        Permanently deletes your tasks, lists, plans and settings, removes the Tasks calendar this
-        app created in Google Calendar, and disconnects Google. This can&apos;t be undone.
+        Permanently deletes your tasks, lists, plans and settings, removes the Tapestry calendar
+        this app created in Google Calendar, and disconnects Google. This can&apos;t be undone.
       </p>
       {!confirming ? (
         <button

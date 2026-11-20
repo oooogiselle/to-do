@@ -12,7 +12,7 @@ export default function PrivacyPage() {
       <h1 className="text-2xl font-semibold tracking-tight">Privacy</h1>
       <p className="text-muted">Last updated {UPDATED}</p>
       <p>
-        This app puts your Google Calendar events and your to-dos on one timeline. It is a personal
+        Tapestry (&ldquo;the app&rdquo;) puts your Google Calendar events and your to-dos on one timeline. It is a personal
         project run by Giselle Wu, offered free while in beta. This page explains what it accesses,
         what it stores, and who it shares data with. Questions:{" "}
         <a href="mailto:support@tapestry-todo.com" className="underline">
@@ -29,8 +29,8 @@ export default function PrivacyPage() {
         <li>
           <strong>Google Calendar</strong>, only if you choose to connect it (this is a separate
           step from signing in). The app reads events from the calendars you choose, to show them
-          and to find open time. It writes only to a calendar named &ldquo;Tasks&rdquo; that it
-          creates, to add, move and remove your scheduled task blocks. It never edits or deletes
+          and to find open time. It writes only to a calendar named &ldquo;Tapestry&rdquo; that
+          it creates, to add, move and remove your scheduled task blocks. It never edits or deletes
           events on your other calendars.
         </li>
       </ul>
@@ -118,7 +118,7 @@ export default function PrivacyPage() {
       <h2 className="pt-2 text-lg font-semibold">Deleting your data</h2>
       <p>
         You can delete your account from Settings. That permanently removes your tasks, lists,
-        settings and stored calendar copy, deletes the &ldquo;Tasks&rdquo; calendar the app created,
+        settings and stored calendar copy, deletes the &ldquo;Tapestry&rdquo; calendar the app created,
         and revokes the app&apos;s access to your Google account. You can also revoke access at any
         time at{" "}
         <a href="https://myaccount.google.com/permissions" className="underline">

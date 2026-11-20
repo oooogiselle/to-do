@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = { title: "Terms" };
 
-const UPDATED = "November 5, 2026";
+const UPDATED = "November 20, 2026";
 
 // Public page: linked from the sign-in page, the landing page and the Google consent screen.
 export default function TermsPage() {
@@ -12,7 +12,7 @@ export default function TermsPage() {
       <h1 className="text-2xl font-semibold tracking-tight">Terms of use</h1>
       <p className="text-muted">Last updated {UPDATED}</p>
       <p>
-        This app puts your Google Calendar events and your to-dos on one timeline. It is a personal
+        Tapestry (&ldquo;the app&rdquo;) puts your Google Calendar events and your to-dos on one timeline. It is a personal
         project run by Giselle Wu (&ldquo;I&rdquo;), offered free while in beta. By signing in or
         using it, you agree to these terms. If you don&apos;t agree, please don&apos;t use it.
       </p>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AppLogo } from "@/components/app-logo";
 
 export const metadata: Metadata = {
-  title: "Timeline: your calendar and to-dos on one timeline",
+  title: "Tapestry: your calendar and to-dos on one timeline",
   description:
     "See what's due next to what's on your Google Calendar, and find open time to get it done.",
 };
@@ -28,7 +28,10 @@ export default function WelcomePage() {
   return (
     <div className="flex min-h-screen flex-col bg-rail">
       <header className="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-4">
-        <AppLogo size={28} />
+        <div className="flex items-center gap-2">
+          <AppLogo size={28} />
+          <span className="text-[16px] font-medium tracking-tight text-ink">Tapestry</span>
+        </div>
         <Link href="/login" className="rounded-lg px-3 py-1.5 text-[13px] text-ink hover:bg-chip">
           Sign in
         </Link>
@@ -39,8 +42,8 @@ export default function WelcomePage() {
           Your calendar and to-dos on one timeline.
         </h1>
         <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-muted">
-          See what&apos;s due next to what&apos;s on your calendar, and let the app find the time to
-          get it done.
+          See what&apos;s due next to what&apos;s on your calendar, and let Tapestry find the time
+          to get it done.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Link
@@ -62,9 +65,9 @@ export default function WelcomePage() {
         </ul>
 
         <p className="mt-10 max-w-2xl text-[13px] leading-relaxed text-muted">
-          Connecting Google Calendar is optional and separate from signing in. The app reads events
-          from the calendars you choose, and only ever writes to a calendar named &ldquo;Tasks&rdquo;
-          that it creates. You can delete your account and all of your data from Settings at any
+          Connecting Google Calendar is optional and separate from signing in. Tapestry reads events
+          from the calendars you choose, and only ever writes to a calendar named
+          &ldquo;Tapestry&rdquo; that it creates. You can delete your account and all of your data from Settings at any
           time.
         </p>
       </main>

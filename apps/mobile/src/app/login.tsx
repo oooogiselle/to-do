@@ -60,7 +60,7 @@ export default function Login() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.paper }]}>
-      <Text style={[styles.title, { color: colors.ink }]}>Timeline To-Do</Text>
+      <Text style={[styles.title, { color: colors.ink }]}>Tapestry</Text>
       <Pressable
         onPress={signInWithGoogle}
         disabled={busy}
