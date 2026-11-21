@@ -7,6 +7,7 @@ import {
   CalendarDays,
   ClipboardPaste,
   ListChecks,
+  MessageCircle,
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
@@ -18,6 +19,8 @@ import { swatch, weekProgress, type List } from "@tt/shared";
 import { useModel, useSomeday, useSync } from "@tt/client";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { AppLogo } from "./app-logo";
+import { useAssistant } from "./assistant/assistant-context";
+import { useAskButtonHidden } from "./ask-button";
 
 const NAV = [
   { href: "/", label: "My day", icon: Sun },
@@ -109,6 +112,8 @@ function SidebarBody({ onQuickAdd, collapsed, onToggle, activeList }: BodyProps 
   const { lists, tasks, settings } = useModel();
   const { isError } = useSync();
   const someday = useSomeday();
+  const assistant = useAssistant();
+  const askHidden = useAskButtonHidden();
 
   const now = Date.now();
   const progress = (l: List) =>
@@ -132,7 +137,7 @@ function SidebarBody({ onQuickAdd, collapsed, onToggle, activeList }: BodyProps 
     >
       <div className={`flex items-center gap-2 md:pb-4 ${collapsed ? "md:flex-col md:px-0" : "md:px-1.5"}`}>
         <AppLogo />
-        <span className={`${wide} text-[16px] font-medium tracking-tight text-ink`}>tt.</span>
+        <span className={`${wide} text-[15px] font-semibold tracking-tight text-ink`}>tt.</span>
         <button
           type="button"
           onClick={onToggle}
@@ -198,6 +203,18 @@ function SidebarBody({ onQuickAdd, collapsed, onToggle, activeList }: BodyProps 
       </div>
 
       <div className="hidden space-y-0.5 border-t border-line-soft pt-3 md:block">
+        <button
+          type="button"
+          onClick={assistant.toggle}
+          title="Ask tt. (⌘J)"
+          aria-label={collapsed ? "Ask tt." : undefined}
+          aria-expanded={assistant.open}
+          className={`${linkClass(assistant.open)} w-full`}
+        >
+          <MessageCircle className="h-4 w-4 shrink-0 text-muted" strokeWidth={1.75} />
+          <span className={wide}>Ask tt.</span>
+          <kbd className={`ml-auto text-[11px] font-normal text-faint ${wide}`}>⌘J</kbd>
+        </button>
         <Link
           href="/import"
           title="Import"
@@ -234,6 +251,16 @@ function SidebarBody({ onQuickAdd, collapsed, onToggle, activeList }: BodyProps 
         )}
       </div>
 
+      {askHidden && (
+        <button
+          type="button"
+          onClick={assistant.toggle}
+          aria-label="Ask tt."
+          className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-row-hover md:hidden"
+        >
+          <MessageCircle className="h-4 w-4" strokeWidth={1.75} />
+        </button>
+      )}
       <Link
         href="/settings"
         aria-label="Settings"

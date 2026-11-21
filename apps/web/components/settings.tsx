@@ -17,6 +17,7 @@ import { api } from "@/lib/client/api";
 import { keys, useCalendars, useDeleteAccount, useSettings, useUpdateSettings } from "@tt/client";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { Switch } from "@/components/ui/switch";
+import { setAskButtonHidden, useAskButtonHidden } from "./ask-button";
 
 const GOOGLE_MESSAGES: Record<string, string> = {
   connected: "Google Calendar connected. Your calendars are syncing now.",
@@ -262,6 +263,7 @@ export function SettingsView() {
           value={settings.scheduling ?? {}}
           onChange={(scheduling) => updateSettings.mutate({ scheduling })}
         />
+        <AskButtonSection />
         <AssistantSection
           value={settings.someday_assistant ?? {}}
           onChange={(someday_assistant) => updateSettings.mutate({ someday_assistant })}
@@ -322,6 +324,28 @@ const ASSISTANT_FIELDS: { key: keyof AssistantNotes; label: string; hint: string
     placeholder: "e.g. Budget under $50. I don't have a car.",
   },
 ];
+
+/** Whether the round Ask tt. button floats at the bottom right (per browser). */
+function AskButtonSection() {
+  const hidden = useAskButtonHidden();
+  return (
+    <Section title="Ask tt.">
+      <div className="flex items-center gap-4">
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-medium text-ink">Floating button</p>
+          <p className="text-[11px] text-muted">
+            The round button at the bottom right. Ask tt. stays in the sidebar and on ⌘J either way.
+          </p>
+        </div>
+        <Switch
+          checked={!hidden}
+          label="Show the floating Ask tt. button"
+          onChange={(show) => setAskButtonHidden(!show)}
+        />
+      </div>
+    </Section>
+  );
+}
 
 /** What the Someday assistant should know about the user, overall and per item type. */
 function AssistantSection({
