@@ -33,25 +33,30 @@ function hmac(data: string): string {
   return createHmac("sha256", env.stateSecret).update(data).digest("base64url");
 }
 
-/** Signed, expiring OAuth state that binds the Google callback to a user id. */
-export function signState(userId: string, ttlSec = 600): string {
-  const body = Buffer.from(JSON.stringify({ u: userId, e: Date.now() + ttlSec * 1000 })).toString(
-    "base64url",
-  );
+/**
+ * Signed, expiring OAuth state that binds the Google callback to a user id and to a nonce. The
+ * nonce is also set as a cookie in the browser that starts the flow (see /api/google/connect),
+ * so a state link sent to someone else can't attach their calendar to the sender's account.
+ */
+export function signState(userId: string, nonce: string, ttlSec = 600): string {
+  const body = Buffer.from(
+    JSON.stringify({ u: userId, n: nonce, e: Date.now() + ttlSec * 1000 }),
+  ).toString("base64url");
   return `${body}.${hmac(body)}`;
 }
 
-export function verifyState(state: string): string | null {
+export function verifyState(state: string): { userId: string; nonce: string } | null {
   const [body, sig] = state.split(".");
   if (!body || !sig) return null;
   const expected = Buffer.from(hmac(body));
   const given = Buffer.from(sig);
   if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
-  const { u, e } = JSON.parse(Buffer.from(body, "base64url").toString()) as {
+  const { u, n, e } = JSON.parse(Buffer.from(body, "base64url").toString()) as {
     u: string;
+    n?: string;
     e: number;
   };
-  return Date.now() < e ? u : null;
+  return Date.now() < e && n ? { userId: u, nonce: n } : null;
 }
 
 export function safeEqual(a: string, b: string): boolean {
