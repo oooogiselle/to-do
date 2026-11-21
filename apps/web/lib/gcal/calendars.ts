@@ -31,7 +31,11 @@ export async function discoverCalendars(userId: string): Promise<CalendarRow[]> 
     pageToken = res.data.nextPageToken ?? undefined;
   } while (pageToken);
 
-  let tasksCal = items.find((c) => c.description === TASKS_CALENDAR_MARKER);
+  // Ours means our marker AND owned by this user: a calendar someone else shares with the user
+  // could copy the marker, and would then receive (and be able to move) the user's blocks.
+  let tasksCal = items.find(
+    (c) => c.description === TASKS_CALENDAR_MARKER && c.accessRole === "owner",
+  );
   if (!tasksCal) {
     const created = await gcal.calendars.insert({
       requestBody: { summary: TASKS_CALENDAR_SUMMARY, description: TASKS_CALENDAR_MARKER },

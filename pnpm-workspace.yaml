@@ -3,3 +3,6 @@ packages:
   - packages/*
 onlyBuiltDependencies:
   - supabase
+overrides:
+  # Patched for GHSA (uncaught throw in qs.stringify); pulled in by @googleapis/calendar.
+  qs: ^6.16.1

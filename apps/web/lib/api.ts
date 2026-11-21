@@ -83,13 +83,21 @@ export function errorResponse(err: unknown) {
   return NextResponse.json({ error: "Internal error" }, { status: 500 });
 }
 
+const MAX_BODY_BYTES = 1_000_000;
+
 export async function parseBody<S extends ZodTypeAny>(
   req: NextRequest,
   schema: S,
 ): Promise<z.infer<S>> {
+  // The biggest real body is a pasted import (200,000 characters). The cap also bounds how
+  // much work zod does on a hostile body: it builds one issue per failing array element.
+  const text = await req.text();
+  if (Buffer.byteLength(text, "utf8") > MAX_BODY_BYTES) {
+    throw new HttpError(413, "Request is too large");
+  }
   let json: unknown;
   try {
-    json = await req.json();
+    json = JSON.parse(text);
   } catch {
     throw new HttpError(400, "Body must be JSON");
   }

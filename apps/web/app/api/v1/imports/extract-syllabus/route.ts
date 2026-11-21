@@ -13,13 +13,19 @@ type ImageType = (typeof IMAGE_TYPES)[number];
  * Syllabus (pasted text, or a PDF/image the client uploaded to the private `imports` bucket)
  * → proposed tasks. Uploaded files are deleted as soon as they've been read.
  */
+const SAFE_NAME = /^[\w.-]{1,200}$/;
+
 export const POST = route(async (req, { supabase, user }) => {
   const body = await parseBody(req, ExtractSyllabusRequest);
   const ctx = await extractContext(supabase, user.id);
   if ("text" in body) return extractSyllabus({ kind: "text", text: body.text }, ctx);
 
   const path = body.storage_path;
-  if (!path.startsWith(`${user.id}/`) || path.includes("..")) {
+  // Exactly "<own user id>/<file name>", as the upload names it. The download below uses the
+  // service role, and storage-js doesn't encode the path, so an encoded "%2e%2e" segment would
+  // otherwise climb into another user's folder.
+  const name = path.slice(user.id.length + 1);
+  if (!path.startsWith(`${user.id}/`) || !SAFE_NAME.test(name) || name.includes("..")) {
     throw new HttpError(403, "That file isn't yours");
   }
   const bucket = adminClient().storage.from("imports");

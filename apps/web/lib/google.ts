@@ -7,6 +7,9 @@ import { adminClient } from "@/lib/supabase/admin";
 
 export const GOOGLE_SCOPES = ["openid", "email", "https://www.googleapis.com/auth/calendar"];
 
+/** Cookie holding the nonce of an in-progress Google connect (see /api/google/connect). */
+export const GOOGLE_NONCE_COOKIE = "tt_google_nonce";
+
 export function oauthClient() {
   return new auth.OAuth2(
     env.googleClientId,
