@@ -39,6 +39,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // /monitoring is the Sentry tunnel (next.config.ts): no session lookup needed.
+  // /monitoring is the Sentry tunnel (app/monitoring/route.ts): no session lookup needed.
   matcher: ["/((?!_next/static|_next/image|favicon.ico|monitoring).*)"],
 };

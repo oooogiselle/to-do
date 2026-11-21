@@ -17,6 +17,4 @@ const nextConfig: NextConfig = {
 export default withSentryConfig(nextConfig, {
   silent: !process.env.CI,
   widenClientFileUpload: true,
-  // Send browser events through the app's own domain, so ad blockers don't drop them.
-  tunnelRoute: "/monitoring",
 });
