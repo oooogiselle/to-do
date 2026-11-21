@@ -33,7 +33,7 @@ const STARTER_ICON: Record<(typeof ASSISTANT_STARTERS)[number]["icon"], LucideIc
 export function AssistantPanel() {
   const { open, setOpen, chatId, openChat, newChat, sendMessage, retry, send } = useAssistant();
   const [showHistory, setShowHistory] = useState(false);
-  const messagesQ = useAssistantMessages(chatId ?? null, open && chatId !== undefined);
+  const messagesQ = useAssistantMessages(chatId, open);
   const chatsQ = useAssistantChats(open);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -42,12 +42,17 @@ export function AssistantPanel() {
   const thinking = !!last && last.role === "assistant" && messageState(last).state === "pending";
   const lastAssistantId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
   const chat = chatId ? chatsQ.data?.find((c) => c.id === chatId) : undefined;
-  const loading = chatId === undefined || (!!chatId && messagesQ.isLoading);
+  const loading = !!chatId && messagesQ.isLoading;
 
   useEffect(() => {
     const el = scrollRef.current;
     if (el && !showHistory) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages.length, last?.status, open, chatId, showHistory]);
+
+  // Every open shows the chat, not the history list left from last time.
+  useEffect(() => {
+    if (open) setShowHistory(false);
+  }, [open]);
 
   // A message sent from elsewhere ("Ask tt." on a Someday item) brings the chat back into view.
   useEffect(() => {
@@ -58,7 +63,7 @@ export function AssistantPanel() {
 
   const submit = (text: string) => {
     const t = text.trim();
-    if (!t || thinking || send.isPending || chatId === undefined) return;
+    if (!t || thinking || send.isPending) return;
     sendMessage(t);
   };
 
@@ -168,7 +173,7 @@ export function AssistantPanel() {
 
       {!showHistory && (
         <div className="shrink-0 px-3 pb-3">
-          <Composer disabled={thinking || send.isPending || chatId === undefined} onSend={submit} />
+          <Composer disabled={thinking || send.isPending} onSend={submit} />
         </div>
       )}
     </aside>

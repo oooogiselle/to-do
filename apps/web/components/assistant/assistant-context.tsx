@@ -1,14 +1,14 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useAssistantChats, useSendAssistant } from "@tt/client";
+import { useSendAssistant } from "@tt/client";
 
 type AssistantContextValue = {
   open: boolean;
   setOpen: (open: boolean) => void;
   toggle: () => void;
-  /** The open chat: an id, `null` for a new chat, `undefined` until the chats have loaded. */
-  chatId: string | null | undefined;
+  /** The open chat: an id, or `null` for a new chat. */
+  chatId: string | null;
   /** Opens a saved chat. */
   openChat: (chatId: string) => void;
   /** Starts a new chat; nothing is saved until the first message. */
@@ -28,29 +28,12 @@ const AssistantContext = createContext<AssistantContextValue | null>(null);
 /** Ask tt.'s open state, the open chat, and the ⌘J shortcut, for the panel and the "Ask tt." buttons. */
 export function AssistantProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  const [chatId, setChatId] = useState<string | null | undefined>(undefined);
+  const [chatId, setChatId] = useState<string | null>(null);
   const chatIdRef = useRef(chatId);
   chatIdRef.current = chatId;
+  const openRef = useRef(open);
+  openRef.current = open;
   const send = useSendAssistant();
-  const chats = useAssistantChats(open && chatId === undefined);
-  const toggle = useCallback(() => setOpen((o) => !o), []);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
-        e.preventDefault();
-        setOpen((o) => !o);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  // First open after a page load: pick up the most recent chat, like before chats were saved.
-  useEffect(() => {
-    if (chatId === undefined && chats.data) setChatId(chats.data[0]?.id ?? null);
-    else if (chatId === undefined && chats.isError) setChatId(null);
-  }, [chatId, chats.data, chats.isError]);
 
   const { mutate, reset } = send;
   const switchTo = useCallback(
@@ -60,6 +43,24 @@ export function AssistantProvider({ children }: { children: React.ReactNode }) {
     },
     [reset],
   );
+
+  // Every open starts a new chat; saved chats are a click away in the history.
+  const toggle = useCallback(() => {
+    if (openRef.current) return setOpen(false);
+    switchTo(null);
+    setOpen(true);
+  }, [switchTo]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
+        e.preventDefault();
+        toggle();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [toggle]);
   const openChat = useCallback((id: string) => switchTo(id), [switchTo]);
   const newChat = useCallback(() => switchTo(null), [switchTo]);
 
