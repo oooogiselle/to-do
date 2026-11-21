@@ -72,69 +72,6 @@ export function Pulse({ label }: { label: string }) {
   );
 }
 
-/** On a Someday card: the estimate and the first few resources, or the research status. */
-export function ResearchSummary({
-  task,
-  onMore,
-  className = "",
-}: {
-  task: Task;
-  onMore: () => void;
-  className?: string;
-}) {
-  const research = useResearchTask();
-  const s = researchState(task);
-  if (s.state === "none" && !research.error) return null;
-  if (s.state === "pending")
-    return (
-      <div className={className}>
-        <Pulse label="Finding resources…" />
-      </div>
-    );
-
-  const r = s.state === "none" ? null : s.research;
-  const effort = r ? effortLabel(r) : null;
-  const shown = r?.resources.slice(0, 3) ?? [];
-  const more = (r?.resources.length ?? 0) - shown.length;
-  return (
-    <div className={`space-y-1.5 ${className}`}>
-      {effort && (
-        <p className="flex items-center gap-1.5 text-[12px] font-medium text-chip-ink" title={r?.basis ?? undefined}>
-          <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          {effort}
-        </p>
-      )}
-      {shown.length > 0 && (
-        <ul className="space-y-1">
-          {shown.map((res) => (
-            <li key={res.url}>
-              <ResourceLink r={res} compact />
-            </li>
-          ))}
-        </ul>
-      )}
-      {more > 0 && (
-        <button type="button" onClick={onMore} className="text-[12px] font-medium text-muted hover:text-ink">
-          +{more} more
-        </button>
-      )}
-      {(s.state === "error" || research.error) && (
-        <p className="flex flex-wrap items-center gap-x-2 text-[12px] text-muted">
-          <span>{research.error?.message ?? (s.state === "error" ? s.message : "")}</span>
-          <button
-            type="button"
-            disabled={research.isPending || isTemp(task.id)}
-            onClick={() => research.mutate(task.id)}
-            className="font-medium text-chip-ink hover:text-ink disabled:opacity-50"
-          >
-            Try again
-          </button>
-        </p>
-      )}
-    </div>
-  );
-}
-
 const label = "mb-1.5 block text-[12px] font-semibold text-ink";
 
 /** In the task sheet: every resource (removable), the estimate and how it was made, and re-run. */

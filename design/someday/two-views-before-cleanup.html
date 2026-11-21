@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1440">
+<title>Tapestry · Someday: two views</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../loom/base.css">
+<style>
+  /* Loom tokens (design/loom/DESIGN.md). Only scale sizes: type 18/15/13/12/11/10, corners 12/10/8/6/4. */
+  :root {
+    --paper: #eef0f3; --rail: #f6f7f9; --surface: #ffffff;
+    --ink: #1b2233; --muted: #5f6b80; --faint: #98a1b2;
+    --line: #e3e6ec; --line-soft: #eef0f4; --line-strong: #cdd2dc;
+    --row: #f7f8fa; --row-hover: #f0f2f5; --active: #e9ecf2;
+    --chip: #eef0f4; --chip-ink: #4a5468;
+    --open: #e8f4f2; --open-line: #a9d4cd; --open-ink: #2f7a70;
+    --risk: #b42318; --risk-bg: #fdf0ee; --warn: #8a6110; --warn-bg: #fbf3df;
+    --grape-bg: #f3f0fc; --grape-ink: #5a43a8;
+    --focus: #3452d6; --accent: #3452d6; --on-accent: #ffffff;
+    --l-cs: #3f7ddb; --l-econ: #7c5cd6; --l-rec: #d4972a; --l-pers: #d0577e;
+    --l-mint: #3b9b6e; --l-coral: #d2694a;
+    --shadow-card: 0 1px 2px rgb(27 34 51 / 0.04);
+    --shadow-pop: 0 8px 24px rgb(27 34 51 / 0.12);
+    --r-pane: 12px; --r-row: 6px; --r-ctl: 8px; --r-chip: 4px;
+    --f-body: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --f-head: var(--f-body);
+  }
+  body { background: var(--paper); }
+  .frame-wrap { padding: 40px 0 56px; }
+  .frame-cap { width: 1440px; padding: 0 0 14px; }
+  .frame-cap h2 { font-size: 15px; font-weight: 600; }
+  .frame-cap p { margin-top: 2px; max-width: 760px; font-size: 13px; color: var(--muted); }
+  .screen { border: 1px solid var(--line); }
+
+  /* shared */
+  .top-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--chip); }
+  .seg button { height: 22px; padding: 0 10px; border-radius: var(--r-ctl); font-size: 12px; font-weight: 500; color: var(--chip-ink); }
+  .seg button.on { background: var(--ink); color: var(--surface); }
+  .btn.ink { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+  .btn.sm { height: 24px; padding: 0 8px; font-size: 12px; gap: 4px; }
+  .btn.fixed { width: 112px; justify-content: center; white-space: nowrap; }
+  .btn.ghost { border-color: transparent; background: transparent; color: var(--chip-ink); }
+  .btn.ghost:hover { background: var(--row-hover); }
+
+  .capture {
+    display: flex; align-items: center; gap: 6px;
+    height: 40px; padding: 0 5px 0 12px;
+    border: 1px solid var(--line); border-radius: var(--r-ctl);
+    background: var(--surface); box-shadow: var(--shadow-card);
+  }
+  .capture .ic { color: var(--faint); }
+  .capture input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 13px; }
+  .capture input::placeholder { color: var(--faint); }
+  .pick { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px 0 10px; border-radius: var(--r-ctl); font-size: 12px; font-weight: 500; color: var(--chip-ink); background: var(--chip); }
+  .pick .ic { width: 12px; height: 12px; color: var(--muted); }
+
+  .kind { display: inline-block; padding: 1px 6px; border-radius: var(--r-chip); font-size: 10px; font-weight: 500; line-height: 1.5; }
+  .kind.goal { background: var(--warn-bg); color: var(--warn); }
+  .kind.learn { background: var(--grape-bg); color: var(--grape-ink); }
+  .kind.people { background: var(--open); color: var(--open-ink); }
+  .hz { justify-self: start; display: inline-block; padding: 1px 6px; border-radius: var(--r-chip); background: var(--chip); color: var(--chip-ink); font-size: 10px; font-weight: 500; line-height: 1.5; }
+  .meta { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--faint); white-space: nowrap; }
+  .meta .sep::before { content: "·"; }
+  .num { font-variant-numeric: tabular-nums; }
+  .thread { position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 99px; background: var(--c); }
+  .label { display: flex; align-items: baseline; gap: 6px; font-size: 12px; font-weight: 600; color: var(--ink); }
+  .label .note { font-size: 11px; font-weight: 400; color: var(--faint); }
+  .label .note::before { content: "·"; margin-right: 6px; }
+  .label .cnt { margin-left: auto; font-size: 11px; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .ellip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .views { }
+  .menu-anchor { position: relative; }
+  .btn.is-open { background: var(--active); border-color: var(--line-strong); }
+  .menu { position: absolute; right: 0; top: 34px; z-index: 20; width: 280px; padding: 6px; border: 1px solid var(--line); border-radius: var(--r-pane); background: var(--surface); box-shadow: var(--shadow-pop); }
+  .menu-sec { padding: 8px 8px 10px; }
+  .menu-sec + .menu-sec { border-top: 1px solid var(--line-soft); }
+  .menu-label { margin-bottom: 6px; font-size: 11px; color: var(--muted); }
+  .menu-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 28px; padding: 0 8px; border-radius: var(--r-row); font-size: 12px; font-weight: 500; color: var(--ink); }
+  .menu-row:hover { background: var(--row-hover); }
+  .menu-row .ic { width: 14px; height: 14px; color: var(--muted); }
+  .menu-row span { display: flex; align-items: center; gap: 8px; }
+  .menu-select { display: flex; align-items: center; justify-content: space-between; height: 28px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--r-ctl); font-size: 12px; font-weight: 500; }
+  .menu-select .ic { width: 12px; height: 12px; color: var(--muted); }
+  .sw { width: 28px; height: 16px; border-radius: 99px; background: var(--line-strong); position: relative; }
+  .sw::after { content: ""; position: absolute; left: 2px; top: 2px; width: 12px; height: 12px; border-radius: 99px; background: var(--surface); }
+  .menu .seg { display: flex; }
+  .menu .seg button { flex: 1; justify-content: center; text-align: center; }
+  .views button { display: inline-flex; align-items: center; gap: 6px; }
+  .views .ic { width: 14px; height: 14px; }
+  .c-right { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+  .idea-row { position: relative; display: grid; grid-template-columns: 16px minmax(0, 1fr) 112px; column-gap: 12px; align-items: center; height: 52px; padding: 0 16px 0 20px; border-bottom: 1px solid var(--line-soft); }
+  .idea-row .thread { left: 6px; top: 12px; bottom: 12px; }
+  .idea-row .t { font-size: 13px; font-weight: 500; }
+  /* ---------- A: timeframe board ---------- */
+  .a-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px 10px 10px; background: var(--paper); }
+  .a-body .capture { margin: 0 2px; }
+  .board { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .bcol { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--line-soft); border-radius: var(--r-pane); background: var(--surface); box-shadow: var(--shadow-card); overflow: hidden; }
+  .bcol-head { padding: 12px 14px 4px; }
+  .bcol-head p { margin-top: 2px; font-size: 11px; color: var(--faint); }
+  .bcards { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; }
+  .bcard { position: relative; display: block; padding: 9px 10px 9px 14px; border-radius: var(--r-row); background: var(--row); }
+  .bcard .thread { left: 4px; }
+  .bcard .t { display: block; font-size: 13px; font-weight: 500; }
+  .bcard .meta { margin-top: 3px; }
+  .bcard .acts { position: absolute; right: 6px; top: 6px; display: none; gap: 2px; padding: 2px; border-radius: var(--r-ctl); background: var(--surface); box-shadow: var(--shadow-pop); }
+  .bcard.is-hover { background: var(--row-hover); }
+  .bcard.is-hover .acts { display: flex; }
+  .bcard.ghost { opacity: 0.45; }
+  .bcard.lift { box-shadow: var(--shadow-pop); background: var(--surface); outline: 1px solid var(--line); transform: rotate(-1.5deg) translate(6px, -2px); z-index: 5; }
+  .drop-line { height: 2px; margin: -2px 4px; border-radius: 99px; background: var(--l-econ); }
+  .b-add { display: flex; align-items: center; gap: 8px; margin: 0 10px 10px; padding: 8px 10px; border-radius: var(--r-row); color: var(--faint); font-size: 13px; }
+  .b-add:hover { background: var(--row); }
+  .b-add .ic { width: 14px; height: 14px; }
+  .icon-btn.xs { width: 24px; height: 24px; border: 0; }
+  .icon-btn.xs .ic { width: 14px; height: 14px; }
+
+  /* ---------- B: list and preview ---------- */
+  .b-body { flex: 1; min-height: 0; display: flex; gap: 10px; padding: 10px; background: var(--paper); }
+  .b-list { flex: 1; min-width: 0; padding: 20px 24px; overflow: hidden; }
+  .b-list .capture { margin-bottom: 18px; }
+  .b-group + .b-group { margin-top: 20px; }
+  .b-group .label { padding: 0 12px 8px; border-bottom: 1px solid var(--line); }
+  .brow {
+    position: relative; display: grid; align-items: center;
+    grid-template-columns: 16px minmax(0, 1fr) 56px 104px 48px; column-gap: 14px;
+    height: 42px; padding: 0 12px; border-bottom: 1px solid var(--line-soft);
+  }
+  .brow .thread { top: 10px; bottom: 10px; }
+  .brow .t { font-size: 13px; font-weight: 500; }
+  .brow .t small { margin-left: 8px; font-size: 11px; font-weight: 400; color: var(--faint); }
+  .brow .c { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .brow .c.f { color: var(--faint); text-align: right; }
+  .brow.sel { background: var(--active); border-radius: var(--r-row); border-bottom-color: transparent; }
+  .brow:hover { background: var(--row); }
+  .b-prev { width: 420px; flex-shrink: 0; }
+  .prev-head { padding: 20px 20px 14px; border-bottom: 1px solid var(--line-soft); }
+  .prev-head h2 { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .prev-head .meta { margin-top: 6px; padding-left: 26px; }
+  .prev-head .seg { margin: 12px 0 0 26px; }
+  .prev-body { flex: 1; min-height: 0; padding: 16px 20px; display: flex; flex-direction: column; gap: 18px; overflow: hidden; }
+  .sec-label { margin-bottom: 8px; font-size: 12px; font-weight: 600; }
+  .effort { padding: 10px 12px; border-radius: var(--r-ctl); background: var(--row); }
+  .effort p:first-child { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; }
+  .effort p:last-child { margin-top: 2px; font-size: 11px; color: var(--muted); }
+  .res { display: flex; gap: 8px; padding: 6px 0; }
+  .res .ic { width: 14px; height: 14px; margin-top: 2px; color: var(--muted); }
+  .res b { display: block; font-size: 12px; font-weight: 500; }
+  .res span { font-size: 11px; color: var(--faint); }
+  .step { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 13px; }
+  .step.done span { color: var(--faint); text-decoration: line-through; text-decoration-color: var(--line-strong); }
+  .prev-foot { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--line-soft); }
+  kbd.k { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; border: 1px solid var(--line); border-radius: var(--r-chip); background: var(--surface); font-size: 10px; color: var(--muted); }
+  .hint-row { display: flex; align-items: center; gap: 6px; margin-top: 14px; padding-left: 12px; font-size: 11px; color: var(--faint); }
+
+  /* ---------- C: shelves by kind ---------- */
+  .c-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 10px; padding: 10px; background: var(--paper); }
+  .c-left { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+  .c-cap { padding: 14px 16px; }
+  .shelf-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px 10px; border-bottom: 1px solid var(--line-soft); }
+  .shelf-head h3 { font-size: 12px; font-weight: 600; }
+  .shelf-head p { font-size: 11px; color: var(--faint); }
+  .shelf-head .cnt { margin-left: auto; font-size: 11px; color: var(--faint); }
+  .goal-row { position: relative; display: grid; grid-template-columns: 16px minmax(0, 1fr) 136px; column-gap: 12px; padding: 12px 16px 12px 20px; border-bottom: 1px solid var(--line-soft); }
+  .goal-row .thread { left: 6px; top: 12px; bottom: 12px; }
+  .goal-row .check { margin-top: 1px; }
+  .goal-row .t { font-size: 13px; font-weight: 500; }
+  .goal-row .meta { margin-top: 3px; }
+  .goal-row .next { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 6px 6px 6px 10px; border-radius: var(--r-row); background: var(--row); font-size: 12px; color: var(--chip-ink); }
+  .goal-row .next b { font-weight: 500; color: var(--ink); }
+  .goal-row .next .btn { margin-left: auto; }
+  .goal-row .right { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+  .qrow { display: grid; grid-template-columns: 16px minmax(0, 1fr) 80px 112px; column-gap: 12px; align-items: center; height: 44px; padding: 0 16px; border-bottom: 1px solid var(--line-soft); }
+  .qrow .ic { width: 16px; height: 16px; color: var(--muted); }
+  .qrow .t { font-size: 13px; font-weight: 500; }
+  .qrow .meta { margin-top: 1px; }
+  .people { display: flex; flex-direction: column; min-height: 0; }
+  .p-group { padding: 12px 16px 4px; font-size: 12px; font-weight: 600; }
+  .p-group span { margin-left: 6px; font-size: 11px; font-weight: 400; color: var(--faint); }
+  .prow2 { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; column-gap: 10px; align-items: center; height: 52px; padding: 0 16px; border-bottom: 1px solid var(--line-soft); }
+  .av { width: 28px; height: 28px; border-radius: 99px; display: grid; place-items: center; background: var(--chip); color: var(--chip-ink); font-size: 11px; font-weight: 600; }
+  .prow2 .t { font-size: 13px; font-weight: 500; }
+  .prow2 .ago { font-size: 11px; color: var(--muted); }
+  .prow2 .ago.never { color: var(--faint); }
+  .prow2.logged .btn { color: var(--open-ink); border-color: var(--open-line); background: var(--open); }
+</style>
+</head>
+<body>
+<main id="root" style="width:1440px;margin:0 auto"></main>
+<script>
+const P = {
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+  cal: '<path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
+  checks: '<path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"/>',
+  sparkles: '<path d="M9.94 14.06 4 20M12 3l1.9 5.8L20 10.5l-5.6 2.2L12 19l-2.4-6.3L4 10.5l6.1-1.7z"/>',
+  paste: '<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M16 4h2a2 2 0 0 1 2 2v4M21 14H11M15 10l-4 4 4 4"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/>',
+  plus: '<path d="M5 12h14M12 5v14"/>',
+  panel: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18M16 15l-3-3 3-3"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  more: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  video: '<circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z"/>',
+  article: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"/>',
+  book: '<path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+  course: '<path d="M21.42 10.92a1 1 0 0 0-.02-1.84l-8.57-3.9a2 2 0 0 0-1.66 0l-8.57 3.9a1 1 0 0 0 0 1.83l8.57 3.91a2 2 0 0 0 1.66 0zM22 10v6M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
+  down: '<path d="m6 9 6 6 6-6"/>',
+  calplus: '<path d="M8 2v4M16 2v4M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8M3 10h18M16 19h6M19 16v6"/>',
+  columns: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18M15 3v18"/>',
+  rows: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M3 15h18"/>',
+  pencil: '<path d="M21.17 6.81a1 1 0 0 0-3.99-3.98L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/>',
+  sliders: '<path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/>',
+};
+const ic = (n, cls = "ic") => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+const lv = (l) => `var(--l-${l})`;
+const check = (l, done = false, s = 16) => `<button class="check${done ? " is-done" : ""}" style="--c:${lv(l)};--s:${s}px" aria-label="Mark done">${done ? ic("check", "ic-check") : ""}</button>`;
+
+/* ---------- content: two Someday lists, "Someday" (mint) and "Learning" (coral) ---------- */
+const H = { month: "This month", year: "This year", someday: "Someday", none: "Whenever" };
+const HINT = { month: "Worth a spot soon", year: "Sometime this year", someday: "No rush at all", none: "No timeframe yet" };
+const KL = { goal: "Goal", learn: "Learn", people: "People" };
+const ITEMS = [
+  { t: "Run a half marathon", k: "goal", l: "mint", h: "month", steps: [2, 5], effort: "About 12 weeks", next: "10k long run", nextEst: "1h 10m" },
+  { t: "Call Grandma", k: "people", l: "mint", h: "month", last: 12 },
+  { t: "Essence of linear algebra", k: "learn", l: "coral", h: "month", site: "youtube.com", effort: "3h 15m", r: "video" },
+  { t: "Coffee with Maya", k: "people", l: "mint", h: "month", last: 3 },
+  { t: "Spanish to B1", k: "learn", l: "coral", h: "year", steps: [1, 4], effort: "About 40 hours", r: "course", site: "languagetransfer.org" },
+  { t: "Build a personal website", k: "goal", l: "mint", h: "year", steps: [0, 3], effort: "About 10 hours", next: "Pick a domain name", nextEst: "20m" },
+  { t: "Designing Data-Intensive Applications", k: "learn", l: "coral", h: "year", site: "oreilly.com", effort: "About 14 hours", r: "book" },
+  { t: "Catch up with Sam", k: "people", l: "mint", h: "year", last: 41 },
+  { t: "Throw a pot on the wheel", k: "goal", l: "mint", h: "someday", effort: "About 6 classes" },
+  { t: "Autumn trip to Kyoto", k: "goal", l: "mint", h: "someday" },
+  { t: "Learn to sail", k: "learn", l: "coral", h: "someday", site: "ussailing.org", r: "course", effort: "About 2 weekends" },
+  { t: "Dune", k: "learn", l: "coral", h: "none", site: "goodreads.com", effort: "About 10 hours", r: "book" },
+  { t: "Piano chords for beginners", k: "learn", l: "coral", h: "none", site: "youtube.com", effort: "25m", r: "video" },
+  { t: "Write to Ms. Alvarez", k: "people", l: "mint", h: "none", last: null },
+  { t: "Start a herb garden", k: null, l: "mint", h: "someday" },
+  { t: "Volunteer at the food bank", k: null, l: "mint", h: "none" },
+];
+const ago = (d) => d == null ? "Not logged yet" : d === 0 ? "Today" : `${d} days ago`;
+
+/* ---------- shell ---------- */
+function sidebar() {
+  const nav = [["sun", "My day"], ["cal", "Calendar"], ["checks", "To-dos"], ["sparkles", "Someday", true, 16], ["paste", "Import"]];
+  const lists = [["cs", "CS61", 4], ["econ", "Econ 10", 3], ["rec", "Recruiting", 3], ["pers", "Personal", 5]];
+  return `<aside class="sidebar">
+    <div class="brand"><span class="logo" aria-hidden="true"><i style="background:var(--l-cs)"></i><i style="background:var(--l-econ)"></i><i style="background:var(--l-rec)"></i></span><span class="brand-name">Tapestry</span>
+      <button class="icon-btn ghost sm" aria-label="Collapse sidebar">${ic("panel")}</button></div>
+    <button class="quick-add">${ic("plus")}<span>Quick add</span><kbd>⌘K</kbd></button>
+    <nav class="nav">${nav.map(([i, n, a, c]) => `<a href="#" class="nav-item${a ? " is-active" : ""}">${ic(i)}<span>${n}</span>${c ? `<span class="count">${c}</span>` : ""}</a>`).join("")}</nav>
+    <div class="side-section"><h3 class="side-label">Lists</h3>
+      ${lists.map(([k, n, c]) => `<a href="#" class="nav-item"><span class="dot" style="--c:${lv(k)}"></span><span>${n}</span><span class="count">${c}</span></a>`).join("")}
+    </div>
+    <div class="side-foot">
+      <a href="#" class="nav-item">${ic("chat")}<span>Ask tt.</span><kbd>⌘J</kbd></a>
+      <a href="#" class="nav-item">${ic("settings")}<span>Settings</span></a>
+      <div class="me"><span class="avatar">G</span><span class="me-name">Giselle</span></div>
+    </div>
+  </aside>`;
+}
+const seg = (opts, on, cls = "") => `<div class="seg ${cls}" role="radiogroup">${opts.map((o) => `<button class="${o === on ? "on" : ""}">${o}</button>`).join("")}</div>`;
+function topBar(right, view) {
+  const v = (id, icon, label) => `<button class="${view === id ? "on" : ""}">${ic(icon)}${label}</button>`;
+  return `<header class="top">
+    <div class="top-title"><h1>Someday</h1><p>Goals, things to learn and people to keep in touch with · 16 open</p></div>
+    <div class="top-right"><div class="seg views" role="radiogroup" aria-label="View">${v("time", "columns", "By timeframe")}${v("kind", "rows", "By kind")}</div>${right}</div>
+  </header>`;
+}
+const menuPanel = (view) => `<div class="menu" role="menu">
+  ${view === "time" ? `<div class="menu-sec"><div class="menu-label">Show</div><div class="seg sm">${["All", "Goals", "Learn", "People", "Ideas"].map((o) => `<button class="${o === "All" ? "on" : ""}">${o}</button>`).join("")}</div></div>` : ""}
+  <div class="menu-sec"><div class="menu-label">List</div><div class="menu-select">All lists${ic("down")}</div></div>
+  <div class="menu-sec" style="padding-top:4px;padding-bottom:4px"><div class="menu-row">Show done<i class="sw"></i></div></div>
+  <div class="menu-sec" style="padding-top:4px;padding-bottom:4px"><div class="menu-row"><span>${ic("plus")}New list</span></div><div class="menu-row"><span>${ic("pencil")}Edit lists</span></div></div>
+</div>`;
+const viewMenuBtn = (view, open = false) => `<div class="menu-anchor"><button class="btn${open ? " is-open" : ""}">${ic("sliders", "ic sm")}View${ic("down", "ic xs")}</button>${open ? menuPanel(view) : ""}</div>`;
+const capture = (ph, picks = true) => `<div class="capture">${ic("plus", "ic sm")}<input placeholder="${ph}">
+  ${picks ? `<span class="pick">Idea${ic("down")}</span><span class="pick">Any time${ic("down")}</span>` : ""}
+  <button class="btn ink">Add</button></div>`;
+const meta = (parts) => `<div class="meta">${parts.filter(Boolean).map((p, i) => (i ? `<span class="sep"></span>` : "") + p).join("")}</div>`;
+const kindChip = (k) => `<span class="kind ${k}">${KL[k]}</span>`;
+function frame(id, title, blurb, main) {
+  return `<section class="frame-wrap"><div class="frame-cap"><h2>${title}</h2><p>${blurb}</p></div>
+    <div class="screen" id="${id}">${sidebar()}<div class="main">${main}</div></div></section>`;
+}
+
+/* ---------- A: timeframe board ---------- */
+function cardMeta(it) {
+  if (it.k === "people") return meta([kindChip("people"), ago(it.last)]);
+  return meta([it.k ? kindChip(it.k) : "", it.steps ? `<span class="num">${it.steps[0]} of ${it.steps[1]}</span>` : "", it.effort, it.k === "learn" && it.site && !it.steps ? it.site : ""].slice(0, 3));
+}
+function optionA() {
+  const cols = ["month", "year", "someday", "none"].map((h) => {
+    const items = ITEMS.filter((i) => i.h === h);
+    const cards = items.map((it) => {
+      const hover = it.t === "Run a half marathon";
+      const ghost = it.t === "Throw a pot on the wheel";
+      const acts = `<div class="acts"><button class="icon-btn xs" title="Add to My day">${ic("sun")}</button><button class="icon-btn xs" title="Ask tt.">${ic("chat")}</button><button class="icon-btn xs" title="More">${ic("more")}</button></div>`;
+      const card = `<div class="bcard${hover ? " is-hover" : ""}${ghost ? " ghost" : ""}" style="--c:${lv(it.l)}"><span class="thread"></span><span class="t ellip">${it.t}</span>${cardMeta(it)}${acts}</div>`;
+      return card + (h === "year" && it.t === "Catch up with Sam" ? `<div class="drop-line"></div><div class="bcard lift" style="--c:var(--l-mint)"><span class="thread"></span><span class="t">Throw a pot on the wheel</span>${meta([kindChip("goal"), "About 6 classes"])}</div>` : "");
+    }).join("");
+    return `<div class="bcol" style="position:relative">
+      <div class="bcol-head"><div class="label">${H[h]}<span class="cnt">${items.length}</span></div><p>${HINT[h]}</p></div>
+      <div class="bcards">${cards}</div>
+      <button class="b-add">${ic("plus")}Add to ${H[h].toLowerCase()}</button>
+    </div>`;
+  }).join("");
+  return frame("frame-a", "View 1 · By timeframe",
+    "One control group in the header: the view switch and a View menu (shown open). The menu holds the type filter, list filter, Show done and New list. When you mean to get to things. Four columns, one per timeframe. Drag a card to change when you mean to get to it (shown: moving the pottery goal into This year). Cards are one height: list thread, title, one meta line. Hover shows Add to My day, Ask tt. and ⋯; clicking opens the task sheet with resources.",
+    topBar(viewMenuBtn("time", true), "time") +
+    `<div class="a-body">${capture("A goal, someone to keep in touch with, or paste a link to something to learn…")}<div class="board">${cols}</div></div>`);
+}
+
+/* ---------- B: list and preview ---------- */
+function optionB() {
+  const groups = ["month", "year", "someday", "none"].map((h) => {
+    const items = ITEMS.filter((i) => i.h === h);
+    const rows = items.map((it) => {
+      const sel = it.t === "Spanish to B1";
+      const effort = it.k === "people" ? ago(it.last) : it.effort ?? "";
+      return `<div class="brow${sel ? " sel" : ""}" style="--c:${lv(it.l)}"><span class="thread"></span>${check(it.l)}
+        <span class="t ellip">${it.t}${it.k === "learn" && it.site ? `<small>${it.site}</small>` : ""}</span>
+        <span>${kindChip(it.k)}</span><span class="c">${effort}</span><span class="c f num">${it.steps ? `${it.steps[0]} of ${it.steps[1]}` : ""}</span></div>`;
+    }).join("");
+    return `<div class="b-group"><div class="label">${H[h]}<span class="note">${HINT[h]}</span><span class="cnt">${items.length} open</span></div>${rows}</div>`;
+  }).join("");
+  const res = [
+    ["video", "Dreaming Spanish: superbeginner", "youtube.com · 20m a day"],
+    ["course", "Language Transfer: Complete Spanish", "languagetransfer.org · 12h"],
+    ["article", "SpanishDict grammar guide", "spanishdict.com"],
+  ];
+  const steps = [["Pick a course", true], ["20 minutes a day for two weeks"], ["Find a conversation partner"], ["Take a B1 practice test"]];
+  const prev = `<aside class="pane b-prev">
+    <div class="prev-head"><h2>${check("coral")}Spanish to B1</h2>
+      ${meta([kindChip("learn"), `<span style="color:color-mix(in srgb,var(--l-coral) 78%,var(--ink))">Learning</span>`, "languagetransfer.org"])}
+      ${seg(["This month", "This year", "Someday", "Whenever"], "This year", "sm")}</div>
+    <div class="prev-body">
+      <div class="effort"><p>${ic("clock", "ic sm")}About 40 hours</p><p>Reaching A2 takes about 40 hours at 20 minutes a day. B1 is roughly three times that.</p></div>
+      <div><div class="sec-label">Places to start</div>${res.map(([k, t, s]) => `<div class="res">${ic(k)}<div><b>${t}</b><span>${s}</span></div></div>`).join("")}</div>
+      <div><div class="sec-label">Steps <span class="meta" style="display:inline;font-weight:400;margin-left:4px">1 of 4</span></div>${steps.map(([t, d]) => `<div class="step${d ? " done" : ""}">${check("coral", !!d, 14)}<span>${t}</span></div>`).join("")}</div>
+    </div>
+    <div class="prev-foot"><button class="btn primary">${ic("calplus", "ic sm")}Find time</button><button class="btn">${ic("sun", "ic sm")}Add to My day</button><button class="btn">${ic("chat", "ic sm")}Ask tt.</button><button class="icon-btn" style="margin-left:auto" title="Make it a to-do, delete…">${ic("more")}</button></div>
+  </aside>`;
+  return frame("frame-b", "B · List and preview",
+    "Matches the new To-dos page: one grouped list on a shared grid (check / title / type / effort / steps), grouped by timeframe. Selecting a row shows everything about it on the right, including the timeframe switch and all actions in one place. Arrow keys move, Enter opens.",
+    topBar(seg(["All", "Goals", "Learn", "People"], "All") + viewMenu) +
+    `<div class="b-body"><div class="pane b-list">${capture("A goal, someone to keep in touch with, or paste a link to something to learn…")}${groups}
+      <p class="hint-row"><kbd class="k">↑</kbd><kbd class="k">↓</kbd> to move <kbd class="k">D</kbd> Add to My day <kbd class="k">F</kbd> Find time</p></div>${prev}</div>`);
+}
+
+/* ---------- C: shelves by kind ---------- */
+function optionC() {
+  const goals = ITEMS.filter((i) => i.k === "goal").map((it) => `<div class="goal-row" style="--c:${lv(it.l)}"><span class="thread"></span>${check(it.l)}
+    <div><span class="t">${it.t}</span>${meta([it.steps ? `<span class="num">${it.steps[0]} of ${it.steps[1]} steps</span>` : "No steps yet", it.effort])}
+      ${it.next ? `<div class="next">Next: <b>${it.next}</b><span class="meta">${it.nextEst}</span><button class="btn sm">${ic("sun", "ic xs")}Add to My day</button></div>` : ""}</div>
+    <div class="right"><span class="hz">${H[it.h]}</span><button class="icon-btn ghost sm">${ic("more")}</button></div></div>`).join("");
+  const learn = ITEMS.filter((i) => i.k === "learn").map((it) => `<div class="qrow">${ic(it.r ?? "article")}
+    <div style="min-width:0"><span class="t ellip" style="display:block">${it.t}</span>${meta([it.site, it.effort, it.steps ? `<span class="num">${it.steps[0]} of ${it.steps[1]} steps</span>` : ""])}</div>
+    <span class="hz">${H[it.h]}</span><button class="btn sm fixed">${ic("check", "ic xs")}${it.r === "video" ? "Watched" : it.r === "book" ? "Read it" : "Done"}</button></div>`).join("");
+  const ppl = ITEMS.filter((i) => i.k === "people").map((p) => ({ ...p, name: p.t.replace(/^(Call|Coffee with|Catch up with|Write to) /, "") }))
+    .sort((a, b) => (b.last ?? 999) - (a.last ?? 999));
+  const prow = (p, logged) => `<div class="prow2${logged ? " logged" : ""}"><span class="av">${p.name.split(" ").map((w) => w[0]).join("").replace(".", "").slice(0, 2)}</span>
+    <div style="min-width:0"><span class="t ellip" style="display:block">${p.t}</span><span class="ago${p.last == null ? " never" : ""}">${logged ? "Today" : ago(p.last)}</span></div>
+    <button class="btn sm fixed">${ic("check", "ic xs")}${logged ? "Logged" : "Talked today"}</button></div>`;
+  const ideas = ITEMS.filter((i) => !i.k);
+  const due = ppl.filter((p) => p.last == null || p.last > 14);
+  const recent = ppl.filter((p) => p.last != null && p.last <= 14);
+  return frame("frame-c", "View 2 · By kind",
+    "What you do with each thing: the same items, regrouped. Each kind gets the layout for what you do with it. Goals show the next step with Add to My day. Learn is a queue you tick off (Watched, Read it). People is a keep-in-touch list, longest gap first, with one-click Talked today. Items with no type yet sit under Ideas. Timeframe becomes a chip; ⋯ changes it. The switch in the header remembers your last view.",
+    topBar(viewMenuBtn("kind"), "kind") +
+    `<div class="c-body"><div class="c-left">
+      <div class="pane c-cap">${capture("A goal, a link to something to learn, or someone to keep in touch with…")}</div>
+      <div class="pane"><div class="shelf-head"><h3>Goals</h3><p>Next steps you can put on My day</p><span class="cnt">4</span></div>${goals}</div>
+      <div class="pane" style="flex:1;min-height:0"><div class="shelf-head"><h3>Learn</h3><p>To watch, read and try</p><span class="cnt">6</span></div>${learn}</div>
+    </div>
+    <div class="c-right"><div class="pane people"><div class="shelf-head"><h3>People</h3><p>Longest since you talked first</p><span class="cnt">4</span></div>
+      <div class="p-group">Due a hello<span>over 2 weeks</span></div>${due.map((p) => prow(p)).join("")}
+      <div class="p-group" style="margin-top:8px">Recently<span>last 2 weeks</span></div>${recent.map((p) => prow(p, p.last === 12)).join("")}
+    </div>
+    <div class="pane" style="flex:1;min-height:0"><div class="shelf-head"><h3>Ideas</h3><p>Not sorted yet. Give one a type or ask tt.</p><span class="cnt">${ideas.length}</span></div>${ideas.map((it) => `<div class="idea-row" style="--c:${lv(it.l)}"><span class="thread"></span>${check(it.l)}<div style="min-width:0"><span class="t ellip" style="display:block">${it.t}</span><span class="meta">${H[it.h]}</span></div><button class="btn sm fixed">${ic("chat", "ic xs")}Ask tt.</button></div>`).join("")}</div>
+    </div></div>`);
+}
+
+document.getElementById("root").innerHTML = optionA() + optionC();
+</script>
+</body>
+</html>

@@ -75,7 +75,17 @@ export type SomedayItem = {
   progress: { done: number; total: number };
 };
 
-export type SomedayFilter = { kind?: IdeaKind | "all"; showDone?: boolean };
+/** "idea" is an item with no type yet (idea_kind null). */
+export type SomedayKindFilter = IdeaKind | "idea" | "all";
+export type SomedayFilter = { kind?: SomedayKindFilter; showDone?: boolean };
+
+/** The first step not done yet, in order: what "Add to My day" on a goal puts on today. */
+export const nextStep = <S extends { done: boolean; order: number }>(steps: S[]): S | undefined =>
+  [...steps].sort((a, b) => a.order - b.order).find((s) => !s.done);
+
+/** People items, longest since you last connected first; never logged comes first of all. */
+export const byLongestGap = (a: Pick<Task, "done_dates">, b: Pick<Task, "done_dates">) =>
+  (lastContact(a) ?? "").localeCompare(lastContact(b) ?? "");
 
 /** Someday lists and their items, newest first, grouped by timeframe. */
 export function useSomeday({ kind = "all", showDone = false }: SomedayFilter = {}) {
@@ -87,7 +97,7 @@ export function useSomeday({ kind = "all", showDone = false }: SomedayFilter = {
       const list = task.list_id ? listById.get(task.list_id) : undefined;
       if (!list || !isSomedayList(list)) continue;
       if (task.status === "archived" || (task.status === "done" && !showDone)) continue;
-      if (kind !== "all" && task.idea_kind !== kind) continue;
+      if (kind === "idea" ? task.idea_kind !== null : kind !== "all" && task.idea_kind !== kind) continue;
       const steps = stepsByTask.get(task.id) ?? [];
       items.push({
         task,
