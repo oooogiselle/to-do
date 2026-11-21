@@ -25,10 +25,10 @@ export function SchedulePanel({ task, onClose }: { task: Task; onClose: () => vo
   return (
     <section className="space-y-2.5" aria-label="Schedule">
       <div className="flex items-center justify-between">
-        <h4 className="text-[13px] font-bold text-ink">
+        <h4 className="text-[13px] font-semibold text-ink">
           {neededMin ? `Find ${formatMinutes(neededMin)} before it's due` : "Fully scheduled"}
         </h4>
-        <button onClick={onClose} className="text-[12px] font-bold text-muted hover:text-ink">
+        <button onClick={onClose} className="text-[12px] font-medium text-muted hover:text-ink">
           Cancel
         </button>
       </div>
@@ -55,7 +55,7 @@ export function SchedulePanel({ task, onClose }: { task: Task; onClose: () => vo
               >
                 {s.kind === "split" ? (
                   <>
-                    <div className="font-bold text-ink">
+                    <div className="font-medium text-ink">
                       Split across {s.blocks.length} sessions, one step each
                     </div>
                     <ul className="mt-1 space-y-0.5 text-[12px] text-muted">
@@ -68,7 +68,7 @@ export function SchedulePanel({ task, onClose }: { task: Task; onClose: () => vo
                   </>
                 ) : (
                   <>
-                    <div className="font-bold text-ink">
+                    <div className="font-medium text-ink">
                       {fmtRange(s.blocks[0]!.start, s.blocks[0]!.end)}
                     </div>
                     {s.kind === "partial" && (

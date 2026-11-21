@@ -1,43 +1,45 @@
 @import "tailwindcss";
 
-/* Tokens: neutral zinc surfaces, deep ink, sage for open time, coral now-line, six list hues. Light only. */
+/* Tokens: the Loom design system (design/loom/DESIGN.md is the source of truth). Cool paper, blue-black
+   ink, teal open time, ink-blue now and accent, six equal-lightness list hues. Light only. */
 :root {
-  --paper: #ececee;
-  --rail: #f7f7f8;
+  --paper: #eef0f3;
+  --rail: #f6f7f9;
   --surface: #ffffff;
-  --ink: #18181b;
-  --muted: #71717a;
-  --faint: #a1a1aa;
-  --line: #e5e7eb;
-  --line-soft: #f0f0f2;
-  --line-strong: #d4d4d8;
-  --row: #fafafa;
-  --row-hover: #f4f4f5;
-  --chip: #f0f0f2;
-  --chip-ink: #52525b;
-  --event: #f0f0f2;
-  --event-ink: #52525b;
-  --open: #f1f8f4;
-  --open-line: #b5d8c7;
-  --open-ink: #3f8466;
-  --open-active: #e9f5ef;
-  --open-active-line: #8cc5ab;
-  --active: #ededef;
-  --shadow-ink: 24 24 27;
-  --now: #d9775e;
-  --risk: #a04b35;
-  --risk-bg: #f9ece7;
-  --warn: #7a5e1e;
-  --warn-bg: #faf3df;
-  --focus: #5c88c7;
-  --grape-bg: #f6f3fc;
-  --grape-ink: #5b4b97;
-  --tt-coral: #d9775e;
-  --tt-sun: #e3ba55;
-  --tt-mint: #5aa585;
-  --tt-sky: #5c88c7;
-  --tt-grape: #8775c9;
-  --tt-pink: #c97a9f;
+  --ink: #1b2233;
+  --muted: #5f6b80;
+  --faint: #98a1b2;
+  --line: #e3e6ec;
+  --line-soft: #eef0f4;
+  --line-strong: #cdd2dc;
+  --row: #f7f8fa;
+  --row-hover: #f0f2f5;
+  --chip: #eef0f4;
+  --chip-ink: #4a5468;
+  --event: #eef0f4;
+  --event-ink: #4a5468;
+  --open: #e8f4f2;
+  --open-line: #a9d4cd;
+  --open-ink: #2f7a70;
+  --open-active: #ddf0ec;
+  --open-active-line: #86c3b9;
+  --active: #e9ecf2;
+  --shadow-ink: 27 34 51;
+  --now: #3452d6;
+  --accent: #3452d6;
+  --risk: #b42318;
+  --risk-bg: #fdf0ee;
+  --warn: #8a6110;
+  --warn-bg: #fbf3df;
+  --focus: #3452d6;
+  --grape-bg: #f3f0fc;
+  --grape-ink: #5a43a8;
+  --tt-coral: #d2694a;
+  --tt-sun: #d4972a;
+  --tt-mint: #3b9b6e;
+  --tt-sky: #3f7ddb;
+  --tt-grape: #7c5cd6;
+  --tt-pink: #d0577e;
 }
 
 /* Devices that can't hover (phones, tablets): hover-only controls must be visible. */
@@ -57,6 +59,7 @@
   --color-open: var(--open);
   --color-open-ink: var(--open-ink);
   --color-now: var(--now);
+  --color-accent: var(--accent);
   --color-risk: var(--risk);
   --color-warn: var(--warn);
   --color-warn-bg: var(--warn-bg);
@@ -77,10 +80,13 @@
   --color-sky: var(--tt-sky);
   --color-grape: var(--tt-grape);
   --color-pink: var(--tt-pink);
-  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
-  --font-weight-semibold: 500;
-  --font-weight-bold: 500;
-  --font-weight-extrabold: 500;
+  --font-sans: var(--font-sans-face), ui-sans-serif, system-ui, sans-serif;
+  /* Weights by role: 400 body, 500 names (medium), 600 headings (semibold). Nothing heavier.
+     bold/extrabold are clamped only as a safety net; components don't use them. */
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 600;
+  --font-weight-extrabold: 600;
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
@@ -99,8 +105,7 @@ body {
 }
 
 body {
-  font-feature-settings: "tnum" 1;
-  accent-color: var(--tt-grape);
+  accent-color: var(--accent);
   -webkit-font-smoothing: antialiased;
 }
 

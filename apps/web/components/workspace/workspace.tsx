@@ -44,7 +44,7 @@ function WorkspaceView({ screen }: { screen: Screen }) {
     return (
       <div className="flex h-full flex-col">
         <Header now={now} tz={settings.timezone} ws={ws} screen={screen} />
-        <div className="grid flex-1 place-items-center font-semibold text-muted">
+        <div className="grid flex-1 place-items-center font-medium text-muted">
           {error ? `Couldn't load your tasks: ${error.message}` : "Loading…"}
         </div>
       </div>
@@ -199,9 +199,9 @@ function ConnectBanner() {
   if (!data) return null;
   if (data.google?.needs_reconnect) {
     return (
-      <p className="border-b border-sun/40 bg-warn-bg px-4 py-2 text-[13px] font-semibold text-warn">
+      <p className="border-b border-sun/40 bg-warn-bg px-4 py-2 text-[13px] font-medium text-warn">
         Google Calendar access expired, so events aren&apos;t updating.{" "}
-        <a href="/api/google/connect" className="font-bold underline">
+        <a href="/api/google/connect" className="font-medium underline">
           Reconnect
         </a>
       </p>
@@ -209,9 +209,9 @@ function ConnectBanner() {
   }
   if (data.google) return null;
   return (
-    <p className="border-b border-line bg-surface px-4 py-2 text-[13px] font-semibold text-muted">
+    <p className="border-b border-line bg-surface px-4 py-2 text-[13px] font-medium text-muted">
       Your calendar isn&apos;t connected yet.{" "}
-      <a href="/settings" className="font-bold text-ink underline">
+      <a href="/settings" className="font-medium text-ink underline">
         Connect Google Calendar
       </a>{" "}
       to see events and open time.

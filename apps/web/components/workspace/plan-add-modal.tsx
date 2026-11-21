@@ -11,7 +11,7 @@ import { ListPicker } from "@/components/list-picker";
 type Body = z.infer<typeof TaskCreate>;
 type Parsed = ReturnType<typeof parseQuickAdd>;
 
-const label = "mb-1.5 block text-[11px] font-bold tracking-wider text-muted uppercase";
+const label = "mb-1.5 block text-[11px] font-medium tracking-wider text-muted uppercase";
 
 /**
  * Opens when a to-do is typed into My day: the typed text is parsed once to prefill the title,
@@ -109,7 +109,7 @@ export function PlanAddModal({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="To-do"
               autoComplete="off"
-              className="block w-full bg-transparent text-xl font-bold text-ink outline-none placeholder:font-semibold placeholder:text-faint focus-visible:outline-none"
+              className="block w-full bg-transparent text-xl font-semibold text-ink outline-none placeholder:font-medium placeholder:text-faint focus-visible:outline-none"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -137,14 +137,14 @@ export function PlanAddModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-3 py-1.5 text-[13px] font-semibold text-muted hover:text-ink"
+            className="rounded-lg px-3 py-1.5 text-[13px] font-medium text-muted hover:text-ink"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={!canAdd}
-            className="flex items-center gap-1.5 rounded-lg bg-coral px-3 py-1.5 text-[13px] font-bold text-white disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg bg-coral px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-40"
           >
             Add to {dayLabel}
             <CornerDownLeft className="h-3.5 w-3.5" />

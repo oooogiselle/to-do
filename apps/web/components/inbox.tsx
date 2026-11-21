@@ -67,7 +67,7 @@ export function Inbox() {
               { value: "priority", label: "Priority" },
             ]}
           />
-          <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-chip-ink">
+          <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-chip-ink">
             <Switch checked={showDone} onChange={setShowDone} label="Show done" />
             Show done
           </label>
@@ -103,7 +103,7 @@ export function Inbox() {
         )}
 
         {isLoading ? (
-          <p className="font-semibold text-muted">Loading…</p>
+          <p className="font-medium text-muted">Loading…</p>
         ) : !tasks.length && !lists.length ? (
           <EmptyState />
         ) : (
@@ -142,8 +142,8 @@ export function Inbox() {
 function EmptyState() {
   return (
     <div className="rounded-2xl border-2 border-dashed border-line bg-surface px-6 py-14 text-center">
-      <p className="text-base font-bold text-ink">No tasks yet.</p>
-      <p className="mt-1 text-sm font-semibold text-coral">Press ⌘K to add your first one.</p>
+      <p className="text-base font-semibold text-ink">No tasks yet.</p>
+      <p className="mt-1 text-sm font-medium text-coral">Press ⌘K to add your first one.</p>
     </div>
   );
 }
@@ -178,8 +178,8 @@ function ListCard({
           className="group flex items-center gap-3 px-4 py-3"
           style={{ background: c.solid, color: c.onSolid }}
         >
-          <h2 className="truncate text-base font-extrabold tracking-tight">{name}</h2>
-          <span className="shrink-0 rounded-full bg-black/15 px-2 py-0.5 text-[12px] font-bold">
+          <h2 className="truncate text-base font-semibold tracking-tight">{name}</h2>
+          <span className="shrink-0 rounded-full bg-black/15 px-2 py-0.5 text-[12px] font-medium">
             {openCount} open
           </span>
           {list && !isTemp(list.id) && (
@@ -241,14 +241,14 @@ function TaskRow({
         className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-left"
       >
         <span
-          className={`mr-1 text-sm font-semibold ${done ? "text-faint line-through" : "text-ink"}`}
+          className={`mr-1 text-sm font-medium ${done ? "text-faint line-through" : "text-ink"}`}
         >
           {task.title}
         </span>
         {!done && <DueChip dueAt={task.due_at} tz={tz} />}
         {!done && nextAt !== undefined && (
           <span
-            className="rounded-md bg-[#e6f2ec] px-1.5 py-0.5 text-[11px] font-semibold text-[#2f6b52]"
+            className="rounded-md bg-open px-1.5 py-0.5 text-[11px] font-medium text-open-ink"
             title="Next scheduled block"
           >
             {fmtWhen(nextAt, tz)}
@@ -264,7 +264,7 @@ function TaskRow({
         />
       )}
       {task.estimate_min && (
-        <span className="hidden text-[12px] font-semibold text-faint tabular-nums sm:inline">
+        <span className="hidden text-[12px] font-medium text-faint tabular-nums sm:inline">
           {formatMinutes(task.estimate_min)}
         </span>
       )}
@@ -314,7 +314,7 @@ export function ListEditor({
         autoFocus
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="min-w-[140px] flex-1 rounded-xl border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink outline-none focus:ring-2 focus:ring-sky/30"
+        className="min-w-[140px] flex-1 rounded-xl border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-sky/30"
       />
       <ColorPicker value={color} onChange={(v) => v && setColor(v)} label="List color" size={22} />
       <SomedayToggle checked={someday} onChange={setSomeday} />
@@ -327,18 +327,18 @@ export function ListEditor({
               : "";
             if (confirm(`Delete the list “${list.name}”?${note}`)) deleteList.mutate(list.id);
           }}
-          className="rounded-lg px-2 py-1 text-[13px] font-bold text-risk hover:bg-white/60"
+          className="rounded-lg px-2 py-1 text-[13px] font-medium text-risk hover:bg-white/60"
         >
           Delete list
         </button>
         <button
           type="button"
           onClick={onDone}
-          className="ml-auto rounded-lg px-2 py-1 text-[13px] font-bold text-muted hover:text-ink"
+          className="ml-auto rounded-lg px-2 py-1 text-[13px] font-medium text-muted hover:text-ink"
         >
           Cancel
         </button>
-        <button type="submit" className="rounded-xl bg-ink px-3 py-1.5 text-[13px] font-bold text-white">
+        <button type="submit" className="rounded-xl bg-ink px-3 py-1.5 text-[13px] font-medium text-white">
           Save
         </button>
       </div>
@@ -383,11 +383,11 @@ export function NewListForm({
         onChange={(e) => setName(e.target.value)}
         placeholder="List name, e.g. CS61"
         aria-label="List name"
-        className="min-w-[180px] flex-1 rounded-xl border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink outline-none focus:ring-2 focus:ring-sky/30"
+        className="min-w-[180px] flex-1 rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-sky/30"
       />
       <ColorPicker value={color} onChange={(v) => v && setColor(v)} label="List color" size={28} />
       <SomedayToggle checked={someday} onChange={setSomeday} />
-      <button type="submit" className="rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white">
+      <button type="submit" className="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-white">
         Create
       </button>
       <button
@@ -406,7 +406,7 @@ export function NewListForm({
 function SomedayToggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label
-      className="flex w-full cursor-pointer items-center gap-2 text-[13px] font-semibold text-ink"
+      className="flex w-full cursor-pointer items-center gap-2 text-[13px] font-medium text-ink"
       title="The AI suggests tasks from this list when you click open time"
     >
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />

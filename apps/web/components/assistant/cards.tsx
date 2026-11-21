@@ -69,7 +69,7 @@ const cardHeader =
   "flex items-center gap-1.5 border-b border-line-soft px-3 py-2 text-[11px] tracking-[0.08em] text-faint uppercase";
 const cardFooter = "flex items-center gap-2 border-t border-line-soft bg-row px-3 py-2";
 const primaryBtn =
-  "inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-ink px-2.5 text-[12px] text-white transition-colors hover:bg-[#27272A] focus:outline-none focus-visible:ring-2 focus-visible:ring-line-strong disabled:opacity-40";
+  "inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-ink px-2.5 text-[12px] text-white transition-colors hover:bg-ink/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-line-strong disabled:opacity-40";
 const secondaryBtn =
   "inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-line bg-surface px-2.5 text-[12px] text-ink transition-colors hover:bg-row-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-line-strong disabled:opacity-40";
 const iconBtn =

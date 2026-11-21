@@ -303,7 +303,7 @@ function Composer({ disabled, onSend }: { disabled: boolean; onSend: (text: stri
           type="submit"
           disabled={!text.trim() || disabled}
           aria-label="Send"
-          className={`${text.length > COUNT_FROM ? "" : "ml-auto "}grid h-7 w-7 place-items-center rounded-lg bg-ink text-white transition-colors hover:bg-[#27272A] focus:outline-none focus-visible:ring-2 focus-visible:ring-line-strong disabled:bg-line disabled:text-faint`}
+          className={`${text.length > COUNT_FROM ? "" : "ml-auto "}grid h-7 w-7 place-items-center rounded-lg bg-ink text-white transition-colors hover:bg-ink/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-line-strong disabled:bg-line disabled:text-faint`}
         >
           <ArrowUp className="h-3.5 w-3.5" />
         </button>

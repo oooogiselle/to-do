@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1440">
+<title>Tapestry · Type specimen</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Schibsted+Grotesk:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=Onest:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=Albert+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --paper: #eef0f3; --surface: #fff; --ink: #1b2233; --muted: #5f6b80; --faint: #98a1b2;
+    --line: #e3e6ec; --line-soft: #eef0f4; --open: #e8f4f2; --open-ink: #2f7a70; --risk: #b42318;
+    --l-econ: #7c5cd6; --l-cs: #3f7ddb;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 13px/1.4 ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .page { width: 1440px; padding: 40px 48px 64px; }
+  .intro { max-width: 720px; }
+  .intro h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+  .intro p { margin: 6px 0 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+  table { margin-top: 28px; border-collapse: separate; border-spacing: 12px; margin-left: -12px; }
+  th { text-align: left; vertical-align: top; font-weight: 600; font-size: 12px; color: var(--muted); padding: 0 4px; }
+  th small { display: block; font-weight: 400; color: var(--faint); margin-top: 2px; }
+  th.font { width: 150px; padding-top: 16px; color: var(--ink); font-size: 13px; }
+  td { width: 400px; vertical-align: top; }
+  .cell {
+    background: var(--surface); border: 1px solid var(--line-soft); border-radius: 14px; padding: 16px 18px;
+    font-family: var(--fb); font-weight: var(--wb);
+  }
+  .cell.today { box-shadow: inset 0 0 0 1.5px var(--line); }
+  .h { display: flex; align-items: baseline; justify-content: space-between; }
+  .h b { font-family: var(--fh); font-weight: var(--wh); font-size: 18px; letter-spacing: -0.015em; }
+  .h span { font-size: 12px; color: var(--muted); }
+  .lab { margin-top: 12px; font-family: var(--fb); font-weight: var(--wh); font-size: 12px; color: var(--ink); }
+  .row { position: relative; display: flex; gap: 12px; align-items: center; padding: 8px 0 8px 12px; border-bottom: 1px solid var(--line-soft); }
+  .row::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 99px; background: var(--c); }
+  .ck { width: 16px; height: 16px; border-radius: 99px; border: 2px solid var(--c); flex-shrink: 0; }
+  .row.done .ck { background: var(--c); }
+  .row.done::before { opacity: 0.35; }
+  .t { display: block; font-weight: var(--wn); font-size: 13px; }
+  .row.done .t { color: var(--faint); text-decoration: line-through; }
+  .m { display: flex; gap: 6px; margin-top: 2px; font-size: 11px; color: var(--faint); }
+  .m .l { color: color-mix(in srgb, var(--c) 78%, var(--ink)); }
+  .chip { padding: 1px 6px; border-radius: 4px; background: var(--open); color: var(--open-ink); font-size: 10px; font-weight: var(--wn); }
+  .hint { margin-top: 8px; display: flex; justify-content: space-between; font-size: 13px; }
+  .hint span:first-child { font-weight: var(--wn); color: #4a5468; }
+  .hint em { font-style: normal; font-size: 11px; color: var(--risk); }
+  .hint em i { font-style: normal; color: var(--faint); }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="intro">
+    <h1>Type specimen: fonts × weights</h1>
+    <p>The same piece of My day in each font at the app's sizes: day heading 18, section label 12, to-do 13, meta 11. Each column is a weight set (body / names / headings). The outlined cell is roughly today: Geist with everything capped near 500. Pick a row and a column, e.g. “Onest, Medium”.</p>
+  </div>
+  <table id="t"></table>
+</div>
+<script>
+  const FONTS = [
+    ["Geist", "today's font", "'Geist'", "'Geist'"],
+    ["Schibsted Grotesk", "A · Loom", "'Schibsted Grotesk'", "'Schibsted Grotesk'"],
+    ["Public Sans + Newsreader", "B · Indigo (serif headings)", "'Public Sans'", "'Newsreader'"],
+    ["Onest", "C · Daylight", "'Onest'", "'Onest'"],
+    ["Hanken Grotesk", "alternative", "'Hanken Grotesk'", "'Hanken Grotesk'"],
+    ["Albert Sans", "alternative", "'Albert Sans'", "'Albert Sans'"],
+  ];
+  const W = [["Light", 400, 400, 500], ["Medium", 400, 500, 600], ["Strong", 500, 600, 700]];
+  const cell = (f, w, today) => `<td><div class="cell${today ? " today" : ""}" style="--fb:${f[2]},sans-serif;--fh:${f[3]},${f[2]},sans-serif;--wb:${w[1]};--wn:${w[2]};--wh:${w[3]}">
+    <div class="h"><b>Today</b><span>Saturday, November 21</span></div>
+    <div class="lab">Plan</div>
+    <div class="row" style="--c:var(--l-econ)"><span class="ck"></span><div><span class="t">Study for Econ midterm</span><span class="m"><span class="l">Econ 10</span>·<span>2h</span><span class="chip">2:00–4:00 PM</span></span></div></div>
+    <div class="row done" style="--c:var(--l-cs)"><span class="ck"></span><div><span class="t">Write problem statement</span><span class="m"><span>CS project proposal</span>·<span>45m</span></span></div></div>
+    <div class="hint"><span>Coffee chat prep</span><em>Short on time <i>· due Mon</i></em></div>
+  </div></td>`;
+  document.getElementById("t").innerHTML =
+    `<tr><th></th>${W.map((w) => `<th>${w[0]}<small>body ${w[1]} · names ${w[2]} · headings ${w[3]}</small></th>`).join("")}</tr>` +
+    FONTS.map((f, fi) => `<tr><th class="font">${f[0]}<small>${f[1]}</small></th>${W.map((w, wi) => cell(f, w, fi === 0 && wi === 0)).join("")}</tr>`).join("");
+</script>
+</body>
+</html>

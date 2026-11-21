@@ -298,7 +298,7 @@ export function WorkspaceDnd({
       {error && (
         <div
           role="alert"
-          className="animate-pop-in fixed bottom-4 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-2xl bg-ink px-4 py-2.5 text-[13px] font-semibold text-white shadow-sheet"
+          className="animate-pop-in fixed bottom-4 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-2xl bg-ink px-4 py-2.5 text-[13px] font-medium text-white shadow-sheet"
         >
           <span>Couldn&apos;t do that: {error.message}</span>
           <button
@@ -308,7 +308,7 @@ export function WorkspaceDnd({
               addToPlan.reset();
               movePlanItem.reset();
             }}
-            className="rounded-lg px-2 py-1 font-bold text-white/70 hover:bg-white/10 hover:text-white"
+            className="rounded-lg px-2 py-1 font-medium text-white/70 hover:bg-white/10 hover:text-white"
           >
             Dismiss
           </button>

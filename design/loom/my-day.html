@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1440">
+<title>Tapestry · Loom · My day reference</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  /* Loom: the Tapestry design system. Tokens are specified in DESIGN.md; this page shows them on My day. */
+  :root {
+    --paper: #eef0f3;
+    --rail: #f6f7f9;
+    --surface: #ffffff;
+    --ink: #1b2233;
+    --muted: #5f6b80;
+    --faint: #98a1b2;
+    --line: #e3e6ec;
+    --line-soft: #eef0f4;
+    --line-strong: #cdd2dc;
+    --row: #f7f8fa;
+    --row-hover: #f0f2f5;
+    --active: #e9ecf2;
+    --chip: #eef0f4;
+    --chip-ink: #4a5468;
+    --event: #eef0f4;
+    --event-ink: #4a5468;
+    --open: #e8f4f2;
+    --open-line: #a9d4cd;
+    --open-ink: #2f7a70;
+    --now: #3452d6;
+    --risk: #b42318;
+    --risk-bg: #fdf0ee;
+    --warn: #8a6110;
+    --warn-bg: #fbf3df;
+    --focus: #3452d6;
+    --accent: #3452d6;
+    --on-accent: #ffffff;
+    --sun: #e0a93b;
+    --l-cs: #3f7ddb;
+    --l-econ: #7c5cd6;
+    --l-rec: #d4972a;
+    --l-pers: #d0577e;
+    --shadow-card: 0 1px 2px rgb(27 34 51 / 0.04);
+    --r-pane: 12px;
+    --r-row: 6px;
+    --r-ctl: 8px;
+    --r-chip: 4px;
+  }
+  /* Signature: one thread per to-do, filled in its list colour when done. */
+  .bar { display: none; }
+  .threads { display: flex; gap: 4px; margin-top: 10px; }
+  .threads i { flex: 1; height: 4px; border-radius: 99px; background: var(--line-soft); position: relative; overflow: hidden; }
+  .threads i.on::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--c);
+    transform-origin: left; transform: scaleX(0);
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i) * 70ms + 150ms);
+  }
+  .loaded .threads i.on::after { transform: none; }
+  /* Thread marks carry through: active nav, plan rows, booked blocks. */
+  .nav-item.is-active::before { content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); }
+  .day-dot { background: var(--accent); }
+  .group-label { color: var(--ink); }
+  .slot.block { border-radius: 2px 6px 6px 2px; }
+</style>
+</head>
+<body>
+<script>
+  window.DIRECTION = {
+    id: "loom",
+    name: "Loom",
+    font: "schibsted",
+    weights: "medium",
+    switcher: false,
+    blurb: "The Tapestry design system, shown on My day. See DESIGN.md for the rules. The zinc greys cool to a blue-black ink, the coral now-line becomes ink blue, and the list colours are tuned to the same lightness so no list shouts. The one new idea is threads: every to-do is a thread in its list colour, in the plan, in the Day pane and in the progress strip, which fills one thread per finished to-do.",
+    corners: "Panes 12, tabs 10, controls 8, rows 6, chips 4 (the existing radius tokens). Booked blocks get a squared thread edge.",
+    palette: [
+      ["Paper", "#EEF0F3", "--paper (was #ECECEE)"],
+      ["Surface", "#FFFFFF", "--surface"],
+      ["Ink", "#1B2233", "--ink (was zinc #18181B)"],
+      ["Muted", "#5F6B80", "--muted · 5.4:1 on white"],
+      ["Line", "#E3E6EC", "--line"],
+      ["Now / accent", "#3452D6", "--now, --focus (was coral #D9775E)"],
+      ["Open time", "#E8F4F2 / #2F7A70", "--open / --open-ink (was sage)"],
+      ["Risk", "#B42318", "--risk"],
+      ["Lists", "#3F7DDB #7C5CD6 #D4972A #D0577E", "--tt-sky, grape, sun, pink, re-tuned"],
+    ],
+  };
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

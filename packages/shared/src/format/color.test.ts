@@ -3,13 +3,19 @@ import { HUES, canonicalColor, swatch } from "./color";
 
 describe("swatch", () => {
   it("uses the tuned shades for palette colors, case-insensitively", () => {
-    expect(swatch(HUES.coral).tint).toBe("#F9ECE7");
-    expect(swatch(HUES.sun.toLowerCase()).onSolid).toBe("#4A3A12");
+    expect(swatch(HUES.coral).tint).toBe("#F9EAE6");
+    expect(swatch(HUES.sun.toLowerCase()).onSolid).toBe("#58442B");
   });
 
   it("maps old palette colors to their new hue", () => {
     expect(canonicalColor("#2563eb")).toBe(HUES.sky);
     expect(swatch("#ea580c").solid).toBe(HUES.coral);
+  });
+
+  it("maps the pre-Loom palette to the Loom hues", () => {
+    expect(canonicalColor("#5c88c7")).toBe(HUES.sky);
+    expect(swatch("#D9775E").solid).toBe(HUES.coral);
+    expect(swatch("#8A8FA6")).toEqual(swatch(HUES.slate));
   });
 
   it("computes shades for any other color", () => {

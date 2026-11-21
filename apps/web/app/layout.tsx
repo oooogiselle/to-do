@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 
-const geist = Geist({
+const sans = Schibsted_Grotesk({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-  variable: "--font-geist",
+  variable: "--font-sans-face",
 });
 
 export const metadata: Metadata = {
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${geist.variable} font-sans text-[13px] antialiased`}>{children}</body>
+      <body className={`${sans.variable} font-sans text-[13px] antialiased`}>{children}</body>
     </html>
   );
 }

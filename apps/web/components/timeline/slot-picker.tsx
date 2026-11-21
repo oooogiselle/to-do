@@ -36,7 +36,7 @@ const PLACEHOLDER: Record<SuggestFocus, string> = {
 };
 
 const chip = (on: boolean) =>
-  `rounded-full border px-2.5 py-0.5 text-[11px] font-bold disabled:opacity-60 ${
+  `rounded-full border px-2.5 py-0.5 text-[11px] font-medium disabled:opacity-60 ${
     on ? "border-grape bg-grape-bg text-grape-ink" : "border-line bg-paper text-chip-ink hover:bg-line-soft"
   }`;
 
@@ -120,7 +120,7 @@ export function SlotPicker({
       <div className="mb-2 flex items-start gap-2">
         <Sparkles className="mt-0.5 h-3.5 w-3.5 text-grape" />
         <div className="min-w-0 flex-1">
-          <p className="text-[12px] font-extrabold text-ink">What to do here?</p>
+          <p className="text-[12px] font-semibold text-ink">What to do here?</p>
           <p className="text-[11px] text-faint">
             {fmtTime(start, tz)}–{fmtTime(end, tz)} · {formatMinutes(mins)} open
           </p>
@@ -131,7 +131,7 @@ export function SlotPicker({
       </div>
 
       <div role="group" aria-label="What do you feel like doing?" className="mb-2 flex flex-wrap items-center gap-1.5">
-        <span className="text-[10px] font-extrabold tracking-wider text-faint uppercase">Focus</span>
+        <span className="text-[10px] font-semibold tracking-wider text-faint uppercase">Focus</span>
         {FOCUSES.map((f) => (
           <button
             key={f.id}
@@ -152,7 +152,7 @@ export function SlotPicker({
       </div>
 
       <div role="group" aria-label="Energy" className="mb-2 flex items-center gap-1.5">
-        <span className="text-[10px] font-extrabold tracking-wider text-faint uppercase">Energy</span>
+        <span className="text-[10px] font-semibold tracking-wider text-faint uppercase">Energy</span>
         {ENERGIES.map((e) => (
           <button
             key={e.id}
@@ -187,7 +187,7 @@ export function SlotPicker({
             return (
               <div key={key} className="flex items-center gap-2 rounded-xl bg-open p-2 text-[12px] text-open-ink">
                 <p className="min-w-0 flex-1">
-                  {done ? "Logged" : "Log"} <span className="font-bold">{task.title}</span> on{" "}
+                  {done ? "Logged" : "Log"} <span className="font-medium">{task.title}</span> on{" "}
                   {contactLabel(l.date, today)}
                   {done ? "." : "?"}
                 </p>
@@ -200,7 +200,7 @@ export function SlotPicker({
                       logContact(l);
                       setLogged((s) => new Set(s).add(key));
                     }}
-                    className="shrink-0 rounded-lg bg-ink px-2 py-1 text-[11px] font-extrabold text-surface hover:opacity-90"
+                    className="shrink-0 rounded-lg bg-ink px-2 py-1 text-[11px] font-medium text-surface hover:opacity-90"
                   >
                     Log it
                   </button>
@@ -221,17 +221,17 @@ export function SlotPicker({
               <div key={p.task_id} className="flex items-start gap-2 rounded-xl border border-line-soft p-2">
                 <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />
                 <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-1.5 text-[12px] font-bold text-ink">
+                  <p className="flex items-center gap-1.5 text-[12px] font-medium text-ink">
                     <span className="truncate">{task?.title ?? "Task"}</span>
                     {urgent && (
-                      <span className="shrink-0 rounded bg-risk-bg px-1 text-[10px] font-extrabold text-risk">
+                      <span className="shrink-0 rounded bg-risk-bg px-1 text-[10px] font-medium text-risk">
                         Due soon
                       </span>
                     )}
                   </p>
                   {step && <p className="truncate text-[11px] text-chip-ink">{step.title}</p>}
                   <p className="text-[11px] text-muted">{p.reason}</p>
-                  <p className="text-[10px] font-semibold text-faint">
+                  <p className="text-[10px] font-medium text-faint">
                     {fmtTime(p.start, tz)}–{fmtTime(p.end, tz)}
                   </p>
                   {person && task && (
@@ -251,7 +251,7 @@ export function SlotPicker({
                     accept(p);
                     onClose();
                   }}
-                  className="shrink-0 rounded-lg bg-ink px-2 py-1 text-[11px] font-extrabold text-surface hover:opacity-90"
+                  className="shrink-0 rounded-lg bg-ink px-2 py-1 text-[11px] font-medium text-surface hover:opacity-90"
                 >
                   Schedule
                 </button>
@@ -264,12 +264,12 @@ export function SlotPicker({
             <div key={`idea-${i}`} className="flex items-start gap-2 rounded-xl border border-dashed border-line p-2">
               <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-open-ink" />
               <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1.5 text-[12px] font-bold text-ink">
+                <p className="flex items-center gap-1.5 text-[12px] font-medium text-ink">
                   <span className="truncate">{idea.title}</span>
-                  <span className="shrink-0 rounded bg-open px-1 text-[10px] font-extrabold text-open-ink">New</span>
+                  <span className="shrink-0 rounded bg-open px-1 text-[10px] font-medium text-open-ink">New</span>
                 </p>
                 <p className="text-[11px] text-muted">{idea.reason}</p>
-                <p className="text-[10px] font-semibold text-faint">
+                <p className="text-[10px] font-medium text-faint">
                   {fmtTime(idea.start, tz)}–{fmtTime(idea.end, tz)} · saved to Someday
                 </p>
               </div>
@@ -279,7 +279,7 @@ export function SlotPicker({
                   void acceptIdea(idea);
                   onClose();
                 }}
-                className="shrink-0 rounded-lg bg-ink px-2 py-1 text-[11px] font-extrabold text-surface hover:opacity-90"
+                className="shrink-0 rounded-lg bg-ink px-2 py-1 text-[11px] font-medium text-surface hover:opacity-90"
               >
                 Schedule
               </button>
@@ -314,7 +314,7 @@ export function SlotPicker({
         <button
           type="submit"
           disabled={isPending}
-          className="flex shrink-0 items-center gap-1 rounded-lg border border-line bg-paper px-2 py-1.5 text-[11px] font-extrabold text-ink hover:bg-line-soft disabled:opacity-50"
+          className="flex shrink-0 items-center gap-1 rounded-lg border border-line bg-paper px-2 py-1.5 text-[11px] font-medium text-ink hover:bg-line-soft disabled:opacity-50"
           title={feedback.trim() ? "Regenerate with your feedback" : "Shuffle"}
         >
           <RefreshCw className="h-3 w-3" />
@@ -324,7 +324,7 @@ export function SlotPicker({
       <button
         type="button"
         onClick={onClose}
-        className="mt-1.5 w-full text-center text-[11px] font-semibold text-faint hover:text-ink"
+        className="mt-1.5 w-full text-center text-[11px] font-medium text-faint hover:text-ink"
       >
         Not now
       </button>
@@ -342,7 +342,7 @@ function AlreadyDid({ today, onLog }: { today: string; onLog: (date: string) => 
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-0.5 text-[10px] font-bold text-chip-ink hover:text-ink"
+        className="mt-0.5 text-[10px] font-medium text-chip-ink hover:text-ink"
       >
         Already did this…
       </button>
@@ -365,7 +365,7 @@ function AlreadyDid({ today, onLog }: { today: string; onLog: (date: string) => 
         aria-label="Day you connected"
         className="rounded-md border border-line bg-paper px-1 py-0.5 text-[11px] text-ink"
       />
-      <button type="submit" className="rounded-md px-1.5 py-0.5 text-[11px] font-bold text-ink hover:bg-line-soft">
+      <button type="submit" className="rounded-md px-1.5 py-0.5 text-[11px] font-medium text-ink hover:bg-line-soft">
         Log
       </button>
     </form>

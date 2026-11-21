@@ -10,7 +10,7 @@ export function LinkChip({ url }: { url: string }) {
       rel="noopener noreferrer"
       title={url}
       onClick={(e) => e.stopPropagation()}
-      className="inline-flex max-w-[180px] shrink-0 items-center gap-1 rounded-md bg-chip px-1.5 py-0.5 text-[11px] font-semibold text-chip-ink hover:bg-line hover:text-ink"
+      className="inline-flex max-w-[180px] shrink-0 items-center gap-1 rounded-md bg-chip px-1.5 py-0.5 text-[11px] font-medium text-chip-ink hover:bg-line hover:text-ink"
     >
       <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
       <span className="truncate">{linkLabel(url)}</span>

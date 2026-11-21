@@ -50,7 +50,7 @@ export function ResourceLink({ r, compact }: { r: ResearchResource; compact?: bo
     >
       <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted" aria-label={KIND_LABEL[r.kind]} />
       <span className="min-w-0">
-        <span className={`font-semibold text-ink group-hover:underline ${compact ? "line-clamp-1" : ""}`}>
+        <span className={`font-medium text-ink group-hover:underline ${compact ? "line-clamp-1" : ""}`}>
           {r.title}
         </span>
         <span className="text-faint">
@@ -65,7 +65,7 @@ export function ResourceLink({ r, compact }: { r: ResearchResource; compact?: bo
 
 export function Pulse({ label }: { label: string }) {
   return (
-    <p className="flex items-center gap-1.5 text-[12px] font-semibold text-muted">
+    <p className="flex items-center gap-1.5 text-[12px] font-medium text-muted">
       <Sparkles className="h-3.5 w-3.5 animate-pulse" aria-hidden />
       <span className="animate-pulse">{label}</span>
     </p>
@@ -99,7 +99,7 @@ export function ResearchSummary({
   return (
     <div className={`space-y-1.5 ${className}`}>
       {effort && (
-        <p className="flex items-center gap-1.5 text-[12px] font-bold text-chip-ink" title={r?.basis ?? undefined}>
+        <p className="flex items-center gap-1.5 text-[12px] font-medium text-chip-ink" title={r?.basis ?? undefined}>
           <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
           {effort}
         </p>
@@ -114,7 +114,7 @@ export function ResearchSummary({
         </ul>
       )}
       {more > 0 && (
-        <button type="button" onClick={onMore} className="text-[12px] font-bold text-muted hover:text-ink">
+        <button type="button" onClick={onMore} className="text-[12px] font-medium text-muted hover:text-ink">
           +{more} more
         </button>
       )}
@@ -125,7 +125,7 @@ export function ResearchSummary({
             type="button"
             disabled={research.isPending || isTemp(task.id)}
             onClick={() => research.mutate(task.id)}
-            className="font-bold text-chip-ink hover:text-ink disabled:opacity-50"
+            className="font-medium text-chip-ink hover:text-ink disabled:opacity-50"
           >
             Try again
           </button>
@@ -135,7 +135,7 @@ export function ResearchSummary({
   );
 }
 
-const label = "mb-1.5 block text-[11px] font-bold tracking-wider text-muted uppercase";
+const label = "mb-1.5 block text-[11px] font-semibold tracking-wider text-muted uppercase";
 
 /** In the task sheet: every resource (removable), the estimate and how it was made, and re-run. */
 export function ResearchSection({ task }: { task: Task }) {
@@ -157,7 +157,7 @@ export function ResearchSection({ task }: { task: Task }) {
             type="button"
             disabled={research.isPending || isTemp(task.id)}
             onClick={() => research.mutate(task.id)}
-            className="flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-[12px] font-bold text-chip-ink hover:bg-row disabled:opacity-50"
+            className="flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-[12px] font-medium text-chip-ink hover:bg-row disabled:opacity-50"
           >
             {s.state === "none" ? <Sparkles className="h-3.5 w-3.5" /> : <RotateCw className="h-3.5 w-3.5" />}
             {s.state === "none" ? "Find resources" : "Find again"}
@@ -172,14 +172,14 @@ export function ResearchSection({ task }: { task: Task }) {
       )}
       {s.state === "pending" && <Pulse label="Searching the web… this takes up to a minute." />}
       {(research.error || s.state === "error") && (
-        <p role="alert" className="mb-1.5 text-[12px] font-semibold text-risk">
+        <p role="alert" className="mb-1.5 text-[12px] font-medium text-risk">
           {research.error?.message ?? (s.state === "error" ? s.message : "")}
         </p>
       )}
 
       {effort && (
         <div className="mb-2 rounded-lg bg-row px-2.5 py-2">
-          <p className="flex items-center gap-1.5 text-[13px] font-bold text-ink">
+          <p className="flex items-center gap-1.5 text-[13px] font-medium text-ink">
             <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
             {effort}
           </p>

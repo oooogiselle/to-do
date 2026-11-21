@@ -128,10 +128,10 @@ export function DuePicker({
         title={compact ? label : undefined}
         className={
           compact
-            ? `flex h-6 items-center rounded-md px-1.5 text-[11px] font-semibold hover:bg-surface ${
+            ? `flex h-6 items-center rounded-md px-1.5 text-[11px] font-medium hover:bg-surface ${
                 value ? (Date.parse(value) < Date.now() ? "text-risk" : "text-muted") : "text-faint"
               } ${className}`
-            : `rounded-lg border px-2 py-1 font-semibold ${value ? "border-line bg-surface text-ink" : "border-dashed border-line-strong text-muted"} hover:border-ink ${className}`
+            : `rounded-lg border px-2 py-1 font-medium ${value ? "border-line bg-surface text-ink" : "border-dashed border-line-strong text-muted"} hover:border-ink ${className}`
         }
       >
         {compact ? (
@@ -165,14 +165,14 @@ export function DuePicker({
                   key={s.label}
                   type="button"
                   onClick={() => set(s.day, time)}
-                  className={`rounded-lg px-2 py-1 font-bold ${date === s.day ? "bg-ink text-white" : "bg-chip text-chip-ink hover:bg-line"}`}
+                  className={`rounded-lg px-2 py-1 font-medium ${date === s.day ? "bg-ink text-white" : "bg-chip text-chip-ink hover:bg-line"}`}
                 >
                   {s.label}
                 </button>
               ))}
             </div>
             <label className="flex items-center gap-2">
-              <span className="w-10 font-semibold text-muted">Date</span>
+              <span className="w-10 font-medium text-muted">Date</span>
               <input
                 type="date"
                 value={date}
@@ -181,7 +181,7 @@ export function DuePicker({
               />
             </label>
             <label className="flex items-center gap-2">
-              <span className="w-10 font-semibold text-muted">Time</span>
+              <span className="w-10 font-medium text-muted">Time</span>
               <input
                 type="time"
                 step={900}
@@ -197,14 +197,14 @@ export function DuePicker({
                 type="button"
                 disabled={!value}
                 onClick={() => onChange(null)}
-                className="font-semibold text-muted hover:text-risk disabled:opacity-40"
+                className="font-medium text-muted hover:text-risk disabled:opacity-40"
               >
                 No due date
               </button>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-lg bg-ink px-2.5 py-1 font-bold text-white hover:opacity-90"
+                className="rounded-lg bg-ink px-2.5 py-1 font-medium text-white hover:opacity-90"
               >
                 Done
               </button>

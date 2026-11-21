@@ -36,10 +36,10 @@ export function PaneColumn(props: {
       style={{ "--col-w": `${panes.length ? width : 150}px` } as React.CSSProperties}
       className={`relative flex w-full shrink-0 flex-col rounded-2xl transition-colors lg:h-auto lg:w-[var(--col-w)] ${
         panes.length > 1 ? "h-auto" : "h-[440px]"
-      } ${draggingPane ? (isOver ? "bg-[#e9e5f7] ring-2 ring-grape" : "bg-line-soft") : ""}`}
+      } ${draggingPane ? (isOver ? "bg-grape-bg ring-2 ring-grape" : "bg-line-soft") : ""}`}
     >
       {panes.length === 0 ? (
-        <div className="grid min-h-24 flex-1 place-items-center rounded-2xl border-2 border-dashed border-line-strong p-3 text-center text-[11px] font-bold text-muted">
+        <div className="grid min-h-24 flex-1 place-items-center rounded-2xl border-2 border-dashed border-line-strong p-3 text-center text-[11px] font-medium text-muted">
           Drop pane here
         </div>
       ) : (
@@ -64,7 +64,7 @@ export function PaneColumn(props: {
         </div>
       )}
       {draggingPane && panes.length > 0 && (
-        <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-lg bg-ink/85 py-1.5 text-center text-[11px] font-bold text-white">
+        <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-lg bg-ink/85 py-1.5 text-center text-[11px] font-medium text-white">
           Drop to add here
         </div>
       )}

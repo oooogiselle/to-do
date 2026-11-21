@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1440">
+<title>Tapestry · B · Indigo</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  /* B · Indigo: dyed cloth. Indigo ink on pale unbleached grey-green, natural-dye list colours. */
+  :root {
+    --paper: #eef0eb;
+    --rail: #f4f5f1;
+    --surface: #fbfbf8;
+    --ink: #22305e;
+    --muted: #5c6374;
+    --faint: #979ca6;
+    --line: #e1e3dc;
+    --line-soft: #ebece6;
+    --line-strong: #c9ccc2;
+    --row: #f4f5f0;
+    --row-hover: #eeefe9;
+    --active: #e7e9e1;
+    --chip: #ecede7;
+    --chip-ink: #4a5168;
+    --event: #ecede7;
+    --event-ink: #4a5168;
+    --open: #ebf1f8;
+    --open-line: #a6bcdc;
+    --open-ink: #345e9a;
+    --now: #22305e;
+    --risk: #a3324a;
+    --risk-bg: #f7eaed;
+    --warn: #7f6110;
+    --warn-bg: #f5efd9;
+    --focus: #3f6fb0;
+    --accent: #22305e;
+    --on-accent: #fbfbf8;
+    --sun: #c29a1e;
+    --l-cs: #3f6fb0;   /* woad */
+    --l-econ: #6d4c8f; /* logwood */
+    --l-rec: #c29a1e;  /* weld */
+    --l-pers: #b23a55; /* madder */
+    --shadow-card: 0 1px 0 rgb(34 48 94 / 0.04);
+    --r-pane: 12px;
+    --r-row: 8px;
+    --r-ctl: 8px;
+    --r-chip: 6px;
+  }
+  .day-title h2 { font-size: 18px; letter-spacing: -0.005em; }
+  :root[data-font="public"] .day-title h2 { font-size: 20px; }
+  .day-dot { display: none; }
+  .day-title p { padding-left: 0; }
+  .pane-head h2, .tab { font-family: var(--f-head); font-size: 13px; }
+  :root[data-font="public"] .pane-head h2, :root[data-font="public"] .tab { font-style: italic; }
+  /* Stitches: dashed rules where something can go. */
+  .pane-head { border-bottom-style: dashed; border-bottom-color: var(--line-strong); }
+  .inline-add { border: 1px dashed transparent; }
+  .inline-add:hover { border-color: var(--line-strong); background: transparent; }
+  .open-slot { border-width: 1.5px; }
+  .group-label { font-family: var(--f-head); font-size: 13px; color: var(--ink); }
+  :root[data-font="public"] .group-label { font-style: italic; font-weight: 500; }
+
+  /* Signature: the woven band. Warp is the day's planned time; each finished to-do weaves in its dye. */
+  .bar { display: none; }
+  .weave { display: flex; gap: 3px; height: 12px; margin-top: 10px; }
+  .weave i {
+    position: relative; min-width: 6px; border-radius: 2px; overflow: hidden;
+    background: repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 4px), var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .weave i.on::after {
+    content: ""; position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(90deg, rgb(255 255 255 / 0.28) 0 1px, transparent 1px 4px),
+      repeating-linear-gradient(0deg, var(--c) 0 2px, color-mix(in srgb, var(--c) 72%, white) 2px 4px);
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 0.6s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i) * 90ms + 150ms);
+  }
+  .loaded .weave i.on::after { clip-path: inset(0 0 0 0); }
+  .stats p { margin-top: 0; }
+  .stats { display: flex; flex-direction: column-reverse; }
+  .stats p { margin-top: 8px; }
+  .slot.block { border-left-style: solid; }
+  .brand-name { font-family: var(--f-head); font-size: 16px; }
+</style>
+</head>
+<body>
+<script>
+  window.DIRECTION = {
+    id: "indigo",
+    name: "B · Indigo",
+    font: "public",
+    weights: "light",
+    blurb: "Tactile and a little crafted, still light. Indigo ink on a pale unbleached grey-green, with list colours taken from natural dyes: woad, logwood, weld, madder. A serif names the day and the sections. Everything else stays sans. The signature is a woven band under the date: the warp is the day's planned time, and each finished to-do weaves in its own colour, as wide as its estimate.",
+    corners: "A little softer: panes 12, rows and controls 8, chips 6. Dashed “stitch” rules mark places something can go (add rows, open time, pane edges).",
+    palette: [
+      ["Paper", "#EEF0EB", "--paper · pale unbleached, not cream"],
+      ["Surface", "#FBFBF8", "--surface"],
+      ["Indigo ink", "#22305E", "--ink, --now, primary button"],
+      ["Muted", "#5C6374", "--muted · 5.8:1 on surface"],
+      ["Line", "#E1E3DC", "--line (stitches use #C9CCC2)"],
+      ["Open time", "#EBF1F8 / #345E9A", "--open / --open-ink · pale woad"],
+      ["Risk", "#A3324A", "--risk"],
+      ["Woad · Logwood", "#3F6FB0 · #6D4C8F", "list colours"],
+      ["Weld · Madder", "#C29A1E · #B23A55", "list colours"],
+    ],
+  };
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

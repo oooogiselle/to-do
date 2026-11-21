@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1440">
+<title>Tapestry · C · Daylight</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  /* C · Daylight: brighter and rounder; the colour of the day's light is the clock. */
+  :root {
+    --paper: #f1f3f8;
+    --rail: #f7f8fc;
+    --surface: #ffffff;
+    --ink: #141a2e;
+    --muted: #59627c;
+    --faint: #9aa1b5;
+    --line: #e2e6ef;
+    --line-soft: #edf0f6;
+    --line-strong: #cbd1de;
+    --row: #f6f8fc;
+    --row-hover: #eef1f8;
+    --active: #e9eefc;
+    --chip: #eef1f8;
+    --chip-ink: #47506a;
+    --event: #eef1f8;
+    --event-ink: #47506a;
+    --open: #e6f6ee;
+    --open-line: #9ed8b9;
+    --open-ink: #1f7a51;
+    --now: #ee9a1e;
+    --risk: #c2410c;
+    --risk-bg: #fdeee6;
+    --warn: #8a5a00;
+    --warn-bg: #fff4db;
+    --focus: #3d6bf2;
+    --accent: #3d6bf2;
+    --on-accent: #ffffff;
+    --sun: #f2b33d;
+    --l-cs: #4f7df5;
+    --l-econ: #8b5cf6;
+    --l-rec: #ec8f2e;
+    --l-pers: #ec6a9c;
+    --past: linear-gradient(rgb(241 243 248 / 0.55), rgb(241 243 248 / 0.55));
+    --shadow-card: 0 1px 3px rgb(20 26 46 / 0.05);
+    --r-pane: 18px;
+    --r-row: 10px;
+    --r-ctl: 10px;
+    --r-chip: 99px;
+    --thread-w: 4px;
+    --sky: linear-gradient(90deg, #ffd9b8 0%, #ffe9b0 14%, #c8dcff 34%, #9fbfff 50%, #b9c3ff 68%, #d3bff4 84%, #a99fe6 100%);
+  }
+  .nav-item.is-active { color: var(--accent); }
+  .nav-item.is-active .ic { color: var(--accent); }
+  .quick-add { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 2px 8px rgb(61 107 242 / 0.25); }
+  .quick-add kbd { color: rgb(255 255 255 / 0.75); }
+  .tab { border-radius: 12px 12px 0 0; }
+  .prow { border-bottom: 0; border-radius: var(--r-row); margin-bottom: 2px; padding-top: 10px; padding-bottom: 10px; }
+  .prow .thread { left: 4px; top: 10px; bottom: 10px; }
+  .prow { padding-left: 18px; }
+  .inline-add { padding-left: 18px; }
+  .slot { border-radius: 10px; }
+  .slot.block { border-left: 0; box-shadow: inset 4px 0 0 var(--c); }
+  .open-slot { border-radius: 10px; }
+  .add-btn { border-radius: 99px; }
+  .group-label { font-size: 13px; color: var(--ink); }
+  .now-label { color: #a85d00; }
+  .bar { height: 6px; }
+  .bar-fill { background: linear-gradient(90deg, var(--open-ink), #3fb67d); }
+
+  /* Signature: the sky ribbon. The band runs 8 AM → 8 PM; its colour is the light at that hour,
+     and the sun sits at now. The same light runs down the Day pane's hour column. */
+  .plan-sky { display: block; position: relative; height: 6px; width: calc(100% - 48px); max-width: 592px; margin: 18px auto 0; border-radius: 99px; background: var(--sky); }
+  .sky-end { position: absolute; top: 10px; left: 0; font-size: 10px; color: var(--faint); }
+  .sky-end.r { left: auto; right: 0; }
+  .plan-inner { padding-top: 30px; }
+  .plan-sky .sun {
+    position: absolute; top: 50%; left: 0; width: 14px; height: 14px; margin: -7px 0 0 -7px;
+    border-radius: 99px; background: var(--sun);
+    box-shadow: 0 0 0 3px #fff, 0 0 14px 4px rgb(242 179 61 / 0.55);
+    transition: left 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.2s;
+  }
+  .loaded .plan-sky .sun { left: 43.75%; }
+  .day-dot { width: 10px; height: 10px; background: var(--sun); box-shadow: 0 0 0 3px rgb(242 179 61 / 0.22); }
+  .day-sky {
+    display: block; position: absolute; left: -6px; top: 0; width: 3px; border-radius: 99px;
+    background: linear-gradient(180deg, #ffd9b8 0%, #ffe9b0 14%, #c8dcff 34%, #9fbfff 50%, #b9c3ff 68%, #d3bff4 84%, #a99fe6 100%);
+  }
+  .now::before { width: 10px; height: 10px; left: -9px; top: -6px; background: var(--sun); box-shadow: 0 0 0 2px #fff, 0 0 8px 2px rgb(242 179 61 / 0.5); }
+</style>
+</head>
+<body>
+<script>
+  window.DIRECTION = {
+    id: "daylight",
+    name: "C · Daylight",
+    font: "onest",
+    weights: "strong",
+    blurb: "The brightest option: rounder, airier, with more personality. Noon blue is the primary colour, open time is mint, and the now-marker is the sun. The signature is a thin sky ribbon across the top of My day, running 8 AM to 8 PM. Its colour is the light at that hour, from dawn peach through noon blue to dusk violet, and the sun sits at the current time. The same light runs down the Day pane's hour column.",
+    corners: "The roundest: panes 18, rows and controls 10, chips and add buttons fully round. Plan rows lose their dividers and sit on soft hover fills.",
+    palette: [
+      ["Paper", "#F1F3F8", "--paper"],
+      ["Surface", "#FFFFFF", "--surface"],
+      ["Ink", "#141A2E", "--ink"],
+      ["Muted", "#59627C", "--muted · 6.0:1 on white"],
+      ["Noon blue", "#3D6BF2", "--focus, primary, active nav"],
+      ["Sun / now", "#F2B33D · #EE9A1E", "day dot, now-marker (label #A85D00)"],
+      ["Open time", "#E6F6EE / #1F7A51", "--open / --open-ink · mint"],
+      ["Risk", "#C2410C", "--risk"],
+      ["Lists", "#4F7DF5 #8B5CF6 #EC8F2E #EC6A9C", "list colours"],
+    ],
+  };
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

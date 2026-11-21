@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CornerDownLeft, Sparkles } from "lucide-react";
-import { parseQuickAdd, type Priority } from "@tt/shared";
+import { HUES, parseQuickAdd, swatch, type Priority } from "@tt/shared";
 import { setNotice, tempId, useCreateTask, useModel } from "@tt/client";
 import { PREFILL_KEY } from "@/components/import/import-view";
 import { DuePicker } from "@/components/due-picker";
@@ -17,9 +17,9 @@ const PRIORITY_LABEL: Record<Priority, string> = {
 };
 
 const PRIORITY_STYLE: Record<Exclude<Priority, "none">, { bg: string; fg: string }> = {
-  high: { bg: "#f9ece7", fg: "#a04b35" },
-  med: { bg: "#faf3df", fg: "#7a5e1e" },
-  low: { bg: "#e7eef8", fg: "#2e4f80" },
+  high: { bg: "var(--risk-bg)", fg: "var(--risk)" },
+  med: { bg: "var(--warn-bg)", fg: "var(--warn)" },
+  low: { bg: swatch(HUES.sky).tint, fg: swatch(HUES.sky).ink },
 };
 
 // Long text, several lines, or a comma/semicolon-separated list is probably several tasks:
@@ -165,15 +165,15 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
             onKeyDown={onKeyDown}
             placeholder="cs61 lab report fri 11pm high"
             autoComplete="off"
-            className="block w-full resize-none bg-transparent text-xl font-bold text-ink outline-none placeholder:font-semibold placeholder:text-faint focus-visible:outline-none"
+            className="block w-full resize-none bg-transparent text-xl font-medium text-ink outline-none placeholder:font-medium placeholder:text-faint focus-visible:outline-none"
           />
           <div className="mt-3 flex min-h-[30px] flex-wrap items-center gap-1.5 text-[13px]">
             {long ? (
               <>
-                <span className="font-semibold text-muted">Looks like more than one task.</span>
+                <span className="font-medium text-muted">Looks like more than one task.</span>
                 <button
                   onClick={extractWithAi}
-                  className="flex items-center gap-1.5 rounded-lg bg-sun px-2.5 py-1 font-extrabold text-[#4a3a12] hover:bg-[#d9ae48]"
+                  className="flex items-center gap-1.5 rounded-lg bg-sun px-2.5 py-1 font-medium text-ink hover:brightness-95"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   Find tasks with AI
@@ -185,7 +185,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
                 {duePicker}
                 {priority !== "none" && (
                   <span
-                    className="rounded-md px-1.5 py-0.5 text-[11px] font-semibold"
+                    className="rounded-md px-1.5 py-0.5 text-[11px] font-medium"
                     style={{ background: PRIORITY_STYLE[priority].bg, color: PRIORITY_STYLE[priority].fg }}
                   >
                     {PRIORITY_LABEL[priority]} priority
@@ -200,7 +200,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
             )}
           </div>
         </div>
-        <div className="flex items-center justify-between gap-3 border-t border-line bg-row px-4 py-2.5 text-[12px] font-semibold text-muted">
+        <div className="flex items-center justify-between gap-3 border-t border-line bg-row px-4 py-2.5 text-[12px] font-medium text-muted">
           <span className="hidden min-w-0 truncate sm:inline">
             {long ? "⌘Enter or Enter to split with AI" : lists.length ? `Lists: ${listHints}` : "Enter to add, ⌘Enter to split with AI"}
           </span>
@@ -209,7 +209,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
               type="button"
               onClick={addInstantly}
               disabled={!parsed}
-              className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg bg-coral px-3 py-1.5 text-[13px] font-bold text-white disabled:opacity-40"
+              className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg bg-coral px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-40"
             >
               Add task
               <CornerDownLeft className="h-3.5 w-3.5" />

@@ -23,7 +23,7 @@ export function Switch({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className="relative h-6 w-10 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-      style={{ background: checked ? color : "#d3d6e2" }}
+      style={{ background: checked ? color : "var(--line-strong)" }}
     >
       <span
         className={`absolute top-1 h-4 w-4 rounded-full bg-surface transition-all ${checked ? "left-5" : "left-1"}`}

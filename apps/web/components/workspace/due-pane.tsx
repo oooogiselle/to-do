@@ -91,7 +91,7 @@ export function DuePane({ pane, now }: { pane: string; now: number }) {
                 localStorage.setItem(RANGE_KEY, String(n));
               } catch {}
             }}
-            className="rounded-md border border-[#e4e4e7] bg-surface px-1 py-0.5 text-chip-ink"
+            className="rounded-md border border-line bg-surface px-1 py-0.5 text-chip-ink"
           >
             {DUE_RANGES.map((n) => (
               <option key={n} value={n}>
@@ -160,7 +160,7 @@ function MetaChip({
   return (
     <span
       title={title}
-      className={`inline-flex items-center gap-1 rounded-md border border-[#e4e4e7] bg-surface px-1.5 py-0.5 text-[11px] whitespace-nowrap ${risk ? "text-risk" : "text-chip-ink"}`}
+      className={`inline-flex items-center gap-1 rounded-md border border-line bg-surface px-1.5 py-0.5 text-[11px] whitespace-nowrap ${risk ? "text-risk" : "text-chip-ink"}`}
     >
       <Icon className={`h-3 w-3 ${risk ? "text-coral" : "text-faint"}`} />
       {children}
