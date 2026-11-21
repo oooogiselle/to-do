@@ -135,7 +135,7 @@ export function ResearchSummary({
   );
 }
 
-const label = "mb-1.5 block text-[11px] font-semibold tracking-wider text-muted uppercase";
+const label = "mb-1.5 block text-[12px] font-semibold text-ink";
 
 /** In the task sheet: every resource (removable), the estimate and how it was made, and re-run. */
 export function ResearchSection({ task }: { task: Task }) {

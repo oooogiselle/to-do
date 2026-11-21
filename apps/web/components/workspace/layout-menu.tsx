@@ -38,7 +38,7 @@ export function LayoutMenu({
           role="menu"
           className="animate-pop-in absolute top-10 right-0 z-50 w-60 rounded-2xl border border-line-soft bg-surface p-1.5 shadow-pop"
         >
-          <p className="px-2 pt-1 pb-1 text-[10px] font-semibold tracking-wider text-faint uppercase">
+          <p className="px-2 pt-1 pb-1 text-[12px] font-semibold text-muted">
             Saved layouts
           </p>
           {presets.map((p) => {

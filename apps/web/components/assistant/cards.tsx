@@ -66,7 +66,7 @@ import { Segmented } from "@/components/ui/segmented";
 // Shared class strings, so every card reads as one family.
 const cardShell = "overflow-hidden rounded-[10px] border border-line bg-surface";
 const cardHeader =
-  "flex items-center gap-1.5 border-b border-line-soft px-3 py-2 text-[11px] tracking-[0.08em] text-faint uppercase";
+  "flex items-center gap-1.5 border-b border-line-soft px-3 py-2 text-[12px] font-semibold text-chip-ink";
 const cardFooter = "flex items-center gap-2 border-t border-line-soft bg-row px-3 py-2";
 const primaryBtn =
   "inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-ink px-2.5 text-[12px] text-white transition-colors hover:bg-ink/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-line-strong disabled:opacity-40";

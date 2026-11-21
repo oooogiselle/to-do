@@ -11,7 +11,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { LinkChip } from "./link-chip";
 import { ResearchSection } from "./research";
 
-const label = "mb-1.5 block text-[11px] font-medium tracking-wider text-muted uppercase";
+const label = "mb-1.5 block text-[12px] font-medium text-chip-ink";
 
 type Patch = Partial<Pick<Task, "link_url" | "idea_kind" | "horizon">>;
 

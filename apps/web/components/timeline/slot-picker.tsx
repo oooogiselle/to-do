@@ -131,7 +131,7 @@ export function SlotPicker({
       </div>
 
       <div role="group" aria-label="What do you feel like doing?" className="mb-2 flex flex-wrap items-center gap-1.5">
-        <span className="text-[10px] font-semibold tracking-wider text-faint uppercase">Focus</span>
+        <span className="text-[12px] font-semibold text-chip-ink">Focus</span>
         {FOCUSES.map((f) => (
           <button
             key={f.id}
@@ -152,7 +152,7 @@ export function SlotPicker({
       </div>
 
       <div role="group" aria-label="Energy" className="mb-2 flex items-center gap-1.5">
-        <span className="text-[10px] font-semibold tracking-wider text-faint uppercase">Energy</span>
+        <span className="text-[12px] font-semibold text-chip-ink">Energy</span>
         {ENERGIES.map((e) => (
           <button
             key={e.id}

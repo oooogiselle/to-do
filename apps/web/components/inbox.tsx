@@ -143,7 +143,7 @@ function EmptyState() {
   return (
     <div className="rounded-2xl border-2 border-dashed border-line bg-surface px-6 py-14 text-center">
       <p className="text-base font-semibold text-ink">No tasks yet.</p>
-      <p className="mt-1 text-sm font-medium text-coral">Press ⌘K to add your first one.</p>
+      <p className="mt-1 text-sm font-medium text-accent">Press ⌘K to add your first one.</p>
     </div>
   );
 }

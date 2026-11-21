@@ -3,7 +3,7 @@
 This file is the source of truth for how Tapestry looks: colour, type, weights, corners and the thread motif. When this file and the code disagree, the code is wrong and gets changed to match. This file only changes when Giselle approves the change.
 
 - **Reference mock:** `design/loom/my-day.html` (screenshot: `my-day.png`, 1440×900). It shows these rules on My day. If the mock and this file disagree, this file wins.
-- **Status (2026-11-21):** partly applied on the web (branch `loom-tokens`): tokens, Schibsted Grotesk, list colours, weights by role, and hex values replaced by tokens (steps 1–4). Threads, sentence-case labels and grid blocks (step 5) are next. Mobile `theme.ts` is still on its own palette.
+- **Status (2026-11-21):** applied on the web (PR 1 `loom-tokens`: tokens, font, list colours, weights; PR 2 `loom-threads`: threads, labels, grid blocks). Not yet applied: mobile `theme.ts` (it has its own palette and a dark mode).
 - **History:** the directions that weren't chosen (Indigo, Daylight) and the type specimen are in `design/archive/my-day-directions/`.
 
 ## Principles
@@ -102,6 +102,7 @@ Control heights are 28 (`h-7`) and 24 (`h-6`); checks are 16 in rows and 14 in l
 - **What a thread is:** a 3px-wide, fully rounded bar in the list colour.
 - **Plan and "Every day" rows:** a thread on the left edge, inset 8px top and bottom. At 35% opacity when the to-do is done.
 - **Booked blocks in the Day pane:** a 3px left edge in the list colour, so a planned to-do and its time on the calendar read as the same thread.
+- **Google Calendar events are not threads.** They are a plain `--event` card (`--event-ink` text, corners 6) with a 6px dot in the calendar's colour before the title. Free (not busy) events are a dashed `--line-strong` outline. All-day events use the same chip.
 - **Active nav item:** an accent thread on the sidebar's left edge.
 - **Progress:** a strip of threads, one per to-do that day (routines first, then the plan, in order). Each is 4px tall, 4px apart and equal width. Empty threads are `--line-soft`; done ones fill in their list colour. This replaces the single mint progress bar, and it sits under the stats line ("3 of 8 done · 4h 15m planned · 3h 30m free").
 - **Motion:** the only automatic animation. On first load, done threads fill left to right (0.5s, staggered 70ms). It's turned off under `prefers-reduced-motion`. Everything else animates only in response to the user.

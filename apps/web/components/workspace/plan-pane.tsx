@@ -10,6 +10,7 @@ import {
   isRecurring,
   localDate,
   occursOn,
+  swatch,
   zonedInstant,
   type ComingUpReason,
   type Task,
@@ -19,6 +20,7 @@ import {
   fmtDay,
   fmtDue,
   fmtRelDay,
+  taskColor,
   tempId,
   useAddToPlan,
   useComingUp,
@@ -47,7 +49,7 @@ const navBtn =
  * that day. The date follows the Day pane, so stepping one steps the other.
  */
 export function PlanPane({ pane, now }: { pane: string; now: number }) {
-  const { tasks, taskById, stepsByTask, blocks, planByDate, settings } = useModel();
+  const { tasks, taskById, stepsByTask, blocks, planByDate, listById, settings } = useModel();
   const tz = settings.timezone;
   const today = localDate(new Date(now), tz);
   const [anchor, setAnchor] = useCalendarAnchor("today");
@@ -75,6 +77,12 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
   const doneCount =
     entries.filter(entryDone).length + routines.filter((t) => isDoneOn(t, date)).length;
   const totalCount = entries.length + routines.length;
+  const planDone = entries.filter(entryDone).length;
+  // Progress as threads: one per to-do (routines first, then the plan), in its list colour once done.
+  const threads = [
+    ...routines.map((t) => ({ key: t.id, color: taskColor(t, listById), done: isDoneOn(t, date) })),
+    ...entries.map((e) => ({ key: e.item.id, color: taskColor(e.task, listById), done: entryDone(e) })),
+  ];
   const estimate = (t: Task) => t.estimate_min ?? settings.default_block_min;
   const entryMin = (e: Entry) =>
     e.step ? (e.step.estimate_min ?? settings.default_block_min) : estimate(e.task);
@@ -174,7 +182,7 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
           <header className="flex items-center gap-1.5">
             <div className="mr-auto min-w-0">
               <h2 className="flex items-center gap-2 truncate text-[18px] font-medium tracking-tight text-ink">
-                <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-sun" />
+                <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-accent" />
                 {dayLabel(date, today, tz)}
               </h2>
               <p className="mt-0.5 pl-4 text-[13px] text-muted">{fmtDay(date, tz, "long")}</p>
@@ -209,17 +217,24 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
             </span>
           </p>
           <div
-            className="mt-2 h-1 w-full overflow-hidden rounded-full bg-line-soft"
+            className="mt-2.5 flex gap-1"
             role="progressbar"
             aria-valuemin={0}
             aria-valuemax={totalCount}
             aria-valuenow={doneCount}
             aria-label="To-dos done"
           >
-            <div
-              className="h-full rounded-full bg-mint transition-all"
-              style={{ width: totalCount ? `${(doneCount / totalCount) * 100}%` : "0%" }}
-            />
+            {threads.map((th, i) => (
+              <span key={th.key} className="relative h-1 flex-1 overflow-hidden rounded-full bg-line-soft">
+                {th.done && (
+                  <span
+                    className="animate-thread-fill absolute inset-0 rounded-full"
+                    style={{ background: swatch(th.color).solid, animationDelay: `${150 + i * 70}ms` }}
+                  />
+                )}
+              </span>
+            ))}
+            {threads.length === 0 && <span className="h-1 flex-1 rounded-full bg-line-soft" />}
           </div>
 
           <div className="mt-6">
@@ -227,7 +242,14 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
           </div>
 
           <section className="mt-7" aria-label={`Plan for ${fmtDay(date, tz, "long")}`}>
-            <h3 className="px-1 pb-1 text-[11px] tracking-[0.08em] text-faint uppercase">Plan</h3>
+            <h3 className="flex items-center px-1 pb-1.5 text-[12px] font-semibold text-ink">
+              Plan
+              {entries.length > 0 && (
+                <span className="ml-auto text-[11px] font-normal text-faint tabular-nums">
+                  {planDone}/{entries.length}
+                </span>
+              )}
+            </h3>
             <ol className="min-h-[60px] rounded-lg">
               {entries.map(({ item, task, step }, i) => (
                 <Fragment key={item.id}>
@@ -259,8 +281,9 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
 
           {!isPast && comingUp.length > 0 && (
             <section className="mt-7" aria-label="Coming up">
-              <h3 className="px-1 pb-1 text-[11px] tracking-[0.08em] text-faint uppercase">
-                Coming up · add to this day
+              <h3 className="flex items-center gap-1.5 px-1 pb-1.5 text-[12px] font-semibold text-ink">
+                Coming up
+                <span className="text-[11px] font-normal text-faint">· Add to this day</span>
               </h3>
               <ul>
                 {shownComingUp.map((item) => {

@@ -33,9 +33,9 @@ export function DailySection({
 
   return (
     <section aria-label="Daily to-dos">
-      <header className="flex items-center gap-1.5 px-1 pb-1">
-        <Repeat className="h-3 w-3 text-mint" aria-hidden="true" />
-        <h3 className="text-[11px] tracking-[0.08em] text-faint uppercase">Every day</h3>
+      <header className="flex items-center gap-1.5 px-1 pb-1.5">
+        <Repeat className="h-3 w-3 text-open-ink" aria-hidden="true" />
+        <h3 className="text-[12px] font-semibold text-ink">Every day</h3>
         <span className="ml-auto text-[11px] tabular-nums text-faint">
           {doneCount}/{routines.length}
         </span>
@@ -144,7 +144,7 @@ function RoutineRow({ task: t, date, paneKey }: { task: Task; date: string; pane
       <span className="shrink-0 text-[11px] text-faint">{repeatLabel(t)}</span>
       {streak > 1 && (
         <span
-          className="shrink-0 rounded-md border border-risk/20 bg-risk-bg px-1.5 py-px text-[11px] text-risk"
+          className="shrink-0 rounded-sm bg-warn-bg px-1.5 py-px text-[11px] text-warn"
           title={`${streak}-day streak`}
         >
           {streak} days

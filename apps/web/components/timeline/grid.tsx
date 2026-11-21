@@ -105,7 +105,7 @@ export function Grid(props: GridProps) {
               <div key={day} className="min-w-0 border-l border-line px-1.5 py-2">
                 <div className="flex items-center justify-center gap-1.5">
                   <span
-                    className={`text-[10px] font-semibold tracking-wider uppercase ${isToday ? "text-coral" : "text-muted"}`}
+                    className={`text-[11px] font-semibold ${isToday ? "text-accent" : "text-muted"}`}
                   >
                     {weekdayShort(day, tz)}
                   </span>
@@ -121,13 +121,9 @@ export function Grid(props: GridProps) {
                     <div
                       key={e.gcal_event_id}
                       title={e.title}
-                      className={`mt-1 truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium ${e.busy ? "" : "border border-dashed"}`}
-                      style={
-                        e.busy
-                          ? { background: c.tint, color: c.ink }
-                          : { borderColor: c.solid, color: "var(--muted)" }
-                      }
+                      className={`mt-1 flex items-center gap-1.5 truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium ${e.busy ? "bg-event text-event-ink" : "border border-dashed border-line-strong text-muted"}`}
                     >
+                      <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: c.solid }} />
                       {e.title}
                     </div>
                   );
@@ -248,7 +244,7 @@ function DayColumn(
             style={{ top: toY(f.startMin) + 1, height: height - 2 }}
           >
             {height >= 26 && (
-              <span className="absolute top-1 left-2 text-[10px] font-medium tracking-wide text-open-ink uppercase">
+              <span className="absolute top-1 left-2 text-[10px] font-medium text-open-ink">
                 Open · {formatMinutes(f.minutes)}
               </span>
             )}
@@ -335,8 +331,8 @@ function gridLines(hourPx: number) {
 }
 
 /**
- * A Google Calendar event: a white card with a bar in its calendar's color, quieter than task
- * blocks so tasks stand out. Free (not busy) events are a dashed outline.
+ * A Google Calendar event: a quiet grey card with a dot in its calendar's color. Threads are for
+ * to-dos only (DESIGN.md), so events get no bar. Free (not busy) events are a dashed outline.
  */
 function EventItem({
   event: e,
@@ -355,19 +351,15 @@ function EventItem({
   return (
     <div
       title={`${e.title}\n${time} (Google Calendar${e.busy ? "" : ", free"})`}
-      className={`absolute z-[5] overflow-hidden rounded-lg border pr-2 pl-2.5 ${e.busy ? "bg-surface" : "border-dashed bg-white/60"}`}
-      style={{ ...style, borderColor: e.busy ? c.tint : c.solid }}
+      className={`absolute z-[5] overflow-hidden rounded-md px-2 ${e.busy ? "bg-event" : "border border-dashed border-line-strong bg-surface/60"}`}
+      style={style}
     >
-      <span
-        className="absolute inset-y-1 left-1 w-[3px] rounded-full"
-        style={{ background: c.solid, opacity: e.busy ? 1 : 0.5 }}
-      />
       <div className={`flex min-w-0 ${compact ? "h-full items-center gap-1.5" : "flex-col pt-1"}`}>
         <p
-          className={`min-w-0 truncate leading-tight font-medium ${height < 24 ? "text-[11px]" : "text-[12px]"}`}
-          style={{ color: e.busy ? c.ink : "var(--muted)" }}
+          className={`flex min-w-0 items-center gap-1.5 leading-tight font-medium ${height < 24 ? "text-[11px]" : "text-[12px]"} ${e.busy ? "text-event-ink" : "text-muted"}`}
         >
-          {e.title}
+          <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: c.solid }} />
+          <span className="truncate">{e.title}</span>
         </p>
         <p className="shrink-0 truncate text-[11px] leading-tight text-muted">
           {compact ? fmtTime(e.start, tz) : time}
@@ -457,7 +449,7 @@ function BlockItem(props: {
   const compact = height < 44;
   const past = !movable && !isTemp(b.id);
   const c = swatch(label.color);
-  const fg = label.done ? c.ink : c.onSolid;
+  const fg = c.ink;
   const controls = !isTemp(b.id) && !isDragging && resizeEnd === null;
 
   // Backspace / Delete removes the block under the pointer or the focused one (the task stays),
@@ -494,11 +486,19 @@ function BlockItem(props: {
         {...attributes}
         onClick={() => !isDragging && props.onOpen(b.task_id)}
         title={`${label.title}\n${fmtTime(b.start, tz)}–${fmtTime(b.end, tz)}${movable ? "\nDrag to reschedule, drag the bottom edge to change length" : ""}`}
-        className={`absolute inset-0 flex overflow-hidden rounded-lg pr-5 pl-[26px] text-left shadow-[0_3px_8px_rgb(var(--shadow-ink)/0.12)] ${
+        className={`absolute inset-0 flex overflow-hidden rounded-[2px_6px_6px_2px] pr-5 pl-[26px] text-left shadow-card ${
           compact ? "items-center" : "flex-col pt-1.5"
         } ${movable ? "cursor-grab select-none [-webkit-touch-callout:none] active:cursor-grabbing" : ""} ${isTemp(b.id) ? "animate-pulse" : ""}`}
-        style={{ background: label.done ? c.tint : c.solid, color: fg }}
+        style={{
+          background: label.done ? `color-mix(in srgb, ${c.tint} 55%, var(--surface))` : c.tint,
+          color: fg,
+        }}
       >
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-0 w-[3px] rounded-full"
+          style={{ background: c.solid, opacity: label.done ? 0.35 : 1 }}
+        />
         <span
           className={`block truncate text-[12px] leading-tight font-medium ${label.done ? "line-through opacity-70" : ""}`}
         >
@@ -516,8 +516,7 @@ function BlockItem(props: {
         >
           <TaskCheck
             done={label.done}
-            color={label.done ? c.solid : c.onSolid}
-            checkColor={label.done ? "#fff" : c.solid}
+            color={c.solid}
             onToggle={toggleDone}
             label={label.title}
             size={15}

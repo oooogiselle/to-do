@@ -29,6 +29,10 @@ const NAV = [
   { href: "/import", label: "Import", icon: ClipboardPaste },
 ];
 
+/** The active page's thread on the rail's edge (DESIGN.md, Threads). Desktop only. */
+const activeThread =
+  "md:before:absolute md:before:top-2 md:before:bottom-2 md:before:w-[3px] md:before:rounded-r-full md:before:bg-accent";
+
 const itemBase =
   "flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] transition-colors focus-visible:outline-2";
 
@@ -114,7 +118,7 @@ function SidebarBody({ onQuickAdd, collapsed, onToggle, activeList }: BodyProps 
   // A list's own row is highlighted instead of its page when one is open.
   const listOpen = (href: string) => !!activeList && lists.some((l) => l.id === activeList) && path.startsWith(href);
   const linkClass = (active: boolean) =>
-    `${itemBase} ${collapsed ? "md:justify-center md:px-0" : ""} ${active ? "bg-active text-ink" : "text-chip-ink hover:bg-row-hover hover:text-ink"}`;
+    `${itemBase} relative ${collapsed ? "md:justify-center md:px-0" : ""} ${active ? `bg-active text-ink ${activeThread} ${collapsed ? "md:before:-left-1.5" : "md:before:-left-3"}` : "text-chip-ink hover:bg-row-hover hover:text-ink"}`;
   /** Text that shows on a wide desktop sidebar only. */
   const wide = collapsed ? "hidden" : "hidden md:inline";
   const toggleLabel = `${collapsed ? "Expand" : "Collapse"} sidebar (⌘\\)`;
@@ -267,7 +271,7 @@ function ListLinks({
       {collapsed ? (
         <div role="presentation" className="mx-2 mt-4 mb-2 border-t border-line-soft" />
       ) : (
-        <p className="px-2 pt-6 pb-1.5 text-[11px] tracking-[0.08em] text-faint uppercase">{title}</p>
+        <p className="px-2 pt-6 pb-1.5 text-[12px] font-semibold text-faint">{title}</p>
       )}
       <ul className="space-y-0.5">
         {lists.map((l) => (
