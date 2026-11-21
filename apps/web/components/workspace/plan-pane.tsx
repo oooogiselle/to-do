@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import {
   addDays,
@@ -10,6 +10,7 @@ import {
   isRecurring,
   localDate,
   occursOn,
+  parseQuickAdd,
   swatch,
   zonedInstant,
   type ComingUpReason,
@@ -31,7 +32,6 @@ import {
 import { useOpenTask } from "@/components/app-shell";
 import { DailySection } from "./daily-section";
 import { useCalendarAnchor, dayLabel } from "./calendar-dates";
-import { PlanAddModal } from "./plan-add-modal";
 import { PlanItem } from "./plan-item";
 import { useDragState } from "./workspace-dnd";
 
@@ -49,7 +49,7 @@ const navBtn =
  * that day. The date follows the Day pane, so stepping one steps the other.
  */
 export function PlanPane({ pane, now }: { pane: string; now: number }) {
-  const { tasks, taskById, stepsByTask, blocks, planByDate, listById, settings } = useModel();
+  const { tasks, taskById, stepsByTask, blocks, planByDate, lists, listById, settings } = useModel();
   const tz = settings.timezone;
   const today = localDate(new Date(now), tz);
   const [anchor, setAnchor] = useCalendarAnchor("today");
@@ -154,20 +154,27 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
       },
     });
 
-  // Enter opens the details modal, prefilled from the typed text; the modal adds the to-do.
-  const [adding, setAdding] = useState<string | null>(null);
-  const closeAdd = useCallback(() => setAdding(null), []);
+  // Enter adds the to-do straight away. Typed lists, priorities, repeats and dates are read as in
+  // quick add; with no typed date, a one-off to-do is due on this day at 11:59pm.
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!draft.trim()) return;
-    setAdding(draft);
+    const text = draft.trim();
+    if (!text) return;
+    const parsed = parseQuickAdd(text, { lists, now: new Date(), timezone: tz });
+    const oneOff = parsed.repeat === "none";
+    const body = {
+      ...parsed,
+      title: parsed.title || text,
+      due_at: parsed.due_at ?? (oneOff ? zonedInstant(date, "23:59", tz).toISOString() : null),
+    };
+    // mutateAsync, not mutate's onSuccess: that only fires for the latest call, so a to-do typed
+    // right after another would leave the first one off the plan.
+    createTask
+      .mutateAsync({ tempId: tempId(), body })
+      .then((task) => oneOff && plan(task))
+      .catch(() => {}); // the hook rolls back and reports the failure
     setDraft("");
   };
-  const addTask = (body: Parameters<typeof createTask.mutate>[0]["body"]) =>
-    createTask.mutate(
-      { tempId: tempId(), body },
-      { onSuccess: (task) => (body.repeat ?? "none") === "none" && plan(task) },
-    );
 
   const dropAt = planTarget?.date === date ? planTarget.index : null;
   const dropLine = <li aria-hidden="true" className="h-[3px] rounded-full bg-grape" />;
@@ -373,12 +380,6 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
           )}
         </div>
       </div>
-      <PlanAddModal
-        initial={adding}
-        dayLabel={date === today ? "My day" : "this day"}
-        onClose={closeAdd}
-        onAdd={addTask}
-      />
     </div>
   );
 }
