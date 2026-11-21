@@ -26,6 +26,12 @@ export function addDays(date: string, days: number): string {
   return dt.toISOString().slice(0, 10);
 }
 
+/** Monday ("YYYY-MM-DD") of the week containing local date `day` in `tz`. */
+export function weekStart(day: string, tz: string): string {
+  const wd = localWeekday(zonedInstant(day, "12:00", tz), tz);
+  return addDays(day, -((wd + 6) % 7));
+}
+
 const dayNumber = (date: string) => {
   const [y, m, d] = date.split("-").map(Number) as [number, number, number];
   return Date.UTC(y, m - 1, d) / 86_400_000;

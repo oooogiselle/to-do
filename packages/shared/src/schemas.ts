@@ -292,6 +292,8 @@ export const Task = z.object({
   priority: Priority,
   estimate_min: z.number().int().nullable(),
   status: TaskStatus,
+  /** When it was checked off; the database sets and clears it with status. Never sent by clients. */
+  completed_at: z.string().nullable(),
   /** Repeating tasks are checked off per day (done_dates) rather than once. */
   repeat: Repeat,
   /** Days of the week for a custom repeat. */

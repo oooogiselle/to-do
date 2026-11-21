@@ -266,6 +266,7 @@ export function useCreateTask() {
           priority: v.body.priority ?? "none",
           estimate_min: v.body.estimate_min ?? null,
           status: "open" as const,
+          completed_at: null,
           repeat: v.body.repeat ?? "none",
           repeat_days: v.body.repeat_days ?? [],
           done_dates: [],
@@ -289,7 +290,17 @@ export function useUpdateTask() {
   return useOptimistic({
     mutationFn: (v: { id: string; patch: Parameters<ApiClient["updateTask"]>[1] }) =>
       api.updateTask(v.id, v.patch),
-    apply: (s, v) => updateRow(s, "tasks", v.id, v.patch as Partial<Task>),
+    apply: (s, v) => {
+      const patch = v.patch as Partial<Task>;
+      // Mirror the database trigger so "done this week" moves before the server answers.
+      if (patch.status) {
+        const was = s.tasks.find((t) => t.id === v.id);
+        const done = patch.status === "done";
+        const completed_at = done ? (was?.status === "done" ? was.completed_at : now()) : null;
+        return updateRow(s, "tasks", v.id, { ...patch, completed_at });
+      }
+      return updateRow(s, "tasks", v.id, patch);
+    },
     settle: (s, task) => upsertRow(s, "tasks", task),
   });
 }
