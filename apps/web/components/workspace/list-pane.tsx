@@ -78,7 +78,7 @@ export function ListPane({ listId, pane, now }: { listId: string | null; pane: s
         </div>
       )}
       {doneCount > 0 && (
-        <p className="px-3.5 pb-1 text-[10px] font-semibold text-faint">{doneCount} done</p>
+        <p className="px-3.5 pb-1 text-[10px] font-medium text-faint">{doneCount} done</p>
       )}
       <InlineAdd listId={listId} listName={name} color={color} />
     </div>
@@ -120,8 +120,8 @@ function ListPaneRow(props: {
         ref={setNodeRef}
         className="rounded-xl border-[1.5px] border-dashed border-grape bg-grape-bg px-2.5 py-2"
       >
-        <p className="text-[12px] leading-snug font-extrabold text-[#4b3f7a]">{task.title}</p>
-        <p className="mt-0.5 text-[11px] font-semibold text-grape italic">
+        <p className="text-[12px] leading-snug font-medium text-grape-ink">{task.title}</p>
+        <p className="mt-0.5 text-[11px] font-medium text-grape italic">
           ↳ dragging onto calendar…
         </p>
       </li>
@@ -149,17 +149,17 @@ function ListPaneRow(props: {
         onClick={() => openTask(task.id)}
         className="min-w-0 flex-1 text-left"
       >
-        <span className="block text-[12px] leading-snug font-bold text-ink">{task.title}</span>
+        <span className="block text-[12px] leading-snug font-medium text-ink">{task.title}</span>
         <span className="mt-1 flex flex-wrap items-center gap-1.5">
           {upcoming ? (
-            <span className="rounded-md bg-[#e6f2ec] px-1.5 py-0.5 text-[10px] font-bold text-[#2f6b52]">
+            <span className="rounded-md bg-open px-1.5 py-0.5 text-[10px] font-medium text-open-ink">
               {fmtSlot(upcoming.first.start, upcoming.first.end, props.tz, props.now)}
             </span>
           ) : (
-            <DueChip dueAt={task.due_at} tz={props.tz} now={props.now} className="!text-[10px] !font-bold" />
+            <DueChip dueAt={task.due_at} tz={props.tz} now={props.now} className="!text-[10px] !font-medium" />
           )}
           {task.estimate_min && (
-            <span className="text-[10px] font-semibold text-faint">
+            <span className="text-[10px] font-medium text-faint">
               {formatMinutes(task.estimate_min)}
             </span>
           )}

@@ -53,9 +53,9 @@ export function PaneFrame({
           <GripVertical className="h-3.5 w-3.5" />
         </button>
         <span className="h-2 w-2 rounded-sm" style={{ background: paneColor(pane, lists) }} />
-        <h2 className="flex-1 truncate text-[12px] font-extrabold text-ink">{label}</h2>
+        <h2 className="flex-1 truncate text-[12px] font-semibold text-ink">{label}</h2>
         {count !== null && (
-          <span className="text-[10px] font-extrabold text-faint">{count}</span>
+          <span className="text-[10px] font-medium text-faint">{count}</span>
         )}
         <button
           type="button"

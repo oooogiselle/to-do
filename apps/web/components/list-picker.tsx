@@ -108,7 +108,7 @@ export function ListPicker({
         role="menuitemradio"
         aria-checked={value === id}
         onClick={() => pick(id)}
-        className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] font-bold hover:bg-paper ${value === id ? "text-ink" : "text-chip-ink"}`}
+        className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] font-medium hover:bg-paper ${value === id ? "text-ink" : "text-chip-ink"}`}
       >
         <span
           className={`size-2 shrink-0 rounded-sm ${color ? "" : "border border-line-strong"}`}
@@ -139,7 +139,7 @@ export function ListPicker({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 font-semibold ${current ? "border-line bg-surface text-ink" : "border-dashed border-line-strong text-muted"} hover:border-ink ${className}`}
+        className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 font-medium ${current ? "border-line bg-surface text-ink" : "border-dashed border-line-strong text-muted"} hover:border-ink ${className}`}
       >
         {current && (
           <span className="size-2 rounded-sm" style={{ background: current.color }} aria-hidden />
@@ -167,7 +167,7 @@ export function ListPicker({
                 type="button"
                 role="menuitem"
                 onClick={() => setDraft("")}
-                className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] font-bold text-chip-ink hover:bg-paper"
+                className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] font-medium text-chip-ink hover:bg-paper"
               >
                 <Plus className="size-3 shrink-0" strokeWidth={3} aria-hidden />
                 New list
@@ -189,7 +189,7 @@ export function ListPicker({
                 disabled={createList.isPending}
                 placeholder="List name"
                 aria-label="New list name"
-                className="w-full rounded-lg border border-line bg-surface px-2 py-1.5 text-[12px] font-bold text-ink outline-none placeholder:font-semibold placeholder:text-faint focus:border-sky disabled:opacity-60"
+                className="w-full rounded-lg border border-line bg-surface px-2 py-1.5 text-[12px] font-medium text-ink outline-none placeholder:font-medium placeholder:text-faint focus:border-sky disabled:opacity-60"
               />
             )}
           </li>

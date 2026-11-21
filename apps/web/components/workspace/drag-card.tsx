@@ -17,10 +17,10 @@ export function DragCard({
 }) {
   if (item.kind === "pane") {
     return (
-      <div className="inline-flex -rotate-2 items-center gap-2 rounded-xl bg-ink px-3 py-2 text-[12px] font-bold whitespace-nowrap text-white shadow-sheet">
+      <div className="inline-flex -rotate-2 items-center gap-2 rounded-xl bg-ink px-3 py-2 text-[12px] font-medium whitespace-nowrap text-white shadow-sheet">
         <PanelsTopLeft className="h-4 w-4" />
         {item.label}
-        <span className="font-semibold text-white/50">· drop on a column</span>
+        <span className="font-medium text-white/50">· drop on a column</span>
       </div>
     );
   }
@@ -36,22 +36,22 @@ export function DragCard({
       style={{ borderLeft: `5px solid ${c.solid}` }}
     >
       <GripVertical className="absolute top-2 right-2 h-3.5 w-3.5 text-line-strong" />
-      <p className="pr-4 text-[12px] leading-snug font-extrabold text-ink">{item.title}</p>
+      <p className="pr-4 text-[12px] leading-snug font-medium text-ink">{item.title}</p>
       <div className="mt-1.5 flex flex-wrap gap-1">
         {item.listName && (
           <span
-            className="rounded-md px-1.5 py-0.5 text-[10px] font-bold"
+            className="rounded-md px-1.5 py-0.5 text-[10px] font-medium"
             style={{ background: c.tint, color: c.ink }}
           >
             {item.listName}
           </span>
         )}
-        <span className="rounded-md bg-ink px-1.5 py-0.5 text-[10px] font-bold text-white">
+        <span className="rounded-md bg-ink px-1.5 py-0.5 text-[10px] font-medium text-white">
           {formatMinutes(item.minutes)}
         </span>
       </div>
       <p
-        className={`mt-1.5 text-[11px] font-extrabold ${
+        className={`mt-1.5 text-[11px] font-medium ${
           preview?.past || late ? "text-risk" : preview ? "text-grape-ink" : "text-faint"
         }`}
       >

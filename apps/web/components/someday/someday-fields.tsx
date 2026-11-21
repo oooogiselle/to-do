@@ -11,7 +11,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { LinkChip } from "./link-chip";
 import { ResearchSection } from "./research";
 
-const label = "mb-1.5 block text-[11px] font-bold tracking-wider text-muted uppercase";
+const label = "mb-1.5 block text-[11px] font-medium tracking-wider text-muted uppercase";
 
 type Patch = Partial<Pick<Task, "link_url" | "idea_kind" | "horizon">>;
 
@@ -20,7 +20,7 @@ export function SomedayFields({ task, onChange }: { task: Task; onChange: (patch
   return (
     <section className="space-y-3 rounded-2xl border border-line-soft p-3.5">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-[13px] font-extrabold text-ink">Someday</h3>
+        <h3 className="text-[13px] font-semibold text-ink">Someday</h3>
         <AskButton task={task} />
       </div>
       <div className="flex flex-wrap gap-x-5 gap-y-3">
@@ -75,7 +75,7 @@ function AskButton({ task }: { task: Task }) {
         ask(`Help me get started on ${task.title}`, { taskId: task.id });
       }}
       title="Ask tt. for first steps and places to start"
-      className="flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-[12px] font-bold text-chip-ink hover:bg-row disabled:opacity-50"
+      className="flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-[12px] font-medium text-chip-ink hover:bg-row disabled:opacity-50"
     >
       <MessageCircle className="h-3.5 w-3.5" />
       Ask tt.
@@ -111,7 +111,7 @@ function TtNote({ task }: { task: Task }) {
       />
       <p className="mt-1 text-[12px] text-muted">
         tt. uses these with your{" "}
-        <Link href="/settings" className="font-bold underline hover:text-ink">
+        <Link href="/settings" className="font-medium underline hover:text-ink">
           Settings
         </Link>{" "}
         notes when you ask about this item.
@@ -160,7 +160,7 @@ function LinkField({ value, onCommit }: { value: string | null; onCommit: (v: st
         {value && <LinkChip url={value} />}
       </div>
       {invalid && (
-        <p id="task-link-error" className="mt-1 text-[12px] font-semibold text-risk">
+        <p id="task-link-error" className="mt-1 text-[12px] font-medium text-risk">
           That doesn&apos;t look like a link.
         </p>
       )}

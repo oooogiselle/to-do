@@ -1,12 +1,12 @@
-/** The six list hues plus a neutral, in picker order. */
+/** The six list hues plus a neutral, in picker order (Loom; design/loom/DESIGN.md). */
 export const HUES = {
-  coral: "#D9775E",
-  sun: "#E3BA55",
-  mint: "#5AA585",
-  sky: "#5C88C7",
-  grape: "#8775C9",
-  pink: "#C97A9F",
-  slate: "#8A8FA6",
+  coral: "#D2694A",
+  sun: "#D4972A",
+  mint: "#3B9B6E",
+  sky: "#3F7DDB",
+  grape: "#7C5CD6",
+  pink: "#D0577E",
+  slate: "#8790A3",
 } as const;
 
 export interface Swatch {
@@ -20,21 +20,30 @@ export interface Swatch {
   onSolid: string;
 }
 
-/** Hand-tuned shades for the palette; anything else is computed. */
-const SLATE: Swatch = { solid: HUES.slate, tint: "#EEF0F6", ink: "#4D5370", onSolid: "#FFFFFF" };
+/** Hand-tuned shades for the palette (ink is at least 5:1 on its tint); anything else is computed. */
+const SLATE: Swatch = { solid: HUES.slate, tint: "#EEEFF2", ink: "#5F6679", onSolid: "#FFFFFF" };
 
 const TUNED: Record<string, Swatch> = {
-  [HUES.coral]: { solid: HUES.coral, tint: "#F9ECE7", ink: "#8A3F2C", onSolid: "#FFFFFF" },
-  [HUES.sun]: { solid: HUES.sun, tint: "#FAF3DF", ink: "#7A5E1E", onSolid: "#4A3A12" },
-  [HUES.mint]: { solid: HUES.mint, tint: "#E6F2EC", ink: "#2F6B52", onSolid: "#FFFFFF" },
-  [HUES.sky]: { solid: HUES.sky, tint: "#E7EEF8", ink: "#2E4F80", onSolid: "#FFFFFF" },
-  [HUES.grape]: { solid: HUES.grape, tint: "#EEEBF7", ink: "#4A3D85", onSolid: "#FFFFFF" },
-  [HUES.pink]: { solid: HUES.pink, tint: "#F7EAF0", ink: "#7E3A5A", onSolid: "#FFFFFF" },
+  [HUES.coral]: { solid: HUES.coral, tint: "#F9EAE6", ink: "#975040", onSolid: "#FFFFFF" },
+  [HUES.sun]: { solid: HUES.sun, tint: "#F9F0E1", ink: "#82602A", onSolid: "#58442B" },
+  [HUES.mint]: { solid: HUES.mint, tint: "#E4F1EB", ink: "#2E6F58", onSolid: "#FFFFFF" },
+  [HUES.sky]: { solid: HUES.sky, tint: "#E4EDFA", ink: "#325EA6", onSolid: "#FFFFFF" },
+  [HUES.grape]: { solid: HUES.grape, tint: "#EDE8F9", ink: "#5D47A3", onSolid: "#FFFFFF" },
+  [HUES.pink]: { solid: HUES.pink, tint: "#F8E7ED", ink: "#984465", onSolid: "#FFFFFF" },
   [HUES.slate]: SLATE,
 };
 
-/** Colors from the first palette, mapped to the hue that replaced them. */
+/** Colors from earlier palettes, mapped to the hue that replaced them. Lists store their hex. */
 export const LEGACY_HUES: Record<string, string> = {
+  // The second palette (until Loom, 2026-11).
+  "#D9775E": HUES.coral,
+  "#E3BA55": HUES.sun,
+  "#5AA585": HUES.mint,
+  "#5C88C7": HUES.sky,
+  "#8775C9": HUES.grape,
+  "#C97A9F": HUES.pink,
+  "#8A8FA6": HUES.slate,
+  // The first palette.
   "#2563EB": HUES.sky,
   "#0D9488": HUES.mint,
   "#7C3AED": HUES.grape,

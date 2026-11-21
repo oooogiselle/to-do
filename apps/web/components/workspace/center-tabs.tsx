@@ -36,7 +36,7 @@ export function CenterTabs(props: {
       ref={setNodeRef}
       data-zone="center"
       className={`flex h-[640px] min-w-0 flex-1 flex-col rounded-2xl transition-colors max-lg:order-first lg:h-auto ${
-        draggingPane && isOver ? "bg-[#e9e5f7] ring-2 ring-grape" : ""
+        draggingPane && isOver ? "bg-grape-bg ring-2 ring-grape" : ""
       }`}
     >
       <div
@@ -70,7 +70,7 @@ export function CenterTabs(props: {
         ) : (
           <div className="grid h-full place-items-center p-6 text-center">
             <div>
-              <p className="text-sm font-extrabold text-ink">No pane open here</p>
+              <p className="text-sm font-semibold text-ink">No pane open here</p>
               <p className="mt-1 text-[12px] text-muted">
                 Drag a pane in by its handle, or open one with +.
               </p>
@@ -78,7 +78,7 @@ export function CenterTabs(props: {
           </div>
         )}
         {draggingPane && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-4 mx-auto w-fit rounded-lg bg-ink/85 px-3 py-1.5 text-[11px] font-bold text-white">
+          <div className="pointer-events-none absolute inset-x-0 bottom-4 mx-auto w-fit rounded-lg bg-ink/85 px-3 py-1.5 text-[11px] font-medium text-white">
             Drop to open as a tab
           </div>
         )}
@@ -114,7 +114,7 @@ function DraggableTab(props: {
         aria-selected={props.active}
         {...listeners}
         onClick={props.onSelect}
-        className="flex cursor-grab select-none [-webkit-touch-callout:none] items-center gap-1.5 py-2 pr-1 pl-2 text-[12px] font-extrabold active:cursor-grabbing"
+        className="flex cursor-grab select-none [-webkit-touch-callout:none] items-center gap-1.5 py-2 pr-1 pl-2 text-[12px] font-semibold active:cursor-grabbing"
       >
         <GripVertical className="h-3 w-3 opacity-40" aria-hidden />
         <span className="h-2 w-2 rounded-sm" style={{ background: props.color }} />

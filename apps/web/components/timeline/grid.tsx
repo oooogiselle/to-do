@@ -105,12 +105,12 @@ export function Grid(props: GridProps) {
               <div key={day} className="min-w-0 border-l border-line px-1.5 py-2">
                 <div className="flex items-center justify-center gap-1.5">
                   <span
-                    className={`text-[10px] font-bold tracking-wider uppercase ${isToday ? "text-coral" : "text-muted"}`}
+                    className={`text-[10px] font-semibold tracking-wider uppercase ${isToday ? "text-coral" : "text-muted"}`}
                   >
                     {weekdayShort(day, tz)}
                   </span>
                   <span
-                    className={`grid h-6 min-w-6 place-items-center rounded-md px-1 text-[13px] font-extrabold ${isToday ? "bg-ink text-white" : "text-ink"}`}
+                    className={`grid h-6 min-w-6 place-items-center rounded-md px-1 text-[13px] font-semibold ${isToday ? "bg-ink text-white" : "text-ink"}`}
                   >
                     {Number(day.slice(8))}
                   </span>
@@ -121,7 +121,7 @@ export function Grid(props: GridProps) {
                     <div
                       key={e.gcal_event_id}
                       title={e.title}
-                      className={`mt-1 truncate rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${e.busy ? "" : "border border-dashed"}`}
+                      className={`mt-1 truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium ${e.busy ? "" : "border border-dashed"}`}
                       style={
                         e.busy
                           ? { background: c.tint, color: c.ink }
@@ -142,7 +142,7 @@ export function Grid(props: GridProps) {
             {Array.from({ length: 23 }, (_, i) => i + 1).map((h) => (
               <span
                 key={h}
-                className="absolute right-1.5 -translate-y-1/2 text-[10px] font-semibold text-faint tabular-nums"
+                className="absolute right-1.5 -translate-y-1/2 text-[10px] font-medium text-faint tabular-nums"
                 style={{ top: h * hourPx }}
               >
                 {fmtTime(zonedInstant(days[0]!, `${String(h).padStart(2, "0")}:00`, tz), tz)}
@@ -162,7 +162,7 @@ export function Grid(props: GridProps) {
         </div>
       </div>
       {props.loading && (
-        <div className="absolute inset-0 z-40 grid place-items-center bg-white/50 font-semibold text-muted">
+        <div className="absolute inset-0 z-40 grid place-items-center bg-white/50 font-medium text-muted">
           Loading…
         </div>
       )}
@@ -204,11 +204,11 @@ function DayColumn(
   const weekday = localWeekday(zonedInstant(day, "12:00", tz), tz);
   const tint =
     scheduling && !isPast
-      ? "#fbfafe"
+      ? "color-mix(in srgb, var(--grape-bg) 50%, var(--surface))"
       : weekday === 0 || weekday === 6
-        ? "#f7f8fb"
+        ? "var(--row)"
         : props.isToday
-          ? "#fcf9f7"
+          ? "color-mix(in srgb, var(--accent) 3%, var(--surface))"
           : undefined;
   const ghost = preview?.col === col && scheduling ? preview : null;
   const toY = (min: number) => (min / 60) * hourPx;
@@ -248,7 +248,7 @@ function DayColumn(
             style={{ top: toY(f.startMin) + 1, height: height - 2 }}
           >
             {height >= 26 && (
-              <span className="absolute top-1 left-2 text-[10px] font-bold tracking-wide text-open-ink uppercase">
+              <span className="absolute top-1 left-2 text-[10px] font-medium tracking-wide text-open-ink uppercase">
                 Open · {formatMinutes(f.minutes)}
               </span>
             )}
@@ -292,13 +292,13 @@ function DayColumn(
           }`}
           style={{ top: toY(ghost.startMin) + 1, height: toY(ghost.minutes) - 2 }}
         >
-          <span className={`text-[11px] font-extrabold ${ghost.past ? "text-risk" : "text-grape-ink"}`}>
+          <span className={`text-[11px] font-medium ${ghost.past ? "text-risk" : "text-grape-ink"}`}>
             {ghost.past
               ? "That time has passed"
               : `${fmtTime(instantAt(day, ghost.startMin, tz), tz)}–${fmtTime(instantAt(day, ghost.startMin + ghost.minutes, tz), tz)}`}
           </span>
           {!ghost.past && toY(ghost.minutes) > 36 && (
-            <span className="text-[10px] font-bold text-grape">
+            <span className="text-[10px] font-medium text-grape">
               {active?.kind === "block" ? "drop to move" : "drop to schedule"}
             </span>
           )}
@@ -328,10 +328,10 @@ function DayColumn(
 
 /** Hour lines, plus fainter half-hour lines once zoomed in far enough to want them. */
 function gridLines(hourPx: number) {
-  const hours = `repeating-linear-gradient(to bottom, #eef0f5 0 1px, transparent 1px ${hourPx}px)`;
+  const hours = `repeating-linear-gradient(to bottom, var(--line-soft) 0 1px, transparent 1px ${hourPx}px)`;
   if (hourPx < 96) return hours;
   const half = hourPx / 2;
-  return `${hours}, repeating-linear-gradient(to bottom, transparent 0 ${half}px, #f4f5f9 ${half}px ${half + 1}px, transparent ${half + 1}px ${hourPx}px)`;
+  return `${hours}, repeating-linear-gradient(to bottom, transparent 0 ${half}px, color-mix(in srgb, var(--line-soft) 55%, var(--surface)) ${half}px ${half + 1}px, transparent ${half + 1}px ${hourPx}px)`;
 }
 
 /**
@@ -364,7 +364,7 @@ function EventItem({
       />
       <div className={`flex min-w-0 ${compact ? "h-full items-center gap-1.5" : "flex-col pt-1"}`}>
         <p
-          className={`min-w-0 truncate leading-tight font-semibold ${height < 24 ? "text-[11px]" : "text-[12px]"}`}
+          className={`min-w-0 truncate leading-tight font-medium ${height < 24 ? "text-[11px]" : "text-[12px]"}`}
           style={{ color: e.busy ? c.ink : "var(--muted)" }}
         >
           {e.title}
@@ -494,13 +494,13 @@ function BlockItem(props: {
         {...attributes}
         onClick={() => !isDragging && props.onOpen(b.task_id)}
         title={`${label.title}\n${fmtTime(b.start, tz)}–${fmtTime(b.end, tz)}${movable ? "\nDrag to reschedule, drag the bottom edge to change length" : ""}`}
-        className={`absolute inset-0 flex overflow-hidden rounded-lg pr-5 pl-[26px] text-left shadow-[0_3px_8px_rgb(24_24_27/0.12)] ${
+        className={`absolute inset-0 flex overflow-hidden rounded-lg pr-5 pl-[26px] text-left shadow-[0_3px_8px_rgb(var(--shadow-ink)/0.12)] ${
           compact ? "items-center" : "flex-col pt-1.5"
         } ${movable ? "cursor-grab select-none [-webkit-touch-callout:none] active:cursor-grabbing" : ""} ${isTemp(b.id) ? "animate-pulse" : ""}`}
         style={{ background: label.done ? c.tint : c.solid, color: fg }}
       >
         <span
-          className={`block truncate text-[12px] leading-tight font-bold ${label.done ? "line-through opacity-70" : ""}`}
+          className={`block truncate text-[12px] leading-tight font-medium ${label.done ? "line-through opacity-70" : ""}`}
         >
           {label.title}
         </span>

@@ -2,7 +2,7 @@ import type { Task } from "@tt/shared";
 
 const LEVELS = {
   high: { bars: 3, color: "var(--tt-coral)", label: "High priority" },
-  med: { bars: 2, color: "#d6a740", label: "Medium priority" },
+  med: { bars: 2, color: "var(--tt-sun)", label: "Medium priority" },
   low: { bars: 1, color: "var(--tt-sky)", label: "Low priority" },
 } as const;
 
@@ -16,7 +16,7 @@ export function PriorityMark({ priority }: { priority: Task["priority"] }) {
         <span
           key={i}
           className="w-[3px] rounded-full"
-          style={{ height: 6 + i * 3, background: i < level.bars ? level.color : "#d9dce8" }}
+          style={{ height: 6 + i * 3, background: i < level.bars ? level.color : "var(--line-strong)" }}
         />
       ))}
     </span>
@@ -24,7 +24,7 @@ export function PriorityMark({ priority }: { priority: Task["priority"] }) {
 }
 
 export const PRIORITY_CHIP = {
-  high: { bg: "#faf3df", fg: "#7a5e1e", label: "High" },
+  high: { bg: "var(--warn-bg)", fg: "var(--warn)", label: "High" },
   med: { bg: "var(--chip)", fg: "var(--chip-ink)", label: "Med" },
   low: { bg: "var(--chip)", fg: "var(--muted)", label: "Low" },
 } as const;

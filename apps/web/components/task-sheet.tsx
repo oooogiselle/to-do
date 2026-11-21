@@ -38,14 +38,14 @@ import { LinkChip } from "./someday/link-chip";
 import { SomedayFields } from "./someday/someday-fields";
 
 const PRIORITIES: { value: Priority; label: string; color: string }[] = [
-  { value: "none", label: "None", color: "#8a8fa6" },
+  { value: "none", label: "None", color: "var(--faint)" },
   { value: "low", label: "Low", color: "var(--tt-sky)" },
-  { value: "med", label: "Med", color: "#c99a35" },
+  { value: "med", label: "Med", color: "var(--tt-sun)" },
   { value: "high", label: "High", color: "var(--tt-coral)" },
 ];
 const ESTIMATES = [15, 30, 60, 90, 120, 180];
 
-const label = "mb-1.5 block text-[11px] font-bold tracking-wider text-muted uppercase";
+const label = "mb-1.5 block text-[11px] font-medium tracking-wider text-muted uppercase";
 const field =
   "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:border-sky focus:ring-2 focus:ring-sky/20";
 
@@ -164,7 +164,7 @@ function TitleField({
         }
         if (e.key === "Escape") setDraft(value);
       }}
-      className={`w-full resize-none bg-transparent text-[22px] leading-tight font-extrabold tracking-tight outline-none placeholder:opacity-50 ${done ? "line-through opacity-70" : ""}`}
+      className={`w-full resize-none bg-transparent text-[22px] leading-tight font-semibold tracking-tight outline-none placeholder:opacity-50 ${done ? "line-through opacity-70" : ""}`}
     />
   );
 }
@@ -224,7 +224,7 @@ export function TaskSheet({
       <div className="px-5 pt-4 pb-5" style={{ background: c.solid, color: c.onSolid }}>
         <div className="mb-4 flex items-center justify-between">
           <span className="flex min-w-0 items-center gap-2">
-            <span className="rounded-lg bg-black/15 px-2 py-1 text-[12px] font-bold">
+            <span className="rounded-lg bg-black/15 px-2 py-1 text-[12px] font-medium">
               {list?.name ?? "No list"}
             </span>
             {task.link_url && list?.kind !== "someday" && <LinkChip url={task.link_url} />}
@@ -303,7 +303,7 @@ export function TaskSheet({
                   type="button"
                   aria-pressed={active}
                   onClick={() => update({ priority: p.value })}
-                  className="rounded-xl border-2 py-1.5 text-sm font-bold transition-colors"
+                  className="rounded-xl border-2 py-1.5 text-sm font-medium transition-colors"
                   style={{
                     borderColor: active ? p.color : "var(--line)",
                     background: active ? p.color : "#fff",
@@ -328,7 +328,7 @@ export function TaskSheet({
                   type="button"
                   aria-pressed={active}
                   onClick={() => update({ estimate_min: active ? null : m })}
-                  className={`rounded-lg px-2.5 py-1 text-[13px] font-bold transition-colors ${
+                  className={`rounded-lg px-2.5 py-1 text-[13px] font-medium transition-colors ${
                     active ? "bg-ink text-white" : "bg-chip text-chip-ink hover:bg-line"
                   }`}
                 >
@@ -336,7 +336,7 @@ export function TaskSheet({
                 </button>
               );
             })}
-            <label className="flex items-center gap-1 text-[13px] font-semibold text-muted">
+            <label className="flex items-center gap-1 text-[13px] font-medium text-muted">
               <CommitInput
                 aria-label="Estimate in minutes"
                 inputMode="numeric"
@@ -350,7 +350,7 @@ export function TaskSheet({
                   update({ estimate_min: Number.isFinite(n) && n > 0 ? n : null });
                 }}
                 placeholder="Other"
-                className="w-16 rounded-lg border border-line bg-surface px-2 py-1 text-[13px] font-bold text-ink outline-none focus:border-sky"
+                className="w-16 rounded-lg border border-line bg-surface px-2 py-1 text-[13px] font-medium text-ink outline-none focus:border-sky"
               />
               min
             </label>
@@ -359,7 +359,7 @@ export function TaskSheet({
             <button
               type="button"
               onClick={() => update({ estimate_min: stepTotal })}
-              className="mt-1.5 text-[12px] font-semibold text-muted underline hover:text-ink"
+              className="mt-1.5 text-[12px] font-medium text-muted underline hover:text-ink"
             >
               Use step total ({formatMinutes(stepTotal)})
             </button>
@@ -430,7 +430,7 @@ export function TaskSheet({
 
         <section className="rounded-2xl p-3.5" style={{ background: c.tint }}>
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-[13px] font-extrabold" style={{ color: c.ink }}>
+            <h3 className="text-[13px] font-semibold" style={{ color: c.ink }}>
               On your calendar
             </h3>
             {panel !== "schedule" && (
@@ -438,7 +438,7 @@ export function TaskSheet({
                 type="button"
                 disabled={saving || task.status !== "open"}
                 onClick={() => setPanel("schedule")}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-bold disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium disabled:opacity-50"
                 style={{ background: c.solid, color: c.onSolid }}
               >
                 <CalendarPlus className="h-3.5 w-3.5" />
@@ -465,13 +465,15 @@ export function TaskSheet({
 
         <section>
           <div className="mb-1.5 flex items-center justify-between">
-            <h3 className={`${label} mb-0`}>Steps</h3>
+            <h3 className="block text-[11px] font-semibold tracking-wider text-muted uppercase">
+              Steps
+            </h3>
             {panel !== "breakdown" && (
               <button
                 type="button"
                 disabled={saving}
                 onClick={() => setPanel("breakdown")}
-                className="flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-bold text-grape-ink hover:bg-grape-bg disabled:opacity-50"
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-medium text-grape-ink hover:bg-grape-bg disabled:opacity-50"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 Break down
@@ -507,7 +509,7 @@ export function TaskSheet({
             deleteTask(task);
             onClose();
           }}
-          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-bold text-risk hover:bg-risk-bg"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-risk hover:bg-risk-bg"
         >
           <Trash2 className="h-4 w-4" />
           Delete
@@ -515,7 +517,7 @@ export function TaskSheet({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white hover:opacity-90"
+          className="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
           Done
         </button>
@@ -641,7 +643,7 @@ function StepsEditor({
                   patch: { estimate_min: Number.isFinite(n) && n > 0 ? n : null },
                 });
               }}
-              className="w-12 bg-transparent text-right text-[13px] font-semibold text-faint outline-none"
+              className="w-12 bg-transparent text-right text-[13px] font-medium text-faint outline-none"
             />
             <button
               type="button"

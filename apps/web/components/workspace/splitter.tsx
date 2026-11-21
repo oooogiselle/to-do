@@ -57,7 +57,7 @@ export function Splitter({
       <div
         className={`flex gap-[3px] rounded-full p-1 transition-colors group-focus-visible:ring-2 group-focus-visible:ring-grape ${
           vertical ? "flex-col" : ""
-        } ${active ? "bg-[#e4dff5]" : "group-hover:bg-chip"}`}
+        } ${active ? "bg-grape/20" : "group-hover:bg-chip"}`}
       >
         {[0, 1, 2, 3, 4].map((i) => (
           <span key={i} className={`h-1 w-1 rounded-full ${active ? "bg-grape" : "bg-line-strong"}`} />

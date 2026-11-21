@@ -196,7 +196,7 @@ export function ImportReview(props: {
         : lists.find((l) => l.id === (result.list_id ?? target))?.name;
     return (
       <div className="animate-pop-in space-y-4 rounded-2xl border border-line bg-surface p-6">
-        <p className="flex items-center gap-2 text-base font-bold text-ink">
+        <p className="flex items-center gap-2 text-base font-semibold text-ink">
           <CheckCircle2 className="h-5 w-5 text-mint" />
           Added {result.created.length} {result.created.length === 1 ? "task" : "tasks"}
           {result.updated.length ? ` and updated ${result.updated.length}` : ""}
@@ -205,13 +205,13 @@ export function ImportReview(props: {
         <div className="flex gap-2">
           <Link
             href="/to-dos"
-            className="rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white hover:opacity-90"
+            className="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-white hover:opacity-90"
           >
             View in To-dos
           </Link>
           <button
             onClick={props.onCancel}
-            className="rounded-xl border border-line px-4 py-2 text-sm font-bold text-ink hover:bg-paper"
+            className="rounded-xl border border-line px-4 py-2 text-sm font-medium text-ink hover:bg-paper"
           >
             Import more
           </button>
@@ -226,7 +226,7 @@ export function ImportReview(props: {
     <div className="space-y-4 rounded-2xl bg-line-soft p-4">
       <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
         <div>
-          <h2 className="text-base font-extrabold tracking-tight text-ink">
+          <h2 className="text-base font-semibold tracking-tight text-ink">
             {props.tasks.length
               ? `Found ${props.tasks.length} ${props.tasks.length === 1 ? "task" : "tasks"}`
               : "No tasks found"}
@@ -239,11 +239,11 @@ export function ImportReview(props: {
         </div>
         {isSyllabus ? (
           <label className="flex flex-wrap items-center gap-2">
-            <span className="text-[12px] font-bold text-muted">Add to</span>
+            <span className="text-[12px] font-medium text-muted">Add to</span>
             <select
               value={target}
               onChange={(e) => setTarget(e.target.value)}
-              className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm font-semibold text-ink"
+              className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm font-medium text-ink"
             >
               <option value={NO_LIST}>No list</option>
               {lists.map((l) => (
@@ -259,7 +259,7 @@ export function ImportReview(props: {
                 value={newListName}
                 onChange={(e) => setNewListName(e.target.value)}
                 placeholder="List name"
-                className="w-36 rounded-lg border border-line bg-surface px-2 py-1.5 text-sm font-semibold text-ink"
+                className="w-36 rounded-lg border border-line bg-surface px-2 py-1.5 text-sm font-medium text-ink"
               />
             )}
           </label>
@@ -267,7 +267,7 @@ export function ImportReview(props: {
       </div>
 
       {uncertainCount > 0 && (
-        <p className="rounded-xl bg-warn-bg px-3 py-2 text-sm font-semibold text-warn">
+        <p className="rounded-xl bg-warn-bg px-3 py-2 text-sm font-medium text-warn">
           {uncertainCount === 1 ? "1 date needs" : `${uncertainCount} dates need`} a check.
           They&apos;re highlighted below.
         </p>
@@ -298,7 +298,7 @@ export function ImportReview(props: {
 
       {isSyllabus && missing.length > 0 && (
         <details className="rounded-xl bg-surface px-3 py-2 text-sm">
-          <summary className="cursor-pointer font-bold text-muted">
+          <summary className="cursor-pointer font-semibold text-muted">
             Not in the new syllabus ({missing.length})
           </summary>
           <p className="mt-2 text-muted">
@@ -320,18 +320,18 @@ export function ImportReview(props: {
         <button
           disabled={!canSave || saving}
           onClick={save}
-          className="rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40"
+          className="rounded-xl bg-ink px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40"
         >
           {saving ? "Adding…" : addLabel(creates.length, updates.length)}
         </button>
         <button
           onClick={props.onCancel}
-          className="rounded-xl px-3 py-2 text-sm font-bold text-muted hover:text-ink"
+          className="rounded-xl px-3 py-2 text-sm font-medium text-muted hover:text-ink"
         >
           Cancel
         </button>
-        {needsTarget && <span className="text-sm font-semibold text-warn">Pick a list to add these to.</span>}
-        {error && <span className="text-sm font-semibold text-risk">{error}</span>}
+        {needsTarget && <span className="text-sm font-medium text-warn">Pick a list to add these to.</span>}
+        {error && <span className="text-sm font-medium text-risk">{error}</span>}
       </div>
     </div>
   );
@@ -359,7 +359,7 @@ function ReviewRow(props: {
   const [showSource, setShowSource] = useState(false);
   const uncertain = !row.proposed.date_certain;
   const input =
-    "rounded-lg border bg-surface px-2 py-1 text-[13px] font-semibold text-ink outline-none focus:border-sky";
+    "rounded-lg border bg-surface px-2 py-1 text-[13px] font-medium text-ink outline-none focus:border-sky";
   const sw = swatch(props.color);
   const dateInput = uncertain ? `${input} border-warn bg-warn-bg` : `${input} border-line`;
 
@@ -381,7 +381,7 @@ function ReviewRow(props: {
           aria-label="Title"
           value={row.title}
           onChange={(e) => props.onChange({ title: e.target.value })}
-          className={`min-w-48 flex-1 ${input} border-transparent !text-sm !font-bold hover:border-line ${props.include ? "" : "opacity-50"}`}
+          className={`min-w-48 flex-1 ${input} border-transparent !text-sm !font-medium hover:border-line ${props.include ? "" : "opacity-50"}`}
         />
         <StatusBadge match={match} past={props.past} tz={tz} />
       </div>
@@ -431,7 +431,7 @@ function ReviewRow(props: {
         )}
       </div>
       {uncertain && (
-        <p className="pl-7 text-[12px] font-semibold text-warn">
+        <p className="pl-7 text-[12px] font-medium text-warn">
           Check this date{row.proposed.date_note ? `: ${row.proposed.date_note}` : "."}
         </p>
       )}
@@ -450,7 +450,7 @@ function ReviewRow(props: {
 }
 
 function StatusBadge({ match, past, tz }: { match: ImportMatch; past: boolean; tz: string }) {
-  const base = "rounded-md px-1.5 py-0.5 text-[11px] font-bold";
+  const base = "rounded-md px-1.5 py-0.5 text-[11px] font-medium";
   if (match.status === "same")
     return <span className={`${base} bg-chip text-muted`}>Already added</span>;
   if (match.status === "changed") {
@@ -469,5 +469,5 @@ function StatusBadge({ match, past, tz }: { match: ImportMatch; past: boolean; t
     );
   }
   if (past) return <span className={`${base} bg-chip text-muted`}>Already past</span>;
-  return <span className={`${base} bg-[#e6f2ec] text-[#2f6b52]`}>New</span>;
+  return <span className={`${base} bg-open text-open-ink`}>New</span>;
 }

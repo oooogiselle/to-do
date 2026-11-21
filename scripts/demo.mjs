@@ -106,10 +106,10 @@ await insert(admin, "calendar_events", [
 ]);
 
 const [cs, econ, rec, pers] = await insert(user, "lists", [
-  { name: "CS61", color: "#5C88C7", sort_order: 0 },
-  { name: "Econ 10", color: "#5AA585", sort_order: 1 },
-  { name: "Recruiting", color: "#8775C9", sort_order: 2 },
-  { name: "Personal", color: "#D9775E", sort_order: 3 },
+  { name: "CS61", color: "#3F7DDB", sort_order: 0 },
+  { name: "Econ 10", color: "#3B9B6E", sort_order: 1 },
+  { name: "Recruiting", color: "#7C5CD6", sort_order: 2 },
+  { name: "Personal", color: "#D2694A", sort_order: 3 },
 ]);
 const task = (list, title, due, priority, estimate) => ({ list_id: list?.id ?? null, title, due_at: due, priority, estimate_min: estimate });
 const tasks = await insert(user, "tasks", [

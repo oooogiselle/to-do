@@ -108,7 +108,7 @@ export function ImportView() {
   };
 
   const primary =
-    "flex items-center gap-1.5 rounded-xl bg-sun px-4 py-2 text-sm font-extrabold text-[#4a3a12] transition-colors hover:bg-[#d9ae48] disabled:opacity-40";
+    "flex items-center gap-1.5 rounded-xl bg-sun px-4 py-2 text-sm font-medium text-ink transition-colors hover:brightness-95 disabled:opacity-40";
   const area =
     "w-full flex-1 resize-y rounded-xl border border-line bg-row p-3 text-[13px] text-ink outline-none placeholder:text-faint focus:border-sky focus:ring-2 focus:ring-sky/20";
 
@@ -147,7 +147,7 @@ export function ImportView() {
                     role="tab"
                     aria-selected={tab === value}
                     onClick={() => setTab(value)}
-                    className={`rounded-lg px-3 py-1 text-sm font-bold transition-colors ${tab === value ? "bg-ink text-white" : "text-chip-ink hover:text-ink"}`}
+                    className={`rounded-lg px-3 py-1 text-sm font-semibold transition-colors ${tab === value ? "bg-ink text-white" : "text-chip-ink hover:text-ink"}`}
                   >
                     {label}
                   </button>
@@ -162,7 +162,7 @@ export function ImportView() {
                     if (text.trim()) void extractText(text);
                   }}
                 >
-                  <label htmlFor="import-text" className="text-[13px] font-extrabold text-ink">
+                  <label htmlFor="import-text" className="text-[13px] font-medium text-ink">
                     Paste here
                   </label>
                   <textarea
@@ -202,13 +202,13 @@ export function ImportView() {
                     {file ? (
                       <>
                         <FileText className="mb-1 h-6 w-6 text-sun" />
-                        <span className="text-sm font-bold text-ink">{file.name}</span>
+                        <span className="text-sm font-medium text-ink">{file.name}</span>
                         <span className="text-[12px] text-muted">Click to choose a different file</span>
                       </>
                     ) : (
                       <>
                         <Upload className="mb-1 h-6 w-6 text-sun" />
-                        <span className="text-sm font-bold text-ink">
+                        <span className="text-sm font-medium text-ink">
                           Drop a syllabus PDF or photo here
                         </span>
                         <span className="text-[12px] text-muted">
@@ -219,7 +219,7 @@ export function ImportView() {
                   </label>
                   {!file && (
                     <>
-                      <label htmlFor="syllabus-text" className="text-[13px] font-extrabold text-ink">
+                      <label htmlFor="syllabus-text" className="text-[13px] font-medium text-ink">
                         Or paste the syllabus text
                       </label>
                       <textarea
@@ -238,7 +238,7 @@ export function ImportView() {
                     {file && (
                       <button
                         onClick={() => setFile(null)}
-                        className="px-2 py-2 text-sm font-bold text-muted hover:text-ink"
+                        className="px-2 py-2 text-sm font-medium text-muted hover:text-ink"
                       >
                         Remove file
                       </button>
@@ -257,16 +257,16 @@ export function ImportView() {
             </section>
 
             <section className="flex min-h-64 flex-col rounded-2xl bg-line-soft p-4" aria-live="polite">
-              <h2 className="mb-3 text-[13px] font-extrabold text-ink">Preview</h2>
+              <h2 className="mb-3 text-[13px] font-semibold text-ink">Preview</h2>
               <div className="grid flex-1 place-items-center rounded-xl border-2 border-dashed border-line-strong p-8 text-center text-sm">
                 {busy ? (
-                  <p role="status" className="flex flex-col items-center gap-2 font-semibold text-ink">
+                  <p role="status" className="flex flex-col items-center gap-2 font-medium text-ink">
                     <Sparkles className="h-5 w-5 animate-pulse text-sun" />
                     {busy}
                     <span className="font-normal text-muted">This can take up to a minute.</span>
                   </p>
                 ) : error ? (
-                  <p className="font-semibold text-risk">{error}</p>
+                  <p className="font-medium text-risk">{error}</p>
                 ) : (
                   <p className="text-muted">Tasks will show up here before anything is added.</p>
                 )}

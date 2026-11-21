@@ -5,7 +5,7 @@ import { formatMinutes, localDate, zonedInstant, type Step, type TimeBlock } fro
 import { fmtDay, fmtTime, isTemp, localTime, useDeleteBlock, useMoveBlock } from "@tt/client";
 
 const field =
-  "rounded-lg border border-line bg-surface px-2 py-1 font-semibold outline-none focus:border-sky";
+  "rounded-lg border border-line bg-surface px-2 py-1 font-medium outline-none focus:border-sky";
 
 const DURATIONS = [15, 30, 45, 60, 75, 90, 120, 150, 180, 240];
 
@@ -56,7 +56,7 @@ export function ScheduledBlocks(props: {
           return (
             <li
               key={b.id}
-              className={`flex items-center gap-2.5 rounded-xl bg-surface px-3 py-2 text-[13px] font-semibold ${past ? "text-muted" : "text-ink"}`}
+              className={`flex items-center gap-2.5 rounded-xl bg-surface px-3 py-2 text-[13px] font-medium ${past ? "text-muted" : "text-ink"}`}
             >
               <span
                 className="h-2 w-2 shrink-0 rounded-full"
@@ -113,7 +113,7 @@ export function ScheduledBlocks(props: {
                 disabled={isTemp(b.id)}
                 onClick={() => remove.mutate(b.id)}
                 title={past ? "Didn't get to it? The task stays in your to-dos" : undefined}
-                className="rounded-md px-1.5 py-1 text-[12px] font-bold text-muted hover:bg-risk-bg hover:text-risk"
+                className="rounded-md px-1.5 py-1 text-[12px] font-medium text-muted hover:bg-risk-bg hover:text-risk"
               >
                 {past ? "Didn't do it" : "Remove"}
               </button>
@@ -187,14 +187,14 @@ function BlockEditor(props: {
         <button
           type="button"
           onClick={props.onCancel}
-          className="text-[12px] font-bold text-muted hover:text-ink"
+          className="text-[12px] font-medium text-muted hover:text-ink"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={!valid || past}
-          className="rounded-lg bg-ink px-2.5 py-1 text-[12px] font-bold text-white disabled:opacity-40"
+          className="rounded-lg bg-ink px-2.5 py-1 text-[12px] font-medium text-white disabled:opacity-40"
         >
           Save
         </button>

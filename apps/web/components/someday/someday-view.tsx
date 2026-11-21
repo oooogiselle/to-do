@@ -94,7 +94,7 @@ export function SomedayView() {
               { value: "people", label: "People" },
             ]}
           />
-          <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-chip-ink">
+          <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-chip-ink">
             <Switch checked={showDone} onChange={setShowDone} label="Show done" />
             Show done
           </label>
@@ -137,7 +137,7 @@ export function SomedayView() {
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className="flex items-center gap-1.5 text-[12px] font-bold text-muted hover:text-ink"
+                className="flex items-center gap-1.5 text-[12px] font-medium text-muted hover:text-ink"
               >
                 <Pencil className="h-3.5 w-3.5" />
                 Edit “{filteredList.name}”
@@ -149,7 +149,7 @@ export function SomedayView() {
         <Capture lists={lists} listId={listFilter} kindFilter={kind} />
 
         {isLoading ? (
-          <p className="font-semibold text-muted">Loading…</p>
+          <p className="font-medium text-muted">Loading…</p>
         ) : shown.length === 0 ? (
           <EmptyState filtered={kind !== "all" || !!listFilter} />
         ) : (
@@ -157,7 +157,7 @@ export function SomedayView() {
             {shown.map((s) => (
               <section key={s.horizon ?? "none"} aria-label={s.horizon ? HORIZON_LABEL[s.horizon] : "No timeframe"}>
                 <h2 className="mb-3 flex items-baseline gap-2">
-                  <span className="text-[15px] font-extrabold tracking-tight text-ink">
+                  <span className="text-[15px] font-semibold tracking-tight text-ink">
                     {s.horizon ? HORIZON_LABEL[s.horizon] : "Whenever"}
                   </span>
                   <span className="text-[12px] text-muted">{SECTION_HINT[s.horizon ?? "none"]}</span>
@@ -269,12 +269,12 @@ function Capture({
         </p>
       )}
       {researchNote && (
-        <p role="status" className="px-1 pb-1 text-[12px] font-semibold text-muted">
+        <p role="status" className="px-1 pb-1 text-[12px] font-medium text-muted">
           {researchNote}
         </p>
       )}
       {failed && (
-        <p role="alert" className="px-1 pb-1 text-[12px] font-semibold text-risk">
+        <p role="alert" className="px-1 pb-1 text-[12px] font-medium text-risk">
           Couldn&apos;t create the Someday list. Try again.
         </p>
       )}
@@ -298,7 +298,7 @@ function Capture({
           id="someday-horizon"
           value={horizon}
           onChange={(e) => setHorizon(e.target.value as Horizon | "none")}
-          className="rounded-lg border border-line bg-surface px-2 py-1 text-[12px] font-bold text-chip-ink"
+          className="rounded-lg border border-line bg-surface px-2 py-1 text-[12px] font-medium text-chip-ink"
         >
           <option value="none">Any time</option>
           <option value="month">{HORIZON_LABEL.month}</option>
@@ -314,7 +314,7 @@ function Capture({
               id="someday-list"
               value={pickedList}
               onChange={(e) => setPickedList(e.target.value)}
-              className="rounded-lg border border-line bg-surface px-2 py-1 text-[12px] font-bold text-chip-ink"
+              className="rounded-lg border border-line bg-surface px-2 py-1 text-[12px] font-medium text-chip-ink"
             >
               <option value="">{lists[0]!.name}</option>
               {lists.slice(1).map((l) => (
@@ -336,7 +336,7 @@ function Capture({
           }}
           disabled={!text.trim()}
           title="Not sure yet? tt. suggests a type, timeframe and first steps"
-          className="ml-auto flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-1.5 text-[13px] font-bold text-ink hover:bg-row disabled:opacity-40"
+          className="ml-auto flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-1.5 text-[13px] font-medium text-ink hover:bg-row disabled:opacity-40"
         >
           <MessageCircle className="h-3.5 w-3.5 text-muted" />
           Ask tt.
@@ -344,7 +344,7 @@ function Capture({
         <button
           type="submit"
           disabled={!parsed.title || busy}
-          className="rounded-xl bg-ink px-4 py-1.5 text-[13px] font-bold text-white disabled:opacity-40"
+          className="rounded-xl bg-ink px-4 py-1.5 text-[13px] font-medium text-white disabled:opacity-40"
         >
           Add
         </button>
@@ -389,7 +389,7 @@ function IdeaCard({ item }: { item: SomedayItem }) {
         <button
           type="button"
           onClick={() => !saving && openTask(task.id)}
-          className={`min-w-0 flex-1 text-left text-[14px] leading-snug font-semibold ${done ? "text-faint line-through" : "text-ink"}`}
+          className={`min-w-0 flex-1 text-left text-[14px] leading-snug font-medium ${done ? "text-faint line-through" : "text-ink"}`}
         >
           {task.title}
         </button>
@@ -409,7 +409,7 @@ function IdeaCard({ item }: { item: SomedayItem }) {
         <div className="flex flex-wrap items-center gap-1.5 pl-8">
           {task.idea_kind && (
             <span
-              className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold ${
+              className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${
                 task.idea_kind === "goal"
                   ? "bg-warn-bg text-warn"
                   : task.idea_kind === "people"
@@ -443,7 +443,7 @@ function IdeaCard({ item }: { item: SomedayItem }) {
           >
             <div className="h-full rounded-full" style={{ width: `${pct}%`, background: c.solid }} />
           </div>
-          <span className="text-[11px] font-bold text-muted tabular-nums">
+          <span className="text-[11px] font-medium text-muted tabular-nums">
             {progress.done}/{progress.total}
           </span>
         </div>
@@ -460,7 +460,7 @@ function IdeaCard({ item }: { item: SomedayItem }) {
                 body: { task_id: task.id, plan_date: today, position: endPosition(todayPlan) },
               })
             }
-            className="flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-bold text-chip-ink hover:bg-row disabled:opacity-60 disabled:hover:bg-transparent"
+            className="flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-medium text-chip-ink hover:bg-row disabled:opacity-60 disabled:hover:bg-transparent"
           >
             {onToday ? <Check className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
             {onToday ? "On My day" : "Add to My day"}
@@ -488,7 +488,7 @@ function IdeaCard({ item }: { item: SomedayItem }) {
                   e.target.value &&
                   updateTask.mutate({ id: task.id, patch: { list_id: e.target.value } })
                 }
-                className="ml-auto max-w-[130px] rounded-lg bg-transparent px-1.5 py-1 text-[12px] font-bold text-muted hover:bg-row hover:text-ink"
+                className="ml-auto max-w-[130px] rounded-lg bg-transparent px-1.5 py-1 text-[12px] font-medium text-muted hover:bg-row hover:text-ink"
               >
                 <option value="">Make it a to-do…</option>
                 {normalLists.map((l) => (
@@ -535,7 +535,7 @@ function ContactLine({ task, today, disabled }: { task: Task; today: string; dis
             onChange={(e) => setDate(e.target.value)}
             className="rounded-md border border-line bg-surface px-1.5 py-0.5 text-[12px] text-ink"
           />
-          <button type="submit" className="rounded-md px-1.5 py-0.5 font-bold text-ink hover:bg-row">
+          <button type="submit" className="rounded-md px-1.5 py-0.5 font-medium text-ink hover:bg-row">
             Save
           </button>
         </form>
@@ -547,7 +547,7 @@ function ContactLine({ task, today, disabled }: { task: Task; today: string; dis
             setDate(today);
             setLogging(true);
           }}
-          className="rounded-md px-1.5 py-0.5 font-bold text-chip-ink hover:bg-row disabled:opacity-50"
+          className="rounded-md px-1.5 py-0.5 font-medium text-chip-ink hover:bg-row disabled:opacity-50"
         >
           Log
         </button>
@@ -559,7 +559,7 @@ function ContactLine({ task, today, disabled }: { task: Task; today: string; dis
 function EmptyState({ filtered }: { filtered: boolean }) {
   return (
     <div className="rounded-2xl border-2 border-dashed border-line bg-surface px-6 py-14 text-center">
-      <p className="text-base font-bold text-ink">
+      <p className="text-base font-semibold text-ink">
         {filtered ? "Nothing here with this filter." : "Nothing parked yet."}
       </p>
       {!filtered && (
