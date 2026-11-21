@@ -7,7 +7,6 @@ import {
   CalendarDays,
   ClipboardPaste,
   ListChecks,
-  MessageCircle,
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
@@ -15,18 +14,16 @@ import {
   Sparkles,
   Sun,
 } from "lucide-react";
-import { swatch, type List } from "@tt/shared";
-import { useModel, useSync } from "@tt/client";
+import { swatch, weekProgress, type List } from "@tt/shared";
+import { useModel, useSomeday, useSync } from "@tt/client";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { AppLogo } from "./app-logo";
-import { useAssistant } from "./assistant/assistant-context";
 
 const NAV = [
   { href: "/", label: "My day", icon: Sun },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/to-dos", label: "To-dos", icon: ListChecks },
   { href: "/someday", label: "Someday", icon: Sparkles },
-  { href: "/import", label: "Import", icon: ClipboardPaste },
 ];
 
 /** The active page's thread on the rail's edge (DESIGN.md, Threads). Desktop only. */
@@ -34,7 +31,7 @@ const activeThread =
   "md:before:absolute md:before:top-2 md:before:bottom-2 md:before:w-[3px] md:before:rounded-r-full md:before:bg-accent";
 
 const itemBase =
-  "flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] transition-colors focus-visible:outline-2";
+  "flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] font-medium transition-colors focus-visible:outline-2";
 
 function initials(email: string): string {
   const name = email.split("@")[0]!;
@@ -109,11 +106,17 @@ function SidebarWithParams(props: BodyProps) {
 function SidebarBody({ onQuickAdd, collapsed, onToggle, activeList }: BodyProps & { activeList: string | null }) {
   const path = usePathname();
   const email = useUserEmail();
-  const { lists, tasks } = useModel();
+  const { lists, tasks, settings } = useModel();
   const { isError } = useSync();
-  const assistant = useAssistant();
+  const someday = useSomeday();
 
-  const count = (l: List) => tasks.filter((t) => t.list_id === l.id && t.status === "open").length;
+  const now = Date.now();
+  const progress = (l: List) =>
+    weekProgress(
+      tasks.filter((t) => t.list_id === l.id),
+      now,
+      settings.timezone,
+    );
   const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
   // A list's own row is highlighted instead of its page when one is open.
   const listOpen = (href: string) => !!activeList && lists.some((l) => l.id === activeList) && path.startsWith(href);
@@ -125,7 +128,7 @@ function SidebarBody({ onQuickAdd, collapsed, onToggle, activeList }: BodyProps 
 
   return (
     <aside
-      className={`flex shrink-0 items-center gap-2 border-b border-line-soft bg-rail px-3 py-2 md:h-full md:flex-col md:items-stretch md:gap-0 md:border-r md:border-b-0 md:py-4 ${collapsed ? "md:w-[44px] md:px-1.5" : "md:w-[232px]"}`}
+      className={`flex shrink-0 items-center gap-2 border-b border-line-soft bg-rail px-3 py-2 md:h-full md:flex-col md:items-stretch md:gap-0 md:border-r md:border-b-0 md:pt-2.5 md:pb-4 ${collapsed ? "md:w-[44px] md:px-1.5" : "md:w-[232px]"}`}
     >
       <div className={`flex items-center gap-2 md:pb-4 ${collapsed ? "md:flex-col md:px-0" : "md:px-1.5"}`}>
         <AppLogo />
@@ -151,14 +154,17 @@ function SidebarBody({ onQuickAdd, collapsed, onToggle, activeList }: BodyProps 
         onClick={onQuickAdd}
         title="Add task (⌘K)"
         aria-label={collapsed ? "Add task" : undefined}
-        className={`ml-auto flex h-8 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface text-[13px] text-ink shadow-card transition-colors hover:bg-row md:mb-4 md:ml-0 ${collapsed ? "px-3 md:px-0" : "px-3"}`}
+        className={`${itemBase} ml-auto text-ink hover:bg-row-hover md:ml-0 ${collapsed ? "md:justify-center md:px-0" : ""}`}
       >
-        <Plus className="h-3.5 w-3.5" />
+        <Plus className="h-4 w-4 shrink-0" strokeWidth={1.75} />
         <span className={collapsed ? "hidden sm:inline md:hidden" : "hidden sm:inline"}>Add task</span>
-        <kbd className={`ml-auto text-[11px] text-faint ${wide}`}>⌘K</kbd>
+        <kbd className={`ml-auto text-[11px] font-normal text-faint ${wide}`}>⌘K</kbd>
       </button>
 
-      <nav aria-label="Main" className="order-first flex gap-0.5 md:order-none md:flex-col">
+      <nav
+        aria-label="Main"
+        className="order-first flex gap-0.5 md:order-none md:mt-3 md:flex-col md:border-t md:border-line-soft md:pt-3"
+      >
         {NAV.map(({ href, label, icon: Icon }) => {
           const active = isActive(href) && !listOpen(href);
           return (
@@ -171,6 +177,11 @@ function SidebarBody({ onQuickAdd, collapsed, onToggle, activeList }: BodyProps 
             >
               <Icon className="h-4 w-4 shrink-0 text-muted" strokeWidth={1.75} />
               <span className={wide}>{label}</span>
+              {href === "/someday" && someday.openCount > 0 && (
+                <span className={`ml-auto text-[11px] font-normal text-faint tabular-nums ${wide}`}>
+                  {someday.openCount}
+                </span>
+              )}
             </Link>
           );
         })}
@@ -178,38 +189,24 @@ function SidebarBody({ onQuickAdd, collapsed, onToggle, activeList }: BodyProps 
 
       <div className="hidden min-h-0 flex-1 flex-col overflow-y-auto md:flex">
         <ListLinks
-          title="Lists"
           lists={lists.filter((l) => l.kind !== "someday")}
-          href={(l) => `/to-dos?list=${l.id}`}
           isActive={(l) => path.startsWith("/to-dos") && l.id === activeList}
-          count={count}
-          linkClass={linkClass}
-          collapsed={collapsed}
-        />
-        <ListLinks
-          title="Someday"
-          lists={lists.filter((l) => l.kind === "someday")}
-          href={(l) => `/someday?list=${l.id}`}
-          isActive={(l) => path.startsWith("/someday") && l.id === activeList}
-          count={count}
+          progress={progress}
           linkClass={linkClass}
           collapsed={collapsed}
         />
       </div>
 
-      <button
-        type="button"
-        onClick={assistant.toggle}
-        aria-pressed={assistant.open}
-        title="Ask tt. (⌘J)"
-        className={`${linkClass(assistant.open)} order-last grid h-8 w-8 place-items-center p-0 md:order-none md:mb-2 md:flex md:h-auto md:w-auto md:py-1.5 ${collapsed ? "" : "md:px-2"}`}
-      >
-        <MessageCircle className="h-4 w-4 shrink-0 text-muted" strokeWidth={1.75} />
-        <span className={wide}>Ask tt.</span>
-        <kbd className={`ml-auto text-[11px] text-faint ${wide}`}>⌘J</kbd>
-      </button>
-
-      <div className="hidden border-t border-line-soft pt-3 md:block">
+      <div className="hidden space-y-0.5 border-t border-line-soft pt-3 md:block">
+        <Link
+          href="/import"
+          title="Import"
+          aria-current={isActive("/import") ? "page" : undefined}
+          className={linkClass(isActive("/import"))}
+        >
+          <ClipboardPaste className="h-4 w-4 shrink-0 text-muted" strokeWidth={1.75} />
+          <span className={wide}>Import</span>
+        </Link>
         <Link
           href="/settings"
           title="Settings"
@@ -248,20 +245,17 @@ function SidebarBody({ onQuickAdd, collapsed, onToggle, activeList }: BodyProps 
   );
 }
 
+/** The to-do lists, each with how much of its week is done (DESIGN.md, Layout pieces). */
 function ListLinks({
-  title,
   lists,
-  href,
   isActive,
-  count,
+  progress,
   linkClass,
   collapsed,
 }: {
-  title: string;
   lists: List[];
-  href: (l: List) => string;
   isActive: (l: List) => boolean;
-  count: (l: List) => number;
+  progress: (l: List) => { done: number; total: number };
   linkClass: (active: boolean) => string;
   collapsed: boolean;
 }) {
@@ -271,30 +265,48 @@ function ListLinks({
       {collapsed ? (
         <div role="presentation" className="mx-2 mt-4 mb-2 border-t border-line-soft" />
       ) : (
-        <p className="px-2 pt-6 pb-1.5 text-[12px] font-semibold text-faint">{title}</p>
+        <p className="flex items-baseline justify-between px-2 pt-6 pb-1.5">
+          <span className="text-[12px] font-semibold text-faint">Lists</span>
+          <span className="text-[11px] text-faint">done this week</span>
+        </p>
       )}
       <ul className="space-y-0.5">
-        {lists.map((l) => (
-          <li key={l.id}>
-            <Link
-              href={href(l)}
-              title={collapsed ? `${l.name} · ${count(l)}` : undefined}
-              aria-label={collapsed ? l.name : undefined}
-              aria-current={isActive(l) ? "page" : undefined}
-              className={linkClass(isActive(l))}
-            >
-              <span className="grid h-4 w-4 shrink-0 place-items-center">
-                <span className="h-2 w-2 rounded-full" style={{ background: swatch(l.color).solid }} />
-              </span>
-              {!collapsed && (
-                <>
-                  <span className="min-w-0 flex-1 truncate">{l.name}</span>
-                  <span className="text-[11px] text-faint">{count(l)}</span>
-                </>
-              )}
-            </Link>
-          </li>
-        ))}
+        {lists.map((l) => {
+          const { done, total } = progress(l);
+          const color = swatch(l.color).solid;
+          return (
+            <li key={l.id}>
+              <Link
+                href={`/to-dos?list=${l.id}`}
+                title={collapsed ? `${l.name} · ${done} of ${total} done this week` : undefined}
+                aria-label={collapsed ? l.name : undefined}
+                aria-current={isActive(l) ? "page" : undefined}
+                className={`${linkClass(isActive(l))} ${collapsed ? "" : "flex-wrap gap-y-1.5"}`}
+              >
+                <span className="grid h-4 w-4 shrink-0 place-items-center">
+                  <span className="h-2 w-2 rounded-full" style={{ background: color }} />
+                </span>
+                {!collapsed && (
+                  <>
+                    <span className="min-w-0 flex-1 truncate">{l.name}</span>
+                    <span
+                      className="text-[11px] font-normal text-faint tabular-nums"
+                      aria-label={`${done} of ${total} done this week`}
+                    >
+                      {done} of {total}
+                    </span>
+                    <span aria-hidden className="ml-[26px] h-[3px] basis-full overflow-hidden rounded-full bg-line-soft">
+                      <span
+                        className="block h-full rounded-full"
+                        style={{ width: total ? `${(done / total) * 100}%` : 0, background: color }}
+                      />
+                    </span>
+                  </>
+                )}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </>
   );

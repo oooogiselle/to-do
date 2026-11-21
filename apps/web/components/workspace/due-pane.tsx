@@ -23,7 +23,7 @@ const RANGE_KEY = "dueRail.days";
 const UNDATED_KEY = "dueRail.undatedOpen";
 const heading = "flex items-center gap-1.5 px-1 pt-1 pb-1.5 text-[12px] font-semibold";
 
-function savedRange(): DueRange {
+export function savedRange(): DueRange {
   try {
     const n = Number(localStorage.getItem(RANGE_KEY));
     return (DUE_RANGES as readonly number[]).includes(n) ? (n as DueRange) : 14;
@@ -37,7 +37,16 @@ function savedRange(): DueRange {
  * for the work that isn't scheduled yet. "Needs time": everything else due in the next
  * 7/14/30 days with unscheduled work, then (collapsed) tasks without a due date.
  */
-export function DuePane({ pane, now }: { pane: string; now: number }) {
+export function DuePane({
+  pane,
+  now,
+  draggable = true,
+}: {
+  pane: string;
+  now: number;
+  /** Off where there's no calendar to drop on (the To-dos drawer): cards only open and find time. */
+  draggable?: boolean;
+}) {
   const { listById, settings } = useModel();
   const tz = settings.timezone;
   const [days, setDays] = useState<DueRange>(14);
@@ -72,13 +81,16 @@ export function DuePane({ pane, now }: { pane: string; now: number }) {
       defaultMin={settings.default_block_min}
       stepPlannedAt={stepPlannedAt}
       highlighted={highlighted}
+      draggable={draggable}
     />
   );
 
   return (
     <div className="h-full min-h-0 overflow-y-auto bg-paper px-2.5 py-2">
       <div className="flex items-center justify-between gap-2 px-1 pb-1">
-        <p className="text-[11px] text-faint">Drag onto a calendar to schedule</p>
+        <p className="text-[11px] text-faint">
+          {draggable ? "Drag onto a calendar to schedule" : "Find time on a card to schedule it"}
+        </p>
         <label className="flex items-center gap-1 text-[11px] text-muted">
           <span className="sr-only">Show tasks due in the</span>
           Next
@@ -191,6 +203,7 @@ function DueCard(props: {
   defaultMin: number;
   stepPlannedAt: Map<string, number>;
   highlighted: boolean;
+  draggable: boolean;
 }) {
   const { item } = props;
   const { task, steps, neededMin, estimated, plannedAt } = item;
@@ -208,6 +221,7 @@ function DueCard(props: {
       listName: props.listName,
       dueAt: task.due_at,
     } satisfies DragItem,
+    disabled: !props.draggable,
   });
   const { blocks } = useModel();
   const unscheduled = !blocks.some((b) => b.task_id === task.id && Date.parse(b.end) > props.now);
@@ -234,8 +248,8 @@ function DueCard(props: {
     <li
       ref={setNodeRef}
       {...listeners}
-      aria-roledescription="draggable task"
-      className={`@container cursor-grab select-none [-webkit-touch-callout:none] rounded-xl border bg-surface px-3 py-2.5 transition-shadow hover:shadow-[0_2px_6px_rgb(var(--shadow-ink)/0.06)] active:cursor-grabbing ${
+      aria-roledescription={props.draggable ? "draggable task" : undefined}
+      className={`@container rounded-xl border bg-surface px-3 py-2.5 transition-shadow hover:shadow-[0_2px_6px_rgb(var(--shadow-ink)/0.06)] ${props.draggable ? "cursor-grab select-none [-webkit-touch-callout:none] active:cursor-grabbing" : ""} ${
         props.highlighted ? "border-line-strong shadow-[0_2px_6px_rgb(var(--shadow-ink)/0.05)]" : "border-line"
       }`}
     >
@@ -296,6 +310,7 @@ function DueCard(props: {
               atRisk={item.stepUrgency.get(s.id)?.atRisk ?? false}
               tz={props.tz}
               now={props.now}
+              draggable={props.draggable}
             />
           ))}
         </ul>
@@ -339,6 +354,7 @@ function DueStep(props: {
   atRisk: boolean;
   tz: string;
   now: number;
+  draggable: boolean;
 }) {
   const { step, task } = props;
   const minutes = dragMinutes(step.estimate_min ?? props.defaultMin);
@@ -354,13 +370,14 @@ function DueStep(props: {
       listName: props.listName,
       dueAt: step.due_at ?? task.due_at,
     } satisfies DragItem,
+    disabled: !props.draggable,
   });
   return (
     <li
       ref={setNodeRef}
       {...listeners}
-      aria-roledescription="draggable step"
-      className={`flex cursor-grab select-none [-webkit-touch-callout:none] items-center justify-between gap-2 rounded-md border border-line-soft bg-row px-2 py-1 text-[11px] hover:bg-row-hover active:cursor-grabbing ${isDragging ? "opacity-40" : ""}`}
+      aria-roledescription={props.draggable ? "draggable step" : undefined}
+      className={`flex items-center justify-between gap-2 rounded-md border border-line-soft bg-row px-2 py-1 text-[11px] hover:bg-row-hover ${props.draggable ? "cursor-grab select-none [-webkit-touch-callout:none] active:cursor-grabbing" : ""} ${isDragging ? "opacity-40" : ""}`}
     >
       <span className="min-w-0">
         <span className="block truncate text-ink">{step.title}</span>

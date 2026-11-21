@@ -8,6 +8,7 @@ import { QuickAdd } from "./quick-add";
 import { TaskSheet } from "./task-sheet";
 import { AssistantProvider } from "./assistant/assistant-context";
 import { AssistantPanel } from "./assistant/assistant-panel";
+import { AskButtonArea } from "./ask-button";
 
 /**
  * Opens a task's detail sheet by setting ?task=<id> on the current page; `panel` opens it
@@ -65,7 +66,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="h-dvh w-full bg-surface">
         <div className="relative flex h-full w-full flex-col overflow-hidden md:flex-row">
           <Sidebar onQuickAdd={() => setQuickAdd(true)} />
-          <main className="min-h-0 min-w-0 flex-1 bg-surface">{children}</main>
+          <div className="relative flex min-h-0 min-w-0 flex-1">
+            <AskButtonArea>
+              <main className="min-h-0 min-w-0 flex-1 bg-surface">{children}</main>
+            </AskButtonArea>
+          </div>
           <Suspense>
             <AssistantPanel />
           </Suspense>

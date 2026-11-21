@@ -16,15 +16,7 @@ import { Splitter } from "./splitter";
 import { weekStart } from "./time";
 import { useWorkspaceLayout } from "./use-workspace-layout";
 import { WorkspaceDnd } from "./workspace-dnd";
-
-function useNow(intervalMs = 60_000) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), intervalMs);
-    return () => clearInterval(id);
-  }, [intervalMs]);
-  return now;
-}
+import { useNow } from "@/components/use-now";
 
 export function Workspace({ screen }: { screen: Screen }) {
   // Everything here depends on the current time, client-fetched data and this browser's
