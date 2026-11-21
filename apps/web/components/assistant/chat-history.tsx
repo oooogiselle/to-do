@@ -16,7 +16,7 @@ export function ChatHistory({
   onOpen,
   onDeleted,
 }: {
-  activeId: string | null | undefined;
+  activeId: string | null;
   onOpen: (chatId: string) => void;
   /** After a chat is deleted, e.g. to leave it if it was open. */
   onDeleted: (chatId: string) => void;
