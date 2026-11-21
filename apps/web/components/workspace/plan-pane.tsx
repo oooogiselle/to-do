@@ -181,7 +181,7 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
         <div className="mx-auto w-full max-w-[640px] px-6 py-6">
           <header className="flex items-center gap-1.5">
             <div className="mr-auto min-w-0">
-              <h2 className="flex items-center gap-2 truncate text-[18px] font-medium tracking-tight text-ink">
+              <h2 className="flex items-center gap-2 truncate text-[18px] font-semibold tracking-[-0.015em] text-ink">
                 <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-accent" />
                 {dayLabel(date, today, tz)}
               </h2>
