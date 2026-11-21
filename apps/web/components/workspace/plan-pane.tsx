@@ -170,7 +170,7 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
     );
 
   const dropAt = planTarget?.date === date ? planTarget.index : null;
-  const dropLine = <li aria-hidden="true" className="h-[3px] rounded-full bg-sun" />;
+  const dropLine = <li aria-hidden="true" className="h-[3px] rounded-full bg-grape" />;
 
   return (
     <div className="flex h-full min-h-0 flex-col">

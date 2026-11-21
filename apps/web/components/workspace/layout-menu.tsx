@@ -28,7 +28,7 @@ export function LayoutMenu({
         aria-haspopup="menu"
         className="flex items-center gap-1.5 rounded-lg border border-line bg-paper px-2.5 py-1.5 text-[12px] font-medium text-ink hover:bg-line-soft"
       >
-        <LayoutTemplate className="h-3.5 w-3.5 text-grape" />
+        <LayoutTemplate className="h-3.5 w-3.5 text-muted" />
         Layout
         <span className="hidden font-medium text-muted sm:inline">· {current?.name ?? "Custom"}</span>
         <ChevronDown className="h-3 w-3 opacity-50" />

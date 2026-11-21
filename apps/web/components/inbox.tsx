@@ -75,7 +75,7 @@ export function Inbox() {
             href="/import"
             className="flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 text-[13px] text-ink hover:bg-row"
           >
-            <ClipboardPaste className="h-4 w-4 text-sun" strokeWidth={2.5} />
+            <ClipboardPaste className="h-4 w-4 text-muted" strokeWidth={2.5} />
             Import
           </Link>
           <button
@@ -126,7 +126,7 @@ export function Inbox() {
             href="/someday"
             className="mt-5 flex items-center gap-2 rounded-2xl border border-dashed border-line px-4 py-3 text-[13px] text-chip-ink hover:bg-row"
           >
-            <Sparkles className="h-4 w-4 text-grape" strokeWidth={2} aria-hidden />
+            <Sparkles className="h-4 w-4 text-grape-ink" strokeWidth={2} aria-hidden />
             <span>
               {someday.openCount} idea{someday.openCount === 1 ? "" : "s"} in Someday
               <span className="text-muted"> · goals and things to learn</span>
@@ -176,10 +176,10 @@ function ListCard({
       ) : (
         <header
           className="group flex items-center gap-3 px-4 py-3"
-          style={{ background: c.solid, color: c.onSolid }}
+          style={{ background: c.tint, color: c.ink }}
         >
           <h2 className="truncate text-base font-semibold tracking-tight">{name}</h2>
-          <span className="shrink-0 rounded-full bg-black/15 px-2 py-0.5 text-[12px] font-medium">
+          <span className="shrink-0 rounded-full bg-surface/70 px-2 py-0.5 text-[12px] font-medium">
             {openCount} open
           </span>
           {list && !isTemp(list.id) && (
@@ -188,7 +188,7 @@ function ListCard({
               onClick={() => setEditing(true)}
               aria-label={`Edit list ${list.name}`}
               title="Rename, recolor or delete"
-              className="ml-auto grid h-7 w-7 place-items-center rounded-lg opacity-60 group-hover:opacity-100 hover:bg-black/10 focus:opacity-100"
+              className="ml-auto grid h-7 w-7 place-items-center rounded-lg opacity-60 group-hover:opacity-100 hover:bg-surface/60 focus:opacity-100"
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>
@@ -314,7 +314,7 @@ export function ListEditor({
         autoFocus
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="min-w-[140px] flex-1 rounded-xl border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-sky/30"
+        className="min-w-[140px] flex-1 rounded-xl border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-accent/30"
       />
       <ColorPicker value={color} onChange={(v) => v && setColor(v)} label="List color" size={22} />
       <SomedayToggle checked={someday} onChange={setSomeday} />
@@ -327,7 +327,7 @@ export function ListEditor({
               : "";
             if (confirm(`Delete the list “${list.name}”?${note}`)) deleteList.mutate(list.id);
           }}
-          className="rounded-lg px-2 py-1 text-[13px] font-medium text-risk hover:bg-white/60"
+          className="rounded-lg px-2 py-1 text-[13px] font-medium text-risk hover:bg-surface/60"
         >
           Delete list
         </button>
@@ -338,7 +338,7 @@ export function ListEditor({
         >
           Cancel
         </button>
-        <button type="submit" className="rounded-xl bg-ink px-3 py-1.5 text-[13px] font-medium text-white">
+        <button type="submit" className="rounded-xl bg-ink px-3 py-1.5 text-[13px] font-medium text-surface">
           Save
         </button>
       </div>
@@ -383,18 +383,18 @@ export function NewListForm({
         onChange={(e) => setName(e.target.value)}
         placeholder="List name, e.g. CS61"
         aria-label="List name"
-        className="min-w-[180px] flex-1 rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-sky/30"
+        className="min-w-[180px] flex-1 rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-accent/30"
       />
       <ColorPicker value={color} onChange={(v) => v && setColor(v)} label="List color" size={28} />
       <SomedayToggle checked={someday} onChange={setSomeday} />
-      <button type="submit" className="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-white">
+      <button type="submit" className="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-surface">
         Create
       </button>
       <button
         type="button"
         onClick={onDone}
         aria-label="Cancel"
-        className="grid h-9 w-9 place-items-center rounded-xl text-ink hover:bg-white/60"
+        className="grid h-9 w-9 place-items-center rounded-xl text-ink hover:bg-surface/60"
       >
         <X className="h-4 w-4" />
       </button>

@@ -110,7 +110,7 @@ export function Grid(props: GridProps) {
                     {weekdayShort(day, tz)}
                   </span>
                   <span
-                    className={`grid h-6 min-w-6 place-items-center rounded-md px-1 text-[13px] font-semibold ${isToday ? "bg-ink text-white" : "text-ink"}`}
+                    className={`grid h-6 min-w-6 place-items-center rounded-md px-1 text-[13px] font-semibold ${isToday ? "bg-ink text-surface" : "text-ink"}`}
                   >
                     {Number(day.slice(8))}
                   </span>
@@ -158,7 +158,7 @@ export function Grid(props: GridProps) {
         </div>
       </div>
       {props.loading && (
-        <div className="absolute inset-0 z-40 grid place-items-center bg-white/50 font-medium text-muted">
+        <div className="absolute inset-0 z-40 grid place-items-center bg-surface/50 font-medium text-muted">
           Loading…
         </div>
       )}
@@ -284,7 +284,7 @@ function DayColumn(
           className={`pointer-events-none absolute inset-x-1 z-[25] flex flex-col items-center justify-center rounded-lg border-2 border-dashed text-center ${
             ghost.past
               ? "border-risk bg-risk-bg/80"
-              : "animate-slot-glow border-grape bg-[rgba(135,117,201,0.16)]"
+              : "animate-slot-glow border-grape bg-grape/15"
           }`}
           style={{ top: toY(ghost.startMin) + 1, height: toY(ghost.minutes) - 2 }}
         >
@@ -304,7 +304,7 @@ function DayColumn(
       {nowMin !== null && (
         <div className="pointer-events-none absolute inset-x-0 z-20" style={{ top: toY(nowMin) }}>
           <div className="relative h-[2px] bg-now">
-            <span className="absolute -top-[4px] -left-1 h-2.5 w-2.5 rounded-full bg-now ring-2 ring-white" />
+            <span className="absolute -top-[4px] -left-1 h-2.5 w-2.5 rounded-full bg-now ring-2 ring-surface" />
           </div>
         </div>
       )}
@@ -532,7 +532,7 @@ function BlockItem(props: {
               ? "Didn't get to it? Remove from calendar (or press Backspace; the task stays in your to-dos)"
               : "Remove from calendar (or press Backspace; the task stays)"
           }
-          className={`absolute right-0.5 grid size-4 place-items-center rounded opacity-0 group-hover:opacity-100 no-hover:opacity-100 hover:bg-black/10 focus:opacity-100 ${compact ? "top-1/2 -translate-y-1/2" : "top-1"}`}
+          className={`absolute right-0.5 grid size-4 place-items-center rounded opacity-0 group-hover:opacity-100 no-hover:opacity-100 hover:bg-ink/10 focus:opacity-100 ${compact ? "top-1/2 -translate-y-1/2" : "top-1"}`}
           style={{ color: fg }}
         >
           <X className="h-3 w-3" strokeWidth={3} />

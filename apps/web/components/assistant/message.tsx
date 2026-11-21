@@ -10,7 +10,7 @@ export function AssistantAvatar() {
   return (
     <span
       aria-hidden="true"
-      className="mt-px grid h-6 w-6 shrink-0 place-items-center rounded-[7px] bg-ink text-[10px] font-medium tracking-tight text-white"
+      className="mt-px grid h-6 w-6 shrink-0 place-items-center rounded-[7px] bg-ink text-[10px] font-medium tracking-tight text-surface"
     >
       <span>
         tt<span className="text-coral">.</span>

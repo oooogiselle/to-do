@@ -27,7 +27,7 @@ function LoginForm() {
       <h1 className="text-[22px] font-medium tracking-tight">Sign in to tt.</h1>
       <p className="-mt-2 text-[13px] text-muted">Your calendar and to-dos on one timeline.</p>
       {error && <p className="text-sm text-risk">{ERRORS[error] ?? ERRORS.signin}</p>}
-      <button onClick={signIn} className="rounded-lg bg-ink px-4 py-2 text-[13px] text-white hover:opacity-90">
+      <button onClick={signIn} className="rounded-lg bg-ink px-4 py-2 text-[13px] text-surface hover:opacity-90">
         Sign in with Google
       </button>
       {DEMO && <DemoSignIn />}

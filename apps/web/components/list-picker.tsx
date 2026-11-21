@@ -189,7 +189,7 @@ export function ListPicker({
                 disabled={createList.isPending}
                 placeholder="List name"
                 aria-label="New list name"
-                className="w-full rounded-lg border border-line bg-surface px-2 py-1.5 text-[12px] font-medium text-ink outline-none placeholder:font-medium placeholder:text-faint focus:border-sky disabled:opacity-60"
+                className="w-full rounded-lg border border-line bg-surface px-2 py-1.5 text-[12px] font-medium text-ink outline-none placeholder:font-medium placeholder:text-faint focus:border-accent disabled:opacity-60"
               />
             )}
           </li>

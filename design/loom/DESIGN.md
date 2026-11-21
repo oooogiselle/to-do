@@ -3,7 +3,7 @@
 This file is the source of truth for how Tapestry looks: colour, type, weights, corners and the thread motif. When this file and the code disagree, the code is wrong and gets changed to match. This file only changes when Giselle approves the change.
 
 - **Reference mock:** `design/loom/my-day.html` (screenshot: `my-day.png`, 1440×900). It shows these rules on My day. If the mock and this file disagree, this file wins.
-- **Status (2026-11-21):** applied on the web (PR 1 `loom-tokens`: tokens, font, list colours, weights; PR 2 `loom-threads`: threads, labels, grid blocks). Not yet applied: mobile `theme.ts` (it has its own palette and a dark mode).
+- **Status (2026-11-21):** applied on the web: tokens, font, list colours and weights (#32); threads, labels and grid blocks (#33); and every component colour on tokens (`loom-cleanup`). Not yet applied: mobile `theme.ts` (it has its own palette and a dark mode).
 - **History:** the directions that weren't chosen (Indigo, Daylight) and the type specimen are in `design/archive/my-day-directions/`.
 
 ## Principles
@@ -43,6 +43,19 @@ Values for the CSS variables in `apps/web/app/globals.css` (the names exist toda
 Derived (not shown in the mock; check when applying): `--open-active` `#DDF0EC`, `--open-active-line` `#86C3B9`, `--grape-bg` `#F3F0FC`, `--grape-ink` `#5A43A8`.
 
 **Accent is for actions and "now" only:** the now-line, focus ring, primary button, active nav and day dot. It is never a list colour and never decoration.
+
+### Colour in controls
+- **On solid fills** (ink, accent, risk): text and icons are `--surface`. Overlays are `--surface` or `--ink` at an opacity (`bg-surface/60`, `bg-ink/10`), never white or black.
+- **Buttons:** accent for the main action of a screen or dialog (Quick add, Find time, Find tasks with AI, Import, Sync now). Ink for confirming inside a form or sheet (Done, Add, Save). Risk for destructive confirms.
+- **Selected option** (segmented controls; priority, estimate and day choices): ink fill, `--surface` text.
+- **Switches:** accent when on, `--line-strong` when off, including the calendar switches in Settings.
+- **List-colour headers** (task sheet, To-dos list cards): the list's tint with its tuned ink, never the solid colour.
+- **Priority** is not a list colour: high is `--warn`, medium `--chip-ink`, low `--muted` (bars and chips).
+- **Drag and drop:** grape (`--grape-bg`, `--grape-ink`, the grape hue at 15% for the drop ghost, and the drop line). It's the one place a list hue is used for UI state.
+- **AI features** (Break down, AI icons, the import spinner): `--grape-bg` / `--grape-ink`.
+- **Synced and success marks:** `--open-ink`.
+- **Brand:** the coral check in the logo and the coral dot in "tt." are the brand mark and stay coral.
+- **External colours:** Google's four-colour mark in Settings and Google's calendar colour map (`lib/gcal/sync.ts`) keep Google's hex values. They're the only hex values in components.
 
 **Faint grey is a deliberate choice.** At 2.6:1 it is below WCAG AA. Giselle reviewed it and kept it (2026-11-21) because it reads fine. Use it only for tertiary information that's also available elsewhere (counts, estimates, hour labels, placeholders, "Every day"). Anything the user must read to act (risk, buttons, titles, the free-time warning) uses muted or stronger.
 
@@ -109,17 +122,9 @@ Control heights are 28 (`h-7`) and 24 (`h-6`); checks are 16 in rows and 14 in l
 - **Don't** use threads anywhere else as decoration, or turn other bars into threads.
 
 ## Rules for new UI
-- Use the tokens above: no new hex values in components, and no sizes outside the scale. The roughly 40 hex values already in `apps/web` components are migration debt, not examples to copy.
+- Use the tokens above: no hex values, `white`/`black` utilities or Tailwind palette colours in components, and no sizes outside the scale.
 - **Figma:** colours and structure come from Figma; sizes snap to this scale (as in the global Figma rule).
 - If something isn't covered here, propose an addition to this file and wait for approval before inventing.
 
-## Applying Loom (not done yet)
-1. **`apps/web/app/globals.css`:**
-   - Swap the values per the colour table and add `--accent`.
-   - Set `--font-weight-semibold: 600`, keep medium at 500, and clamp bold and extrabold to 600.
-   - Remove the global `tnum`.
-2. **`apps/web/app/layout.tsx`:** switch Geist to Schibsted Grotesk (400, 500, 600).
-3. **Weights in components:** `font-bold` and `font-extrabold` are used loosely in about 33 files. Map each use to its role (500 names, 600 headings) instead of trusting the clamp.
-4. **List colours:** update `HUES` and `TUNED` in `packages/shared/src/format/color.ts`. Saved lists store their hex, so map the old hues to the new ones in `LEGACY_HUES` (as was done for the first palette). Mobile uses the same swatches.
-5. **Threads and labels:** progress strip and sentence-case labels in `components/workspace/plan-pane.tsx` and `daily-section.tsx`; block edges in `components/timeline/grid.tsx`; the active-nav thread in `components/sidebar.tsx`.
-6. **Check:** screenshot each screen at 1440 wide against `my-day.png`, then update the Status line above.
+## Applying Loom
+Done on the web (2026-11-21). The next step is mobile: move `apps/mobile` `theme.ts` onto these tokens (it already gets the list colours through the shared `swatch()`), and decide what happens to its dark mode. Check each screen against `my-day.png`, then update the Status line above.

@@ -86,7 +86,7 @@ export function BreakdownPanel({ task, onClose }: { task: Task; onClose: () => v
               onClick={() =>
                 accept.mutate({ taskId: task.id, steps: draft }, { onSuccess: onClose })
               }
-              className="rounded-xl bg-ink px-3 py-1.5 text-[13px] font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-ink px-3 py-1.5 text-[13px] font-medium text-surface hover:opacity-90 disabled:opacity-50"
             >
               Use these steps
             </button>

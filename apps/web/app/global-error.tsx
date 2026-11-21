@@ -2,8 +2,9 @@
 
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
+import "./globals.css";
 
-// Replaces the root layout when it crashes, so it renders its own <html>.
+// Replaces the root layout when it crashes, so it renders its own <html> and loads the Loom tokens itself.
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
   useEffect(() => {
     Sentry.captureException(error);
@@ -11,9 +12,9 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
 
   return (
     <html lang="en">
-      <body style={{ fontFamily: "system-ui, sans-serif", padding: 40 }}>
-        <h1 style={{ fontSize: 18, fontWeight: 600 }}>Something went wrong</h1>
-        <p style={{ marginTop: 8, color: "#666" }}>
+      <body className="p-10 font-sans">
+        <h1 className="text-[18px] font-semibold text-ink">Something went wrong</h1>
+        <p className="mt-2 text-[13px] text-muted">
           The error has been reported. Reload the page to try again.
         </p>
       </body>

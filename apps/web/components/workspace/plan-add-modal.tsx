@@ -90,13 +90,6 @@ export function PlanAddModal({
         }}
         className="animate-pop-in w-full max-w-md overflow-hidden rounded-2xl bg-surface shadow-sheet"
       >
-        <div className="flex h-1.5" aria-hidden>
-          <span className="flex-1 bg-coral" />
-          <span className="flex-1 bg-sun" />
-          <span className="flex-1 bg-mint" />
-          <span className="flex-1 bg-sky" />
-          <span className="flex-1 bg-grape" />
-        </div>
         <div className="space-y-4 p-4">
           <div>
             <label htmlFor="plan-add-title" className="sr-only">
@@ -144,7 +137,7 @@ export function PlanAddModal({
           <button
             type="submit"
             disabled={!canAdd}
-            className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[13px] font-medium text-surface disabled:opacity-40"
           >
             Add to {dayLabel}
             <CornerDownLeft className="h-3.5 w-3.5" />

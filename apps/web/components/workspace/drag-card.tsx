@@ -17,10 +17,10 @@ export function DragCard({
 }) {
   if (item.kind === "pane") {
     return (
-      <div className="inline-flex -rotate-2 items-center gap-2 rounded-xl bg-ink px-3 py-2 text-[12px] font-medium whitespace-nowrap text-white shadow-sheet">
+      <div className="inline-flex -rotate-2 items-center gap-2 rounded-xl bg-ink px-3 py-2 text-[12px] font-medium whitespace-nowrap text-surface shadow-sheet">
         <PanelsTopLeft className="h-4 w-4" />
         {item.label}
-        <span className="font-medium text-white/50">· drop on a column</span>
+        <span className="font-medium text-surface/50">· drop on a column</span>
       </div>
     );
   }
@@ -46,7 +46,7 @@ export function DragCard({
             {item.listName}
           </span>
         )}
-        <span className="rounded-md bg-ink px-1.5 py-0.5 text-[10px] font-medium text-white">
+        <span className="rounded-md bg-ink px-1.5 py-0.5 text-[10px] font-medium text-surface">
           {formatMinutes(item.minutes)}
         </span>
       </div>

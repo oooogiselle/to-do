@@ -108,9 +108,9 @@ export function ImportView() {
   };
 
   const primary =
-    "flex items-center gap-1.5 rounded-xl bg-sun px-4 py-2 text-sm font-medium text-ink transition-colors hover:brightness-95 disabled:opacity-40";
+    "flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-surface transition-colors hover:bg-accent/90 disabled:opacity-40";
   const area =
-    "w-full flex-1 resize-y rounded-xl border border-line bg-row p-3 text-[13px] text-ink outline-none placeholder:text-faint focus:border-sky focus:ring-2 focus:ring-sky/20";
+    "w-full flex-1 resize-y rounded-xl border border-line bg-row p-3 text-[13px] text-ink outline-none placeholder:text-faint focus:border-accent focus:ring-2 focus:ring-accent/20";
 
   return (
     <div className="h-full overflow-y-auto">
@@ -147,7 +147,7 @@ export function ImportView() {
                     role="tab"
                     aria-selected={tab === value}
                     onClick={() => setTab(value)}
-                    className={`rounded-lg px-3 py-1 text-sm font-semibold transition-colors ${tab === value ? "bg-ink text-white" : "text-chip-ink hover:text-ink"}`}
+                    className={`rounded-lg px-3 py-1 text-sm font-semibold transition-colors ${tab === value ? "bg-ink text-surface" : "text-chip-ink hover:text-ink"}`}
                   >
                     {label}
                   </button>
@@ -191,7 +191,7 @@ export function ImportView() {
                       e.preventDefault();
                       pickFile(e.dataTransfer.files[0] ?? null);
                     }}
-                    className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border-2 border-dashed border-line-strong bg-row px-4 py-8 text-center transition-colors hover:border-sun hover:bg-warn-bg"
+                    className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border-2 border-dashed border-line-strong bg-row px-4 py-8 text-center transition-colors hover:border-accent/50 hover:bg-surface"
                   >
                     <input
                       type="file"
@@ -201,13 +201,13 @@ export function ImportView() {
                     />
                     {file ? (
                       <>
-                        <FileText className="mb-1 h-6 w-6 text-sun" />
+                        <FileText className="mb-1 h-6 w-6 text-muted" />
                         <span className="text-sm font-medium text-ink">{file.name}</span>
                         <span className="text-[12px] text-muted">Click to choose a different file</span>
                       </>
                     ) : (
                       <>
-                        <Upload className="mb-1 h-6 w-6 text-sun" />
+                        <Upload className="mb-1 h-6 w-6 text-muted" />
                         <span className="text-sm font-medium text-ink">
                           Drop a syllabus PDF or photo here
                         </span>
@@ -261,7 +261,7 @@ export function ImportView() {
               <div className="grid flex-1 place-items-center rounded-xl border-2 border-dashed border-line-strong p-8 text-center text-sm">
                 {busy ? (
                   <p role="status" className="flex flex-col items-center gap-2 font-medium text-ink">
-                    <Sparkles className="h-5 w-5 animate-pulse text-sun" />
+                    <Sparkles className="h-5 w-5 animate-pulse text-grape-ink" />
                     {busy}
                     <span className="font-normal text-muted">This can take up to a minute.</span>
                   </p>

@@ -197,7 +197,7 @@ export function ImportReview(props: {
     return (
       <div className="animate-pop-in space-y-4 rounded-2xl border border-line bg-surface p-6">
         <p className="flex items-center gap-2 text-base font-semibold text-ink">
-          <CheckCircle2 className="h-5 w-5 text-mint" />
+          <CheckCircle2 className="h-5 w-5 text-open-ink" />
           Added {result.created.length} {result.created.length === 1 ? "task" : "tasks"}
           {result.updated.length ? ` and updated ${result.updated.length}` : ""}
           {listName ? ` in ${listName}` : ""}.
@@ -205,7 +205,7 @@ export function ImportReview(props: {
         <div className="flex gap-2">
           <Link
             href="/to-dos"
-            className="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            className="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-surface hover:opacity-90"
           >
             View in To-dos
           </Link>
@@ -320,7 +320,7 @@ export function ImportReview(props: {
         <button
           disabled={!canSave || saving}
           onClick={save}
-          className="rounded-xl bg-ink px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40"
+          className="rounded-xl bg-ink px-4 py-2.5 text-sm font-medium text-surface hover:opacity-90 disabled:opacity-40"
         >
           {saving ? "Adding…" : addLabel(creates.length, updates.length)}
         </button>
@@ -359,7 +359,7 @@ function ReviewRow(props: {
   const [showSource, setShowSource] = useState(false);
   const uncertain = !row.proposed.date_certain;
   const input =
-    "rounded-lg border bg-surface px-2 py-1 text-[13px] font-medium text-ink outline-none focus:border-sky";
+    "rounded-lg border bg-surface px-2 py-1 text-[13px] font-medium text-ink outline-none focus:border-accent";
   const sw = swatch(props.color);
   const dateInput = uncertain ? `${input} border-warn bg-warn-bg` : `${input} border-line`;
 

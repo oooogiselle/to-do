@@ -71,7 +71,7 @@ export function paneLabel(pane: PaneId, lists: List[]): string {
 
 export function paneColor(pane: PaneId, lists: List[]): string {
   if (pane === "plan") return "var(--accent)";
-  if (pane === "week") return "var(--tt-sky)";
+  if (pane === "week") return "var(--muted)";
   if (pane === "today") return "var(--ink)";
   if (pane === "due") return "var(--risk)";
   const id = listIdOf(pane);

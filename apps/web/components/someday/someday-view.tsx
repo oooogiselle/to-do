@@ -344,7 +344,7 @@ function Capture({
         <button
           type="submit"
           disabled={!parsed.title || busy}
-          className="rounded-xl bg-ink px-4 py-1.5 text-[13px] font-medium text-white disabled:opacity-40"
+          className="rounded-xl bg-ink px-4 py-1.5 text-[13px] font-medium text-surface disabled:opacity-40"
         >
           Add
         </button>

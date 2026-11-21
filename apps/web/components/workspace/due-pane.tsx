@@ -235,8 +235,8 @@ function DueCard(props: {
       ref={setNodeRef}
       {...listeners}
       aria-roledescription="draggable task"
-      className={`@container cursor-grab select-none [-webkit-touch-callout:none] rounded-xl border bg-surface px-3 py-2.5 transition-shadow hover:shadow-[0_2px_6px_rgba(0,0,0,0.06)] active:cursor-grabbing ${
-        props.highlighted ? "border-line-strong shadow-[0_2px_6px_rgba(0,0,0,0.05)]" : "border-line"
+      className={`@container cursor-grab select-none [-webkit-touch-callout:none] rounded-xl border bg-surface px-3 py-2.5 transition-shadow hover:shadow-[0_2px_6px_rgb(var(--shadow-ink)/0.06)] active:cursor-grabbing ${
+        props.highlighted ? "border-line-strong shadow-[0_2px_6px_rgb(var(--shadow-ink)/0.05)]" : "border-line"
       }`}
     >
       <button

@@ -64,7 +64,7 @@ export function PaneColumn(props: {
         </div>
       )}
       {draggingPane && panes.length > 0 && (
-        <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-lg bg-ink/85 py-1.5 text-center text-[11px] font-medium text-white">
+        <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-lg bg-ink/85 py-1.5 text-center text-[11px] font-medium text-surface">
           Drop to add here
         </div>
       )}
