@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CornerDownLeft, Sparkles } from "lucide-react";
-import { HUES, parseQuickAdd, swatch, type Priority } from "@tt/shared";
+import { parseQuickAdd, type Priority } from "@tt/shared";
 import { setNotice, tempId, useCreateTask, useModel } from "@tt/client";
 import { PREFILL_KEY } from "@/components/import/import-view";
 import { DuePicker } from "@/components/due-picker";
@@ -17,9 +17,9 @@ const PRIORITY_LABEL: Record<Priority, string> = {
 };
 
 const PRIORITY_STYLE: Record<Exclude<Priority, "none">, { bg: string; fg: string }> = {
-  high: { bg: "var(--risk-bg)", fg: "var(--risk)" },
-  med: { bg: "var(--warn-bg)", fg: "var(--warn)" },
-  low: { bg: swatch(HUES.sky).tint, fg: swatch(HUES.sky).ink },
+  high: { bg: "var(--warn-bg)", fg: "var(--warn)" },
+  med: { bg: "var(--chip)", fg: "var(--chip-ink)" },
+  low: { bg: "var(--chip)", fg: "var(--muted)" },
 };
 
 // Long text, several lines, or a comma/semicolon-separated list is probably several tasks:
@@ -145,13 +145,6 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
         aria-label="Add a task"
         className="animate-pop-in w-full max-w-xl overflow-hidden rounded-2xl bg-surface shadow-sheet"
       >
-        <div className="flex h-1.5" aria-hidden>
-          <span className="flex-1 bg-coral" />
-          <span className="flex-1 bg-sun" />
-          <span className="flex-1 bg-mint" />
-          <span className="flex-1 bg-sky" />
-          <span className="flex-1 bg-grape" />
-        </div>
         <div className="p-4">
           <label htmlFor="quick-add" className="sr-only">
             New task
@@ -173,7 +166,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
                 <span className="font-medium text-muted">Looks like more than one task.</span>
                 <button
                   onClick={extractWithAi}
-                  className="flex items-center gap-1.5 rounded-lg bg-sun px-2.5 py-1 font-medium text-ink hover:brightness-95"
+                  className="flex items-center gap-1.5 rounded-lg bg-accent px-2.5 py-1 font-medium text-surface hover:bg-accent/90"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   Find tasks with AI
@@ -209,7 +202,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
               type="button"
               onClick={addInstantly}
               disabled={!parsed}
-              className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-40"
+              className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[13px] font-medium text-surface disabled:opacity-40"
             >
               Add task
               <CornerDownLeft className="h-3.5 w-3.5" />

@@ -78,7 +78,7 @@ export function CenterTabs(props: {
           </div>
         )}
         {draggingPane && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-4 mx-auto w-fit rounded-lg bg-ink/85 px-3 py-1.5 text-[11px] font-medium text-white">
+          <div className="pointer-events-none absolute inset-x-0 bottom-4 mx-auto w-fit rounded-lg bg-ink/85 px-3 py-1.5 text-[11px] font-medium text-surface">
             Drop to open as a tab
           </div>
         )}
@@ -105,7 +105,7 @@ function DraggableTab(props: {
       className={`group relative flex shrink-0 items-center rounded-t-[10px] border border-b-0 transition-colors ${
         props.active
           ? "border-line bg-surface text-ink"
-          : "border-transparent text-muted hover:bg-white/60 hover:text-ink"
+          : "border-transparent text-muted hover:bg-surface/60 hover:text-ink"
       } ${isDragging ? "opacity-40" : ""}`}
     >
       <button

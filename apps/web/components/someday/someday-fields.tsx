@@ -107,7 +107,7 @@ function TtNote({ task }: { task: Task }) {
             updateTask.mutate({ id: task.id, patch: { assistant_note: text || null } });
           }
         }}
-        className="block w-full resize-y rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:border-sky focus:ring-2 focus:ring-sky/20"
+        className="block w-full resize-y rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
       />
       <p className="mt-1 text-[12px] text-muted">
         tt. uses these with your{" "}
@@ -155,7 +155,7 @@ function LinkField({ value, onCommit }: { value: string | null; onCommit: (v: st
           }}
           aria-invalid={invalid}
           aria-describedby={invalid ? "task-link-error" : undefined}
-          className={`min-w-0 flex-1 rounded-xl border bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-sky/20 ${invalid ? "border-risk" : "border-line focus:border-sky"}`}
+          className={`min-w-0 flex-1 rounded-xl border bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-accent/20 ${invalid ? "border-risk" : "border-line focus:border-accent"}`}
         />
         {value && <LinkChip url={value} />}
       </div>

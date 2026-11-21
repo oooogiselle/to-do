@@ -11,7 +11,7 @@ import { fmtDue } from "@tt/client";
 const END_OF_DAY = "23:59";
 
 const field =
-  "rounded-lg border border-line bg-surface px-2 py-1 font-medium outline-none focus:border-sky focus:ring-2 focus:ring-sky/20";
+  "rounded-lg border border-line bg-surface px-2 py-1 font-medium outline-none focus:border-accent focus:ring-2 focus:ring-accent/20";
 
 /** Wall date and time of `dueAt` in tz; time is "" when it's the end-of-day default. */
 function split(dueAt: string | null, tz: string): { date: string; time: string } {
@@ -165,7 +165,7 @@ export function DuePicker({
                   key={s.label}
                   type="button"
                   onClick={() => set(s.day, time)}
-                  className={`rounded-lg px-2 py-1 font-medium ${date === s.day ? "bg-ink text-white" : "bg-chip text-chip-ink hover:bg-line"}`}
+                  className={`rounded-lg px-2 py-1 font-medium ${date === s.day ? "bg-ink text-surface" : "bg-chip text-chip-ink hover:bg-line"}`}
                 >
                   {s.label}
                 </button>
@@ -204,7 +204,7 @@ export function DuePicker({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-lg bg-ink px-2.5 py-1 font-medium text-white hover:opacity-90"
+                className="rounded-lg bg-ink px-2.5 py-1 font-medium text-surface hover:opacity-90"
               >
                 Done
               </button>

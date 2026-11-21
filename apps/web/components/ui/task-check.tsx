@@ -8,7 +8,7 @@ interface TaskCheckProps {
   onToggle: () => void;
   label: string;
   size?: number;
-  /** Check color when done (defaults to white). */
+  /** Check color when done (defaults to the surface colour). */
   checkColor?: string;
   disabled?: boolean;
 }
@@ -20,7 +20,7 @@ export function TaskCheck({
   onToggle,
   label,
   size = 20,
-  checkColor = "#fff",
+  checkColor = "var(--surface)",
   disabled,
 }: TaskCheckProps) {
   return (

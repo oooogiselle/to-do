@@ -28,7 +28,7 @@ const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Satur
 const WEEKDAY_KEYS = ["1", "2", "3", "4", "5", "6", "0"] as const;
 
 const field =
-  "rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:border-sky focus:ring-2 focus:ring-sky/20";
+  "rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20";
 
 function Section({
   title,
@@ -72,7 +72,7 @@ function SyncButton() {
         type="button"
         onClick={() => sync.mutate()}
         disabled={sync.isPending}
-        className="flex items-center gap-2 rounded-xl bg-mint px-4 py-2 text-sm font-medium text-white transition-colors hover:brightness-95 disabled:opacity-70"
+        className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-surface transition-colors hover:bg-accent/90 disabled:opacity-70"
       >
         <RefreshCw className={`h-4 w-4 ${sync.isPending ? "animate-spin" : ""}`} />
         {sync.isPending ? "Syncing…" : sync.isSuccess ? "Synced" : "Sync now"}
@@ -83,7 +83,7 @@ function SyncButton() {
 }
 
 const chip = (active: boolean) =>
-  `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${active ? "bg-grape text-white" : "bg-chip text-chip-ink hover:bg-line"}`;
+  `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${active ? "bg-ink text-surface" : "bg-chip text-chip-ink hover:bg-line"}`;
 
 /** One row of choices; `undefined` is "no preference". */
 function ChoiceRow<T extends string | number>({
@@ -213,7 +213,7 @@ export function SettingsView() {
           {google && !google.needs_reconnect && <SyncButton />}
           <a
             href="/api/google/connect"
-            className={`rounded-xl px-4 py-2 text-sm font-medium ${google && !google.needs_reconnect ? "border border-line text-ink hover:bg-paper" : "bg-ink text-white hover:opacity-90"}`}
+            className={`rounded-xl px-4 py-2 text-sm font-medium ${google && !google.needs_reconnect ? "border border-line text-ink hover:bg-paper" : "bg-ink text-surface hover:opacity-90"}`}
           >
             {google ? "Reconnect" : "Connect Google Calendar"}
           </a>
@@ -243,7 +243,7 @@ export function SettingsView() {
                     type="button"
                     aria-pressed={active}
                     onClick={() => updateSettings.mutate({ default_block_min: m })}
-                    className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${active ? "bg-grape text-white" : "bg-chip text-chip-ink hover:bg-line"}`}
+                    className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${active ? "bg-ink text-surface" : "bg-chip text-chip-ink hover:bg-line"}`}
                   >
                     {formatMinutes(m)}
                   </button>
@@ -434,7 +434,7 @@ function DeleteAccountSection() {
                 },
               })
             }
-            className="rounded-xl bg-risk px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+            className="rounded-xl bg-risk px-4 py-2 text-sm font-medium text-surface disabled:opacity-60"
           >
             {del.isPending ? "Deleting…" : "Yes, delete everything"}
           </button>
@@ -497,7 +497,6 @@ function CalendarsSection() {
               <span className="ml-auto">
                 <Switch
                   checked={on}
-                  color={c.solid}
                   label={`Show ${cal.summary}`}
                   disabled={cal.is_tasks_calendar || toggle.isPending}
                   onChange={(selected) => toggle.mutate({ id: cal.id, selected })}
@@ -536,7 +535,6 @@ function WorkingHoursEditor({
               <Switch
                 checked={!!hours}
                 label={`Work on ${WEEKDAYS[i]}`}
-                color="var(--tt-grape)"
                 onChange={(on) => set(key, on ? { start: "09:00", end: "17:00" } : null)}
               />
               {WEEKDAYS[i]}

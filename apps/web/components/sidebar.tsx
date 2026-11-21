@@ -231,7 +231,7 @@ function SidebarBody({ onQuickAdd, collapsed, onToggle, activeList }: BodyProps 
             <span
               role="img"
               aria-label={isError ? "Sync problem" : "Synced"}
-              className={`h-1.5 w-1.5 rounded-full ${isError ? "bg-risk" : "bg-mint"} ${collapsed ? "absolute top-1.5 right-2.5 ring-2 ring-rail" : ""}`}
+              className={`h-1.5 w-1.5 rounded-full ${isError ? "bg-risk" : "bg-open-ink"} ${collapsed ? "absolute top-1.5 right-2.5 ring-2 ring-rail" : ""}`}
             />
           </div>
         )}

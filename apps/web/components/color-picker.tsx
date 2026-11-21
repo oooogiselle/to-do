@@ -31,12 +31,12 @@ export function ColorPicker(props: {
         aria-label={label}
         title={label}
         onClick={() => props.onChange(c)}
-        className={`rounded-lg transition-transform hover:scale-110 ${c === null ? "border-2 border-dashed border-white/80" : ""}`}
+        className={`rounded-lg transition-transform hover:scale-110 ${c === null ? "border-2 border-dashed border-surface/80" : ""}`}
         style={{
           width: size,
           height: size,
           background: color,
-          boxShadow: active ? `0 0 0 2px #fff, 0 0 0 4px ${color}` : undefined,
+          boxShadow: active ? `0 0 0 2px var(--surface), 0 0 0 4px ${color}` : undefined,
         }}
       />
     );

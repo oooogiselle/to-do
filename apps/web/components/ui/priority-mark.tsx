@@ -1,9 +1,9 @@
 import type { Task } from "@tt/shared";
 
 const LEVELS = {
-  high: { bars: 3, color: "var(--tt-coral)", label: "High priority" },
-  med: { bars: 2, color: "var(--tt-sun)", label: "Medium priority" },
-  low: { bars: 1, color: "var(--tt-sky)", label: "Low priority" },
+  high: { bars: 3, color: "var(--warn)", label: "High priority" },
+  med: { bars: 2, color: "var(--chip-ink)", label: "Medium priority" },
+  low: { bars: 1, color: "var(--muted)", label: "Low priority" },
 } as const;
 
 /** Three rising bars, filled by priority. Renders nothing for "none". */

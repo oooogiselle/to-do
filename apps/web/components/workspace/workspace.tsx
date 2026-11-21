@@ -181,7 +181,7 @@ function Header({
           </>
         ) : (
           <>
-            <span className="animate-sync-pulse h-1.5 w-1.5 rounded-full bg-mint" />
+            <span className="animate-sync-pulse h-1.5 w-1.5 rounded-full bg-open-ink" />
             Synced {dataUpdatedAt ? ago(now - dataUpdatedAt) : "just now"}
             <RefreshCw className="h-3 w-3 opacity-50" />
           </>
@@ -199,7 +199,7 @@ function ConnectBanner() {
   if (!data) return null;
   if (data.google?.needs_reconnect) {
     return (
-      <p className="border-b border-sun/40 bg-warn-bg px-4 py-2 text-[13px] font-medium text-warn">
+      <p className="border-b border-warn/20 bg-warn-bg px-4 py-2 text-[13px] font-medium text-warn">
         Google Calendar access expired, so events aren&apos;t updating.{" "}
         <a href="/api/google/connect" className="font-medium underline">
           Reconnect

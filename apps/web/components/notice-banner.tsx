@@ -14,8 +14,8 @@ import { useOpenTask } from "./app-shell";
 
 const AUTO_DISMISS_MS = 12_000;
 
-const quiet = "rounded-lg px-3 py-1.5 font-medium text-white/70 hover:bg-white/10 hover:text-white";
-const primary = "rounded-lg bg-surface px-3 py-1.5 font-medium text-ink hover:bg-white/90";
+const quiet = "rounded-lg px-3 py-1.5 font-medium text-surface/70 hover:bg-surface/10 hover:text-surface";
+const primary = "rounded-lg bg-surface px-3 py-1.5 font-medium text-ink hover:bg-surface/90";
 const dismiss = () => setNotice(null);
 
 export function NoticeBanner() {
@@ -29,7 +29,7 @@ export function NoticeBanner() {
   return (
     <div
       role="status"
-      className="animate-pop-in fixed bottom-4 left-1/2 z-[60] flex w-[min(32rem,calc(100%-2rem))] -translate-x-1/2 flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-ink px-4 py-3 text-[13px] font-medium text-white shadow-sheet"
+      className="animate-pop-in fixed bottom-4 left-1/2 z-[60] flex w-[min(32rem,calc(100%-2rem))] -translate-x-1/2 flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-ink px-4 py-3 text-[13px] font-medium text-surface shadow-sheet"
     >
       {notice.kind === "added" ? (
         <Added notice={notice} />
@@ -124,7 +124,7 @@ function Completion({ notice }: { notice: Extract<Notice, { kind: "completion" }
           <button
             onClick={dismiss}
             aria-label="Dismiss"
-            className="rounded-lg px-2 py-1.5 text-white/60 hover:bg-white/10 hover:text-white"
+            className="rounded-lg px-2 py-1.5 text-surface/60 hover:bg-surface/10 hover:text-surface"
           >
             <X className="h-4 w-4" />
           </button>

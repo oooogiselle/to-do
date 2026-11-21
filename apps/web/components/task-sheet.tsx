@@ -37,17 +37,17 @@ import { ScheduledBlocks } from "./task-sheet/scheduled-blocks";
 import { LinkChip } from "./someday/link-chip";
 import { SomedayFields } from "./someday/someday-fields";
 
-const PRIORITIES: { value: Priority; label: string; color: string }[] = [
-  { value: "none", label: "None", color: "var(--faint)" },
-  { value: "low", label: "Low", color: "var(--tt-sky)" },
-  { value: "med", label: "Med", color: "var(--tt-sun)" },
-  { value: "high", label: "High", color: "var(--tt-coral)" },
+const PRIORITIES: { value: Priority; label: string }[] = [
+  { value: "none", label: "None" },
+  { value: "low", label: "Low" },
+  { value: "med", label: "Med" },
+  { value: "high", label: "High" },
 ];
 const ESTIMATES = [15, 30, 60, 90, 120, 180];
 
 const label = "mb-1.5 block text-[12px] font-medium text-chip-ink";
 const field =
-  "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:border-sky focus:ring-2 focus:ring-sky/20";
+  "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20";
 
 /** Text input that saves on blur or Enter, and resyncs when the stored value changes. */
 function CommitInput({
@@ -107,7 +107,7 @@ function StartField({
             if (!v) onChange(null);
             else if (v >= "2000-01-01" && v !== value) onChange(v);
           }}
-          className="rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:border-sky focus:ring-2 focus:ring-sky/20"
+          className="rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         />
         {value && (
           <button
@@ -221,10 +221,10 @@ export function TaskSheet({
 
   return (
     <Sheet onClose={onClose} label={`Task: ${task.title}`}>
-      <div className="px-5 pt-4 pb-5" style={{ background: c.solid, color: c.onSolid }}>
+      <div className="px-5 pt-4 pb-5" style={{ background: c.tint, color: c.ink }}>
         <div className="mb-4 flex items-center justify-between">
           <span className="flex min-w-0 items-center gap-2">
-            <span className="rounded-lg bg-black/15 px-2 py-1 text-[12px] font-medium">
+            <span className="rounded-lg bg-surface/70 px-2 py-1 text-[12px] font-medium">
               {list?.name ?? "No list"}
             </span>
             {task.link_url && list?.kind !== "someday" && <LinkChip url={task.link_url} />}
@@ -233,7 +233,7 @@ export function TaskSheet({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="grid h-8 w-8 place-items-center rounded-lg hover:bg-black/10"
+            className="grid h-8 w-8 place-items-center rounded-lg hover:bg-surface/60"
           >
             <X className="h-5 w-5" />
           </button>
@@ -242,8 +242,7 @@ export function TaskSheet({
           <div className="pt-1">
             <TaskCheck
               done={done}
-              color={c.onSolid}
-              checkColor={c.solid}
+              color={c.solid}
               onToggle={() => setTaskDone(task.id, !done)}
               label={task.title}
               size={24}
@@ -305,9 +304,9 @@ export function TaskSheet({
                   onClick={() => update({ priority: p.value })}
                   className="rounded-xl border-2 py-1.5 text-sm font-medium transition-colors"
                   style={{
-                    borderColor: active ? p.color : "var(--line)",
-                    background: active ? p.color : "#fff",
-                    color: active ? "#fff" : "var(--chip-ink)",
+                    borderColor: active ? "var(--ink)" : "var(--line)",
+                    background: active ? "var(--ink)" : "var(--surface)",
+                    color: active ? "var(--surface)" : "var(--chip-ink)",
                   }}
                 >
                   {p.label}
@@ -329,7 +328,7 @@ export function TaskSheet({
                   aria-pressed={active}
                   onClick={() => update({ estimate_min: active ? null : m })}
                   className={`rounded-lg px-2.5 py-1 text-[13px] font-medium transition-colors ${
-                    active ? "bg-ink text-white" : "bg-chip text-chip-ink hover:bg-line"
+                    active ? "bg-ink text-surface" : "bg-chip text-chip-ink hover:bg-line"
                   }`}
                 >
                   {formatMinutes(m)}
@@ -350,7 +349,7 @@ export function TaskSheet({
                   update({ estimate_min: Number.isFinite(n) && n > 0 ? n : null });
                 }}
                 placeholder="Other"
-                className="w-16 rounded-lg border border-line bg-surface px-2 py-1 text-[13px] font-medium text-ink outline-none focus:border-sky"
+                className="w-16 rounded-lg border border-line bg-surface px-2 py-1 text-[13px] font-medium text-ink outline-none focus:border-accent"
               />
               min
             </label>
@@ -399,7 +398,7 @@ export function TaskSheet({
                       })
                     }
                     className={`grid h-8 w-8 place-items-center rounded-lg text-[12px] transition-colors ${
-                      on ? "bg-ink text-white" : "bg-chip text-chip-ink hover:bg-line"
+                      on ? "bg-ink text-surface" : "bg-chip text-chip-ink hover:bg-line"
                     }`}
                   >
                     {o.short}
@@ -438,8 +437,7 @@ export function TaskSheet({
                 type="button"
                 disabled={saving || task.status !== "open"}
                 onClick={() => setPanel("schedule")}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium disabled:opacity-50"
-                style={{ background: c.solid, color: c.onSolid }}
+                className="flex items-center gap-1.5 rounded-lg bg-accent px-2.5 py-1.5 text-[12px] font-medium text-surface disabled:opacity-50"
               >
                 <CalendarPlus className="h-3.5 w-3.5" />
                 Find time
@@ -517,7 +515,7 @@ export function TaskSheet({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          className="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-surface hover:opacity-90"
         >
           Done
         </button>

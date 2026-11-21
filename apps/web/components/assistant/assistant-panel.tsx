@@ -77,7 +77,7 @@ export function AssistantPanel() {
     <aside
       aria-label="Ask tt."
       onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
-      className="fixed inset-0 z-40 flex flex-col bg-surface md:inset-y-2.5 md:right-2.5 md:left-auto md:w-[400px] md:rounded-2xl md:border md:border-line md:shadow-[-12px_0_40px_rgba(0,0,0,0.08)] xl:static xl:z-auto xl:w-[380px] xl:shrink-0 xl:rounded-none xl:border-0 xl:border-l xl:shadow-none"
+      className="fixed inset-0 z-40 flex flex-col bg-surface md:inset-y-2.5 md:right-2.5 md:left-auto md:w-[400px] md:rounded-2xl md:border md:border-line md:shadow-[-12px_0_40px_rgb(var(--shadow-ink)/0.08)] xl:static xl:z-auto xl:w-[380px] xl:shrink-0 xl:rounded-none xl:border-0 xl:border-l xl:shadow-none"
     >
       <header className="flex h-14 shrink-0 items-center gap-2.5 border-b border-line-soft px-4">
         {showHistory ? (
@@ -268,7 +268,7 @@ function Composer({ disabled, onSend }: { disabled: boolean; onSend: (text: stri
         e.preventDefault();
         submit();
       }}
-      className="rounded-xl border border-line bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors focus-within:border-faint"
+      className="rounded-xl border border-line bg-surface shadow-card transition-colors focus-within:border-faint"
     >
       <label htmlFor="assistant-input" className="sr-only">
         Message tt.
@@ -303,7 +303,7 @@ function Composer({ disabled, onSend }: { disabled: boolean; onSend: (text: stri
           type="submit"
           disabled={!text.trim() || disabled}
           aria-label="Send"
-          className={`${text.length > COUNT_FROM ? "" : "ml-auto "}grid h-7 w-7 place-items-center rounded-lg bg-ink text-white transition-colors hover:bg-ink/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-line-strong disabled:bg-line disabled:text-faint`}
+          className={`${text.length > COUNT_FROM ? "" : "ml-auto "}grid h-7 w-7 place-items-center rounded-lg bg-ink text-surface transition-colors hover:bg-ink/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-line-strong disabled:bg-line disabled:text-faint`}
         >
           <ArrowUp className="h-3.5 w-3.5" />
         </button>

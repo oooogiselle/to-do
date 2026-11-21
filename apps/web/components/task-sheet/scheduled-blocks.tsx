@@ -5,7 +5,7 @@ import { formatMinutes, localDate, zonedInstant, type Step, type TimeBlock } fro
 import { fmtDay, fmtTime, isTemp, localTime, useDeleteBlock, useMoveBlock } from "@tt/client";
 
 const field =
-  "rounded-lg border border-line bg-surface px-2 py-1 font-medium outline-none focus:border-sky";
+  "rounded-lg border border-line bg-surface px-2 py-1 font-medium outline-none focus:border-accent";
 
 const DURATIONS = [15, 30, 45, 60, 75, 90, 120, 150, 180, 240];
 
@@ -194,7 +194,7 @@ function BlockEditor(props: {
         <button
           type="submit"
           disabled={!valid || past}
-          className="rounded-lg bg-ink px-2.5 py-1 text-[12px] font-medium text-white disabled:opacity-40"
+          className="rounded-lg bg-ink px-2.5 py-1 text-[12px] font-medium text-surface disabled:opacity-40"
         >
           Save
         </button>

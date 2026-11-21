@@ -5,7 +5,7 @@ export function Switch({
   checked,
   onChange,
   label,
-  color = "var(--tt-mint)",
+  color = "var(--accent)",
   disabled,
 }: {
   checked: boolean;
