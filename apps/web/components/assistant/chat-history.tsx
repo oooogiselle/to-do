@@ -50,7 +50,7 @@ export function ChatHistory({
     <div className="space-y-5">
       {groups.map((g) => (
         <section key={g.label}>
-          <h3 className="mb-1.5 px-2 text-[11px] font-medium tracking-wide text-faint uppercase">{g.label}</h3>
+          <h3 className="mb-1.5 px-2 text-[12px] font-semibold text-muted">{g.label}</h3>
           <ul className="space-y-0.5">
             {g.chats.map((c) => (
               <ChatRow

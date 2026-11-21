@@ -70,10 +70,10 @@ export function paneLabel(pane: PaneId, lists: List[]): string {
 }
 
 export function paneColor(pane: PaneId, lists: List[]): string {
-  if (pane === "plan") return "var(--tt-sun)";
+  if (pane === "plan") return "var(--accent)";
   if (pane === "week") return "var(--tt-sky)";
   if (pane === "today") return "var(--ink)";
-  if (pane === "due") return "var(--tt-coral)";
+  if (pane === "due") return "var(--risk)";
   const id = listIdOf(pane);
   return lists.find((l) => l.id === id)?.color ?? "var(--faint)";
 }

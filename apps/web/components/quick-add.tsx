@@ -209,7 +209,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
               type="button"
               onClick={addInstantly}
               disabled={!parsed}
-              className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg bg-coral px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-40"
+              className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-40"
             >
               Add task
               <CornerDownLeft className="h-3.5 w-3.5" />

@@ -11,7 +11,7 @@ import { ListPicker } from "@/components/list-picker";
 type Body = z.infer<typeof TaskCreate>;
 type Parsed = ReturnType<typeof parseQuickAdd>;
 
-const label = "mb-1.5 block text-[11px] font-medium tracking-wider text-muted uppercase";
+const label = "mb-1.5 block text-[12px] font-medium text-chip-ink";
 
 /**
  * Opens when a to-do is typed into My day: the typed text is parsed once to prefill the title,
@@ -144,7 +144,7 @@ export function PlanAddModal({
           <button
             type="submit"
             disabled={!canAdd}
-            className="flex items-center gap-1.5 rounded-lg bg-coral px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-40"
           >
             Add to {dayLabel}
             <CornerDownLeft className="h-3.5 w-3.5" />

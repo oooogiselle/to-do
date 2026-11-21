@@ -152,6 +152,20 @@ body {
   animation: sync-pulse 2s ease-in-out infinite;
 }
 
+/* Progress threads: a finished to-do's thread fills left to right (DESIGN.md, Threads). */
+@keyframes thread-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: none;
+  }
+}
+.animate-thread-fill {
+  transform-origin: left;
+  animation: thread-fill 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* Sheets and dialogs. */
 @keyframes sheet-in {
   from {

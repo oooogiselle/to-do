@@ -45,7 +45,7 @@ const PRIORITIES: { value: Priority; label: string; color: string }[] = [
 ];
 const ESTIMATES = [15, 30, 60, 90, 120, 180];
 
-const label = "mb-1.5 block text-[11px] font-medium tracking-wider text-muted uppercase";
+const label = "mb-1.5 block text-[12px] font-medium text-chip-ink";
 const field =
   "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:border-sky focus:ring-2 focus:ring-sky/20";
 
@@ -465,7 +465,7 @@ export function TaskSheet({
 
         <section>
           <div className="mb-1.5 flex items-center justify-between">
-            <h3 className="block text-[11px] font-semibold tracking-wider text-muted uppercase">
+            <h3 className="block text-[12px] font-semibold text-ink">
               Steps
             </h3>
             {panel !== "breakdown" && (

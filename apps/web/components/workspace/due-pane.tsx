@@ -21,7 +21,7 @@ import type { DragItem } from "./dnd";
 
 const RANGE_KEY = "dueRail.days";
 const UNDATED_KEY = "dueRail.undatedOpen";
-const heading = "flex items-center gap-1.5 px-1 pt-1 pb-1.5 text-[11px] tracking-[0.08em] uppercase";
+const heading = "flex items-center gap-1.5 px-1 pt-1 pb-1.5 text-[12px] font-semibold";
 
 function savedRange(): DueRange {
   try {
@@ -103,7 +103,7 @@ export function DuePane({ pane, now }: { pane: string; now: number }) {
       </div>
 
       <h3 className={`${heading} text-risk`}>
-        <span className="h-1.5 w-1.5 rounded-full bg-coral" aria-hidden />
+        <span className="h-1.5 w-1.5 rounded-full bg-risk" aria-hidden />
         At risk · {atRisk.length}
       </h3>
       {atRisk.length ? (
@@ -162,7 +162,7 @@ function MetaChip({
       title={title}
       className={`inline-flex items-center gap-1 rounded-md border border-line bg-surface px-1.5 py-0.5 text-[11px] whitespace-nowrap ${risk ? "text-risk" : "text-chip-ink"}`}
     >
-      <Icon className={`h-3 w-3 ${risk ? "text-coral" : "text-faint"}`} />
+      <Icon className={`h-3 w-3 ${risk ? "text-risk" : "text-faint"}`} />
       {children}
     </span>
   );

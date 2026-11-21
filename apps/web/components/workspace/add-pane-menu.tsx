@@ -29,7 +29,7 @@ export function AddPaneMenu({ hidden, onOpen }: { hidden: PaneId[]; onOpen: (pan
           role="menu"
           className="animate-pop-in absolute top-9 left-0 z-50 w-48 rounded-2xl border border-line-soft bg-surface p-1.5 shadow-pop"
         >
-          <p className="px-2 pt-1 pb-1 text-[10px] font-semibold tracking-wider text-faint uppercase">
+          <p className="px-2 pt-1 pb-1 text-[12px] font-semibold text-muted">
             Open pane
           </p>
           {hidden.length === 0 ? (

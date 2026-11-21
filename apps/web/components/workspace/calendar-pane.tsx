@@ -178,10 +178,12 @@ export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: numbe
 
       <div className="flex flex-wrap items-center gap-3 px-3 py-2 text-[11px] font-medium text-muted">
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-sky" /> Task
+          <span className="h-2.5 w-2.5 rounded-[1px_3px_3px_1px] bg-sky/15 shadow-[inset_2px_0_0_var(--tt-sky)]" /> Task
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm border border-line bg-surface shadow-[inset_2px_0_0_var(--tt-sky)]" />
+          <span className="grid h-2.5 w-2.5 place-items-center rounded-sm bg-event">
+            <span className="h-1 w-1 rounded-full bg-sky" />
+          </span>
           Google event
         </span>
         <span className="flex items-center gap-1.5">
