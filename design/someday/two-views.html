@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1440">
+<title>Tapestry · Someday: two views</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../loom/base.css">
+<style>
+  /* Someday, two views. Loom tokens and sizes only (design/loom/DESIGN.md).
+     One rule per piece, used in both views:
+     - Page: paper, white panes (12 corners, 10 apart), the 48 top bar, then the add box.
+     - Pane head: label 12/600 + count 11 faint, line-soft rule. No hint text.
+     - Board card = My day list-pane row: row fill, 6 corners, check 14, title 13/500, meta 11 faint.
+     - Kind row = My day plan row: thread + check 16, title 13/500, meta 11 faint, line-soft divider.
+     - Controls: 28 in the top bar and add box, 24 inside cards and rows. Button text 12/500.
+     - One action per item, a quiet 24 button in one fixed-width column; ⋯ only on hover. */
+  :root {
+    --paper: #eef0f3; --rail: #f6f7f9; --surface: #ffffff;
+    --ink: #1b2233; --muted: #5f6b80; --faint: #98a1b2;
+    --line: #e3e6ec; --line-soft: #eef0f4; --line-strong: #cdd2dc;
+    --row: #f7f8fa; --row-hover: #f0f2f5; --active: #e9ecf2;
+    --chip: #eef0f4; --chip-ink: #4a5468;
+    --open: #e8f4f2; --open-line: #a9d4cd; --open-ink: #2f7a70;
+    --warn: #8a6110; --warn-bg: #fbf3df;
+    --grape-bg: #f3f0fc; --grape-ink: #5a43a8;
+    --focus: #3452d6; --accent: #3452d6;
+    --l-cs: #3f7ddb; --l-econ: #7c5cd6; --l-rec: #d4972a; --l-pers: #d0577e;
+    --l-mint: #3b9b6e; --l-coral: #d2694a;
+    --shadow-card: 0 1px 2px rgb(27 34 51 / 0.04);
+    --shadow-pop: 0 8px 24px rgb(27 34 51 / 0.12);
+    --r-pane: 12px; --r-row: 6px; --r-ctl: 8px; --r-chip: 4px;
+    --f-body: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif; --f-head: var(--f-body);
+  }
+  body { background: var(--paper); }
+  .frame-wrap { padding: 40px 0 56px; }
+  .frame-cap { width: 1440px; padding: 0 0 14px; }
+  .frame-cap h2 { font-size: 15px; font-weight: 600; }
+  .frame-cap p { margin-top: 2px; max-width: 820px; font-size: 13px; color: var(--muted); }
+  .screen { border: 1px solid var(--line); }
+  .ellip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ---------- top bar ---------- */
+  .top-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--chip); }
+  .seg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 22px; padding: 0 10px; border-radius: var(--r-ctl); font-size: 12px; font-weight: 500; color: var(--chip-ink); }
+  .seg button.on { background: var(--ink); color: var(--surface); }
+  .seg .ic { width: 14px; height: 14px; }
+  .btn .ic { width: 14px; height: 14px; }
+  .btn .ic.xs { width: 12px; height: 12px; color: var(--faint); }
+  .btn.is-open { background: var(--active); border-color: var(--line-strong); }
+  .btn.ink { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+
+  /* View menu */
+  .anchor { position: relative; }
+  .menu { position: absolute; right: 0; top: 36px; z-index: 20; width: 288px; padding: 6px; border: 1px solid var(--line); border-radius: var(--r-pane); background: var(--surface); box-shadow: var(--shadow-pop); }
+  .menu-sec { padding: 8px; }
+  .menu-sec + .menu-sec { border-top: 1px solid var(--line-soft); }
+  .menu-label { margin-bottom: 6px; font-size: 11px; color: var(--muted); }
+  .menu .seg { display: flex; }
+  .menu .seg button { flex: 1; }
+  .menu-sel { display: flex; align-items: center; justify-content: space-between; height: 28px; padding: 0 8px 0 10px; border: 1px solid var(--line); border-radius: var(--r-ctl); font-size: 12px; font-weight: 500; }
+  .menu-sel .ic { width: 12px; height: 12px; color: var(--muted); }
+  .menu-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 28px; padding: 0 8px; border-radius: var(--r-row); font-size: 12px; font-weight: 500; }
+  .menu-row:hover { background: var(--row-hover); }
+  .menu-row span { display: flex; align-items: center; gap: 8px; }
+  .menu-row .ic { width: 14px; height: 14px; color: var(--muted); }
+  .sw { width: 28px; height: 16px; border-radius: 99px; background: var(--line-strong); position: relative; }
+  .sw::after { content: ""; position: absolute; left: 2px; top: 2px; width: 12px; height: 12px; border-radius: 99px; background: var(--surface); }
+
+  /* ---------- body + add box ---------- */
+  .body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; padding: 10px; background: var(--paper); }
+  .capture { display: flex; align-items: center; gap: 6px; height: 40px; flex-shrink: 0; padding: 0 5px 0 16px; border: 1px solid var(--line-soft); border-radius: var(--r-pane); background: var(--surface); box-shadow: var(--shadow-card); }
+  .capture > .ic { width: 14px; height: 14px; color: var(--faint); }
+  .capture input { flex: 1; min-width: 0; margin-left: 6px; border: 0; outline: none; background: transparent; font-size: 13px; }
+  .capture input::placeholder { color: var(--faint); }
+  .pick { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px 0 10px; border-radius: var(--r-ctl); background: var(--chip); font-size: 12px; font-weight: 500; color: var(--chip-ink); }
+  .pick .ic { width: 12px; height: 12px; color: var(--muted); }
+
+  /* ---------- panes ---------- */
+  .pane { min-height: 0; }
+  .pane-head { display: flex; align-items: baseline; gap: 8px; padding: 12px 20px 10px; border-bottom: 1px solid var(--line-soft); }
+  .pane-head h3 { font-size: 12px; font-weight: 600; }
+  .pane-head span { margin-left: auto; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+
+  .meta { display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 11px; color: var(--faint); white-space: nowrap; overflow: hidden; }
+  .meta .mdot::before { content: "·"; }
+  .kind { padding: 1px 6px; border-radius: var(--r-chip); font-size: 10px; font-weight: 500; line-height: 1.5; }
+  .kind.goal { background: var(--warn-bg); color: var(--warn); }
+  .kind.learn { background: var(--grape-bg); color: var(--grape-ink); }
+  .kind.people { background: var(--open); color: var(--open-ink); }
+  .kind.idea { background: var(--chip); color: var(--chip-ink); }
+
+  /* quiet 24 controls inside cards and rows */
+  .ib { display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--r-row); color: var(--muted); }
+  .ib .ic { width: 14px; height: 14px; }
+  .ib:hover { background: var(--active); color: var(--ink); }
+  .act { display: inline-flex; align-items: center; justify-content: flex-start; gap: 6px; width: 112px; height: 24px; padding: 0 8px; border-radius: var(--r-row); font-size: 12px; font-weight: 500; color: var(--chip-ink); white-space: nowrap; }
+  .act .ic { width: 12px; height: 12px; }
+  .act:hover, .hover .act { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); }
+
+  /* ---------- View 1: board ---------- */
+  .board { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .cards { display: flex; flex-direction: column; gap: 6px; padding: 10px; }
+  .card { position: relative; display: grid; grid-template-columns: 14px minmax(0, 1fr); column-gap: 10px; padding: 9px 10px; border-radius: var(--r-row); background: var(--row); }
+  .card .check { --s: 14px; margin-top: 2px; }
+  .card .t { display: block; font-size: 13px; font-weight: 500; line-height: 1.35; }
+  .card .tools { position: absolute; top: 6px; right: 6px; display: none; gap: 2px; }
+  .card.hover { background: var(--row-hover); padding-right: 64px; }
+  .card.hover .tools { display: flex; }
+  .card.ghosted { opacity: 0.4; }
+  .card.lifted { background: var(--surface); box-shadow: var(--shadow-pop); outline: 1px solid var(--line); transform: rotate(-1.5deg) translate(4px, -2px); }
+  .drop { height: 2px; margin: -2px 2px; border-radius: 99px; background: var(--l-econ); }
+
+  /* ---------- View 2: shelves ---------- */
+  .shelves { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 10px; }
+  .stack { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+  .stack .grow { flex: 1; }
+  .row { position: relative; display: grid; grid-template-columns: 16px minmax(0, 1fr) 112px 24px; column-gap: 12px; align-items: center; padding: 9px 12px 9px 20px; border-bottom: 1px solid var(--line-soft); }
+  .row .thread { position: absolute; left: 8px; top: 9px; bottom: 9px; width: 3px; border-radius: 99px; background: var(--c); }
+  .row .check { --s: 16px; }
+  .row .t { display: block; font-size: 13px; font-weight: 500; }
+  .row .more { visibility: hidden; }
+  .row.hover { background: var(--row); }
+  .row.hover .more { visibility: visible; }
+</style>
+</head>
+<body>
+<main id="root" style="width:1440px;margin:0 auto"></main>
+<script>
+const P = {
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+  cal: '<path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
+  checks: '<path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"/>',
+  sparkles: '<path d="M9.94 14.06 4 20M12 3l1.9 5.8L20 10.5l-5.6 2.2L12 19l-2.4-6.3L4 10.5l6.1-1.7z"/>',
+  paste: '<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M16 4h2a2 2 0 0 1 2 2v4M21 14H11M15 10l-4 4 4 4"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/>',
+  plus: '<path d="M5 12h14M12 5v14"/>',
+  panel: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18M16 15l-3-3 3-3"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  more: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  down: '<path d="m6 9 6 6 6-6"/>',
+  sliders: '<path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/>',
+  columns: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18M15 3v18"/>',
+  rows: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M3 15h18"/>',
+  pencil: '<path d="M21.17 6.81a1 1 0 0 0-3.99-3.98L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/>',
+};
+const ic = (n, cls = "ic") => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+const lv = (l) => `var(--l-${l})`;
+const check = (l) => `<button class="check" style="--c:${lv(l)}" aria-label="Mark done"></button>`;
+const meta = (parts) => `<div class="meta">${parts.filter(Boolean).map((p, i) => (i ? `<span class="mdot"></span>` : "") + `<span>${p}</span>`).join("")}</div>`;
+
+/* Two Someday lists: "Someday" (mint) and "Learning" (coral). */
+const H = { month: "This month", year: "This year", someday: "Someday", none: "Whenever" };
+const ITEMS = [
+  { t: "Run a half marathon", k: "goal", l: "mint", h: "month", steps: [2, 5], eff: "About 12 weeks", next: "10k long run" },
+  { t: "Call Grandma", k: "people", l: "mint", h: "month", last: 12 },
+  { t: "Essence of linear algebra", k: "learn", l: "coral", h: "month", type: "Video", site: "youtube.com", eff: "3h 15m" },
+  { t: "Coffee with Maya", k: "people", l: "mint", h: "month", last: 3 },
+  { t: "Spanish to B1", k: "learn", l: "coral", h: "year", type: "Course", steps: [1, 4], eff: "About 40 hours", site: "languagetransfer.org" },
+  { t: "Build a personal website", k: "goal", l: "mint", h: "year", steps: [0, 3], eff: "About 10 hours", next: "Pick a domain name" },
+  { t: "Designing Data-Intensive Applications", k: "learn", l: "coral", h: "year", type: "Book", site: "oreilly.com", eff: "About 14 hours" },
+  { t: "Catch up with Sam", k: "people", l: "mint", h: "year", last: 41 },
+  { t: "Throw a pot on the wheel", k: "goal", l: "mint", h: "someday", eff: "About 6 classes" },
+  { t: "Autumn trip to Kyoto", k: "goal", l: "mint", h: "someday" },
+  { t: "Learn to sail", k: "learn", l: "coral", h: "someday", type: "Course", site: "ussailing.org", eff: "About 2 weekends" },
+  { t: "Start a herb garden", k: "idea", l: "mint", h: "someday" },
+  { t: "Dune", k: "learn", l: "coral", h: "none", type: "Book", site: "goodreads.com", eff: "About 10 hours" },
+  { t: "Piano chords for beginners", k: "learn", l: "coral", h: "none", type: "Video", site: "youtube.com", eff: "25m" },
+  { t: "Write to Ms. Alvarez", k: "people", l: "mint", h: "none", last: null },
+  { t: "Volunteer at the food bank", k: "idea", l: "mint", h: "none" },
+];
+const KL = { goal: "Goal", learn: "Learn", people: "People", idea: "Idea" };
+const ago = (d) => d == null ? "Not logged yet" : `${d} days ago`;
+const steps = (it) => it.steps ? `<span class="num">${it.steps[0]} of ${it.steps[1]} steps</span>` : "";
+
+/* ---------- shell ---------- */
+function sidebar() {
+  const nav = [["sun", "My day"], ["cal", "Calendar"], ["checks", "To-dos"], ["sparkles", "Someday", true, 16], ["paste", "Import"]];
+  const lists = [["cs", "CS61", 4], ["econ", "Econ 10", 3], ["rec", "Recruiting", 3], ["pers", "Personal", 5]];
+  return `<aside class="sidebar">
+    <div class="brand"><span class="logo" aria-hidden="true"><i style="background:var(--l-cs)"></i><i style="background:var(--l-econ)"></i><i style="background:var(--l-rec)"></i></span><span class="brand-name">Tapestry</span>
+      <button class="icon-btn ghost sm" aria-label="Collapse sidebar">${ic("panel")}</button></div>
+    <button class="quick-add">${ic("plus")}<span>Quick add</span><kbd>⌘K</kbd></button>
+    <nav class="nav">${nav.map(([i, n, a, c]) => `<a href="#" class="nav-item${a ? " is-active" : ""}">${ic(i)}<span>${n}</span>${c ? `<span class="count">${c}</span>` : ""}</a>`).join("")}</nav>
+    <div class="side-section"><h3 class="side-label">Lists</h3>
+      ${lists.map(([k, n, c]) => `<a href="#" class="nav-item"><span class="dot" style="--c:${lv(k)}"></span><span>${n}</span><span class="count">${c}</span></a>`).join("")}
+    </div>
+    <div class="side-foot">
+      <a href="#" class="nav-item">${ic("chat")}<span>Ask tt.</span><kbd>⌘J</kbd></a>
+      <a href="#" class="nav-item">${ic("settings")}<span>Settings</span></a>
+      <div class="me"><span class="avatar">G</span><span class="me-name">Giselle</span></div>
+    </div>
+  </aside>`;
+}
+function topBar(view, open) {
+  const v = (id, icon, label) => `<button class="${view === id ? "on" : ""}">${ic(icon)}${label}</button>`;
+  const menu = open ? `<div class="menu" role="menu">
+      ${view === "time" ? `<div class="menu-sec"><div class="menu-label">Show</div><div class="seg">${["All", "Goals", "Learn", "People", "Ideas"].map((o) => `<button class="${o === "All" ? "on" : ""}">${o}</button>`).join("")}</div></div>` : ""}
+      <div class="menu-sec"><div class="menu-label">List</div><div class="menu-sel">All lists${ic("down")}</div></div>
+      <div class="menu-sec"><div class="menu-row">Show done<i class="sw"></i></div></div>
+      <div class="menu-sec"><div class="menu-row"><span>${ic("plus")}New list</span></div><div class="menu-row"><span>${ic("pencil")}Edit lists</span></div></div>
+    </div>` : "";
+  return `<header class="top">
+    <div class="top-title"><h1>Someday</h1><p>Goals, things to learn and people to keep in touch with · 16 open</p></div>
+    <div class="top-right">
+      <div class="seg" role="radiogroup" aria-label="View">${v("time", "columns", "By timeframe")}${v("kind", "rows", "By kind")}</div>
+      <div class="anchor"><button class="btn${open ? " is-open" : ""}">${ic("sliders")}View${ic("down", "ic xs")}</button>${menu}</div>
+    </div>
+  </header>`;
+}
+const capture = `<div class="capture">${ic("plus")}<input placeholder="A goal, a link to something to learn, or someone to keep in touch with…">
+  <span class="pick">Idea${ic("down")}</span><span class="pick">Any time${ic("down")}</span><button class="btn ink">Add</button></div>`;
+const paneHead = (title, count) => `<div class="pane-head"><h3>${title}</h3><span>${count}</span></div>`;
+function frame(id, title, blurb, view, open, body) {
+  return `<section class="frame-wrap"><div class="frame-cap"><h2>${title}</h2><p>${blurb}</p></div>
+    <div class="screen" id="${id}">${sidebar()}<div class="main">${topBar(view, open)}<div class="body">${capture}${body}</div></div></div></section>`;
+}
+
+/* ---------- View 1: by timeframe ---------- */
+function cardMeta(it) {
+  const k = `<span class="kind ${it.k}">${KL[it.k]}</span>`;
+  if (it.k === "people") return meta([k, ago(it.last)]);
+  if (it.k === "learn") return meta([k, it.site]);
+  if (it.k === "goal") return meta([k, steps(it) || it.eff]);
+  return meta([k]);
+}
+function card(it, cls = "") {
+  return `<div class="card ${cls}">${check(it.l)}<div style="min-width:0"><span class="t">${it.t}</span>${cardMeta(it)}</div>
+    <div class="tools"><button class="ib" title="Add to My day">${ic("sun")}</button><button class="ib" title="More: Ask tt., Make it a to-do, Delete">${ic("more")}</button></div></div>`;
+}
+function viewTime() {
+  const cols = ["month", "year", "someday", "none"].map((h) => {
+    const items = ITEMS.filter((i) => i.h === h);
+    const cards = items.map((it) => {
+      let html = card(it, it.t === "Run a half marathon" ? "hover" : it.t === "Throw a pot on the wheel" ? "ghosted" : "");
+      if (it.t === "Catch up with Sam") html += `<div class="drop"></div>` + card(ITEMS.find((x) => x.t === "Throw a pot on the wheel"), "lifted");
+      return html;
+    }).join("");
+    return `<div class="pane">${paneHead(H[h], items.length)}<div class="cards">${cards}</div></div>`;
+  }).join("");
+  return frame("frame-a", "View 1 · By timeframe",
+    "When you mean to get to things. Drag a card to another column to change its timeframe (shown: the pottery goal moving into This year). Hovering a card shows Add to My day and ⋯. The View menu is shown open.",
+    "time", true, `<div class="board">${cols}</div>`);
+}
+
+/* ---------- View 2: by kind ---------- */
+function row(it, hover) {
+  const m = {
+    goal: [H[it.h], steps(it), it.next ? `Next: ${it.next}` : it.eff],
+    learn: [H[it.h], it.type, it.site, it.eff],
+    people: [ago(it.last)],
+    idea: [H[it.h]],
+  }[it.k];
+  const act = {
+    goal: `${ic("sun")}Add to My day`,
+    learn: `${ic("check")}${it.type === "Video" ? "Watched" : it.type === "Book" ? "Read it" : "Done"}`,
+    people: `${ic("check")}Talked today`,
+    idea: `${ic("chat")}Ask tt.`,
+  }[it.k];
+  return `<div class="row${hover ? " hover" : ""}" style="--c:${lv(it.l)}"><span class="thread"></span>${check(it.l)}
+    <div style="min-width:0"><span class="t ellip">${it.t}</span>${meta(m)}</div>
+    <button class="act">${act}</button><button class="ib more" title="More">${ic("more")}</button></div>`;
+}
+function viewKind() {
+  const of = (k) => ITEMS.filter((i) => i.k === k);
+  const people = of("people").sort((a, b) => (b.last ?? 999) - (a.last ?? 999));
+  const shelf = (title, items, hoverT, cls = "") => `<div class="pane ${cls}">${paneHead(title, items.length)}${items.map((it) => row(it, it.t === hoverT)).join("")}</div>`;
+  return frame("frame-c", "View 2 · By kind",
+    "What you do with each thing: the same items, regrouped. Every row has the same shape: thread, check, title, one grey line, and one action (Add to My day, Watched or Read it, Talked today, Ask tt.). People are sorted longest-since-you-talked first.",
+    "kind", false,
+    `<div class="shelves">
+      <div class="stack">${shelf("Goals", of("goal"), "Run a half marathon")}${shelf("Learn", of("learn"), null, "grow")}</div>
+      <div class="stack">${shelf("People", people, null)}${shelf("Ideas", of("idea"), null, "grow")}</div>
+    </div>`);
+}
+
+document.getElementById("root").innerHTML = viewTime() + viewKind();
+</script>
+</body>
+</html>
