@@ -155,7 +155,7 @@ function Header({
   return (
     <header className="relative z-40 flex h-12 shrink-0 items-center gap-4 border-b border-line bg-surface px-4">
       <div className="min-w-0 leading-tight">
-        <h1 className="text-[15px] font-medium tracking-tight text-ink">{title}</h1>
+        <h1 className="text-[15px] font-semibold tracking-tight text-ink">{title}</h1>
         <p className="truncate text-[11px] text-muted">{subtitle}</p>
       </div>
       <button

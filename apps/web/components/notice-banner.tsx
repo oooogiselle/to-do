@@ -11,6 +11,7 @@ import {
 } from "@tt/client";
 import { X } from "lucide-react";
 import { useOpenTask } from "./app-shell";
+import { setAskButtonHidden } from "./ask-button";
 
 const AUTO_DISMISS_MS = 12_000;
 
@@ -37,6 +38,8 @@ export function NoticeBanner() {
         <Deleted notice={notice} />
       ) : notice.kind === "blockRemoved" ? (
         <BlockRemoved notice={notice} />
+      ) : notice.kind === "askHidden" ? (
+        <AskHidden />
       ) : (
         <Completion notice={notice} />
       )}
@@ -84,6 +87,23 @@ function BlockRemoved({ notice }: { notice: Extract<Notice, { kind: "blockRemove
     <>
       <span className="min-w-0 flex-1">Removed “{notice.label}” from your calendar.</span>
       <button onClick={() => restore(notice.block)} className={primary}>
+        Undo
+      </button>
+    </>
+  );
+}
+
+function AskHidden() {
+  return (
+    <>
+      <span className="min-w-0 flex-1">Ask tt. button hidden. It’s still in the sidebar, or press ⌘J.</span>
+      <button
+        onClick={() => {
+          setAskButtonHidden(false);
+          dismiss();
+        }}
+        className={primary}
+      >
         Undo
       </button>
     </>

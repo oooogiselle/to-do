@@ -26,7 +26,9 @@ export type Notice =
       kind: "blockRemoved";
       label: string;
       block: { task_id: string; step_id: string | null; start: string; end: string };
-    };
+    }
+  /** The floating Ask tt. button was hidden; the banner offers Undo. */
+  | { kind: "askHidden" };
 
 let notice: Notice | null = null;
 const listeners = new Set<() => void>();

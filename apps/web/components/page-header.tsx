@@ -27,19 +27,19 @@ export function PageHeader({
         {back ? (
           <Link
             href={back.href}
-            className="-ml-1 inline-flex items-center gap-0.5 rounded-md px-1 text-[13px] text-muted hover:text-ink"
+            className="-ml-1 inline-flex items-center gap-0.5 rounded-md px-1 text-[12px] font-medium text-muted hover:text-ink"
           >
-            <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+            <ChevronLeft className="h-3 w-3" aria-hidden="true" />
             {back.label}
           </Link>
         ) : (
-          <p className="flex items-center gap-1.5 text-[13px] text-muted">
+          <p className="flex items-center gap-1 text-[11px] text-muted">
             tt.
-            <ChevronRight className="h-3.5 w-3.5 text-faint" aria-hidden="true" />
+            <ChevronRight className="h-3 w-3 text-faint" aria-hidden="true" />
             <span className="text-chip-ink">{crumb ?? title}</span>
           </p>
         )}
-        <h1 className="mt-1.5 flex items-center gap-3.5 text-[22px] font-medium tracking-tight text-ink">
+        <h1 className="mt-1 flex items-center gap-3.5 text-[15px] font-semibold tracking-tight text-ink">
           {icon}
           {title}
         </h1>
