@@ -121,7 +121,7 @@ function SidebarBody({ onQuickAdd, collapsed, onToggle, activeList }: BodyProps 
 
   return (
     <aside
-      className={`flex shrink-0 items-center gap-2 border-b border-line-soft bg-rail px-3 py-2 md:h-full md:flex-col md:items-stretch md:gap-0 md:border-r md:border-b-0 md:py-4 ${collapsed ? "md:w-[56px]" : "md:w-[232px]"}`}
+      className={`flex shrink-0 items-center gap-2 border-b border-line-soft bg-rail px-3 py-2 md:h-full md:flex-col md:items-stretch md:gap-0 md:border-r md:border-b-0 md:py-4 ${collapsed ? "md:w-[44px] md:px-1.5" : "md:w-[232px]"}`}
     >
       <div className={`flex items-center gap-2 md:pb-4 ${collapsed ? "md:flex-col md:px-0" : "md:px-1.5"}`}>
         <AppLogo />
