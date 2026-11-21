@@ -1,5 +1,6 @@
 import { after, type NextRequest } from "next/server";
 import { safeEqual } from "@/lib/crypto";
+import { GoogleNotConnectedError, GoogleReconnectError } from "@/lib/google";
 import { syncCalendar } from "@/lib/gcal/sync";
 import { adminClient } from "@/lib/supabase/admin";
 
@@ -22,7 +23,11 @@ export async function POST(req: NextRequest) {
 
   if (state !== "sync") {
     after(() =>
-      syncCalendar(data.user_id, data.calendar_id).catch((e) => console.error("webhook sync", e)),
+      syncCalendar(data.user_id, data.calendar_id).catch((e) => {
+        // A revoked token is expected (the account gets flagged for reconnect), not an error.
+        if (e instanceof GoogleReconnectError || e instanceof GoogleNotConnectedError) return;
+        console.error("webhook sync", e);
+      }),
     );
   }
   return new Response(null, { status: 200 });
