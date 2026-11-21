@@ -9,8 +9,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@react-native-community/datetimepicker": "9.2.1",
     "@date-fns/tz": "^1.5.0",
+    "@react-native-community/datetimepicker": "9.2.1",
     "@supabase/supabase-js": "^2.117.3",
     "@tanstack/react-query": "^5.104.2",
     "@tt/client": "workspace:*",
@@ -30,6 +30,7 @@
     "react-native-screens": "~4.30.0"
   },
   "devDependencies": {
+    "@opentelemetry/api": "1.10.0",
     "@types/react": "~19.3.0",
     "typescript": "~6.0.3"
   }

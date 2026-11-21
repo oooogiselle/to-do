@@ -1,4 +1,5 @@
 import "server-only";
+import * as Sentry from "@sentry/nextjs";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { ZodError, type ZodTypeAny, type z } from "zod";
@@ -48,6 +49,8 @@ export async function authenticate(req: NextRequest): Promise<AuthedContext> {
   }
   if (!user) throw new HttpError(401, "Not signed in");
   if (!isAllowedEmail(user.email)) throw new HttpError(403, "This account is not allowed");
+  // Lets Sentry count how many users an error hits. The id only, never the email.
+  Sentry.setUser({ id: user.id });
   return { user, supabase };
 }
 

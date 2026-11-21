@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = { title: "Privacy" };
 
-const UPDATED = "November 5, 2026";
+const UPDATED = "November 20, 2026";
 
 // Public page: Google requires a privacy policy link to publish the OAuth app.
 export default function PrivacyPage() {
@@ -63,7 +63,13 @@ export default function PrivacyPage() {
         <li>Supabase, which hosts the database and sign-in;</li>
         <li>Vercel, which hosts the app;</li>
         <li>Google, for sign-in and Calendar, as you authorize;</li>
-        <li>Anthropic, for the AI features above, only when you use them.</li>
+        <li>Anthropic, for the AI features above, only when you use them;</li>
+        <li>
+          Sentry, which receives error reports when something breaks: the error, the page or
+          request it happened on, your browser type and an anonymous account id. Not your email,
+          IP address, or the content of your tasks or calendar, though an error message can
+          occasionally include a short piece of text, such as a task title.
+        </li>
       </ul>
 
       <h2 className="pt-2 text-lg font-semibold">Google user data</h2>
