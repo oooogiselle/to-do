@@ -38,7 +38,7 @@ export default function PrivacyPage() {
       <h2 className="pt-2 text-lg font-semibold">What it stores</h2>
       <p>
         Your tasks, steps, lists, daily plan and settings; a copy of the events from the calendars
-        you chose; records of imports you ran; how much AI you&apos;ve used (token counts and cost,
+        you chose; records of imports you ran; your Ask tt. chats; how much AI you&apos;ve used (token counts and cost,
         to enforce a monthly limit); and, if you connect Google Calendar, an encrypted Google
         refresh token. This is kept in the app&apos;s database. Tasks you delete are hidden
         immediately and stay in the database until you delete your account.
@@ -49,9 +49,34 @@ export default function PrivacyPage() {
 
       <h2 className="pt-2 text-lg font-semibold">AI features</h2>
       <p>
-        When you use Break down or Import, the task details, text or file you provide is sent to
-        Anthropic&apos;s Claude API to produce suggestions. Uploaded files are deleted right after
-        they are read. Please don&apos;t include sensitive information in what you send.
+        The AI features use Anthropic&apos;s Claude API. Data is sent to Anthropic only when you use
+        one of them, and only what that feature needs:
+      </p>
+      <ul className="list-disc space-y-1 pl-5">
+        <li>
+          <strong>Ask tt.</strong>: your messages, plus a summary of your planner so it can answer
+          and plan: your to-dos and their steps, notes, due dates and estimates, your scheduled
+          blocks and My day, and the titles and times of your calendar events for the next 7 days.
+        </li>
+        <li>
+          <strong>Suggestions for free time</strong>: your open to-dos, and the titles and times of
+          that day&apos;s calendar events.
+        </li>
+        <li>
+          <strong>Break down</strong>: the to-do you&apos;re breaking down.
+        </li>
+        <li>
+          <strong>Import</strong>: the text, file or photo you provide. Uploaded files are deleted
+          right after they are read.
+        </li>
+        <li>
+          <strong>Someday research</strong>: the Someday item&apos;s title and notes. Claude
+          searches the web for resources, so its search queries are based on them.
+        </li>
+      </ul>
+      <p>
+        Anthropic doesn&apos;t use data sent through its API to train its models. Please don&apos;t
+        include sensitive information in what you send.
       </p>
 
       <h2 className="pt-2 text-lg font-semibold">Who it&apos;s shared with</h2>
@@ -83,8 +108,11 @@ export default function PrivacyPage() {
           Google API Services User Data Policy
         </a>
         , including the Limited Use requirements. Google Calendar data is used only to provide the
-        timeline and scheduling features you see in the app. It is not used for advertising, not
-        sold, and not used to train AI models.
+        timeline, scheduling and AI planning features you use in the app. Event titles and times
+        are sent to Anthropic only when you use Ask tt. or suggestions for free time, to answer
+        that request. Google Calendar data is not used for advertising, not sold, not used to
+        train AI models, and not read by people except with your permission, for security, or as
+        the law requires.
       </p>
 
       <h2 className="pt-2 text-lg font-semibold">Deleting your data</h2>
