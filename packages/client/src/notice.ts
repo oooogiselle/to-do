@@ -8,7 +8,8 @@ import { useSyncExternalStore } from "react";
  *   (`count` > 0), and says when the task was completed or reopened because of its steps
  *   (`auto`), with an undo.
  * - added: confirms a task created from quick add, with shortcuts to open or schedule it.
- * - deleted: a task was deleted; offers Undo until the delete is sent.
+ * - deleted: one or more tasks were deleted (`label` is the title, or "4 to-dos"); offers Undo
+ *   until the delete is sent.
  * - blockRemoved: a time block was taken off the calendar; Undo schedules it again.
  */
 export type Notice =
@@ -21,7 +22,7 @@ export type Notice =
       auto?: "done" | "reopened";
     }
   | { kind: "added"; taskId: string; label: string; listName?: string }
-  | { kind: "deleted"; taskId: string; label: string }
+  | { kind: "deleted"; batchId: string; label: string }
   | {
       kind: "blockRemoved";
       label: string;

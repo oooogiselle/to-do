@@ -14,6 +14,7 @@ export * from "./blocks/trim";
 export * from "./format/eventTitle";
 export * from "./format/color";
 export * from "./risk/dueRisk";
+export * from "./risk/staleOverdue";
 export * from "./recurrence/recurrence";
 export * from "./api";
 export * from "./import";

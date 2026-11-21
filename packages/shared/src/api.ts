@@ -86,6 +86,7 @@ export function createApiClient({ baseUrl, getToken, fetch: f = fetch }: Opts) {
     updateTask: (id: string, body: z.infer<typeof TaskPatch>) =>
       call<Task>("PATCH", `/tasks/${id}`, body),
     deleteTask: (id: string) => call<void>("DELETE", `/tasks/${id}`),
+    deleteTasks: (ids: string[]) => call<void>("POST", "/tasks/bulk-delete", { ids }),
 
     createStep: (body: z.infer<typeof StepCreate>) => call<Step>("POST", "/steps", body),
     updateStep: (id: string, body: z.infer<typeof StepPatch>) =>

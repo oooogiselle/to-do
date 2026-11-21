@@ -1,6 +1,6 @@
 import { TaskPatch } from "@tt/shared";
-import { parseBody, route, unwrap } from "@/lib/api";
-import { removeUpcomingBlocks } from "@/lib/blocks";
+import { HttpError, parseBody, route, unwrap } from "@/lib/api";
+import { deleteTasks } from "@/lib/tasks";
 
 type P = { id: string };
 
@@ -41,24 +41,7 @@ export const PATCH = route<P>(async (req, { supabase, params }) => {
 
 /** Soft-deletes the task and its steps, and removes its upcoming blocks from gcal. */
 export const DELETE = route<P>(async (_req, { supabase, user, params }) => {
-  await removeUpcomingBlocks(supabase, user.id, { task_id: params.id });
-  const now = new Date().toISOString();
-  unwrap(
-    await supabase
-      .from("tasks")
-      .update({ deleted_at: now })
-      .eq("id", params.id)
-      .is("deleted_at", null)
-      .select("id")
-      .single(),
-  );
-  unwrap(
-    await supabase
-      .from("steps")
-      .update({ deleted_at: now })
-      .eq("task_id", params.id)
-      .is("deleted_at", null)
-      .select("id"),
-  );
+  const deleted = await deleteTasks(supabase, user.id, [params.id]);
+  if (!deleted.length) throw new HttpError(404, "Not found");
   return { ok: true };
 });
