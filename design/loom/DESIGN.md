@@ -94,6 +94,8 @@ On list colours: list names in meta lines use the hue mixed 78% with ink. Booked
 | 10 | 400 / 500 | Hour labels, chip text, slot times |
 
 - **Section labels** ("Every day", "Plan", "Coming up") are sentence case, 12/600, in ink. A count sits right-aligned at 11/400 faint; a note follows after "·" at 11/400 faint. The "Every day" label carries a 12px repeat icon in `--open-ink`.
+- **Big title inputs:** the task sheet title is 18/600 (−0.015em); quick add and add-to-day inputs are 15/500 with a 400 placeholder.
+- **Empty states:** a 15/600 heading with a 12/400 muted line under it.
 
 ## Corners and spacing
 Uses the existing radius tokens in `globals.css`:
@@ -132,6 +134,11 @@ Approved 2026-11-21 with the sidebar and To-dos redesign. They use only the toke
   - Each list starts with a heading: the list dot on the check column, the name 12/600 ink on the title column, and "2 open" at 11/400 faint, over a `--line` rule. Each list ends with its own add row on the same columns.
   - No column-label row: the chips and marks explain themselves.
   - The page header has two controls: a view menu (sort and Show done) and New list, or Edit list on a single list.
+- **Someday.** Approved 2026-11-21 (mock: `design/someday/two-views.html`). The same items shown two ways, with one rule per piece across both views.
+  - The page has a 48 top bar like My day (title 15/600, subtitle 11 muted). On its right are the view switch ("By timeframe" / "By kind", segmented with icons) and a View menu holding Show (board only), List, Show done, New list and Edit list. Below the bar, on `--paper`: the add box (a 40 tall pane with Idea and Any time pickers at 28 and an ink Add button), then the panes, 10 apart.
+  - Pane heads are the name at 12/600 and a count at 11/400 faint over a `--line-soft` rule, with no hint text. Head text and checks sit 20 in from the pane edge.
+  - **By timeframe** has four panes (This month, This year, Someday, Whenever). Cards are list-pane rows: `--row` fill, corners 6, check 14, title 12/500, then a kind chip (goal warn, learn grape, people open, idea chip) and one fact at 11 faint. Hovering shows Add to My day and ⋯ at 24. Dragging a card to another pane changes its timeframe, with the grape drop line.
+  - **By kind** has Goals and Learn on the left, People and Ideas on a 400 column on the right. Rows are plan rows: a thread, check 16, title 13/500, one meta line at 11 faint (timeframe first). Each row has one action in a 112 column (Add to My day, Watched / Read it / Done, Talked today, Ask tt.) as a quiet 24 button that gets a `--line` ring on hover, then ⋯ on hover. People sort longest since you talked first.
 
 ## Rules for new UI
 - Use the tokens above: no hex values, `white`/`black` utilities or Tailwind palette colours in components, and no sizes outside the scale.

@@ -108,9 +108,9 @@ export function ImportView() {
   };
 
   const primary =
-    "flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-surface transition-colors hover:bg-accent/90 disabled:opacity-40";
+    "flex h-7 items-center gap-1.5 rounded-lg bg-accent px-3 text-[12px] font-medium text-surface transition-colors hover:bg-accent/90 disabled:opacity-40";
   const area =
-    "w-full flex-1 resize-y rounded-xl border border-line bg-row p-3 text-[13px] text-ink outline-none placeholder:text-faint focus:border-accent focus:ring-2 focus:ring-accent/20";
+    "w-full flex-1 resize-y rounded-lg border border-line bg-row p-3 text-[13px] text-ink outline-none placeholder:text-faint focus:border-accent focus:ring-2 focus:ring-accent/20";
 
   return (
     <div className="h-full overflow-y-auto">
@@ -147,7 +147,7 @@ export function ImportView() {
                     role="tab"
                     aria-selected={tab === value}
                     onClick={() => setTab(value)}
-                    className={`rounded-lg px-3 py-1 text-sm font-semibold transition-colors ${tab === value ? "bg-ink text-surface" : "text-chip-ink hover:text-ink"}`}
+                    className={`rounded-lg px-3 py-1 text-[12px] font-semibold transition-colors ${tab === value ? "bg-ink text-surface" : "text-chip-ink hover:text-ink"}`}
                   >
                     {label}
                   </button>
@@ -202,13 +202,13 @@ export function ImportView() {
                     {file ? (
                       <>
                         <FileText className="mb-1 h-6 w-6 text-muted" />
-                        <span className="text-sm font-medium text-ink">{file.name}</span>
+                        <span className="text-[13px] font-medium text-ink">{file.name}</span>
                         <span className="text-[12px] text-muted">Click to choose a different file</span>
                       </>
                     ) : (
                       <>
                         <Upload className="mb-1 h-6 w-6 text-muted" />
-                        <span className="text-sm font-medium text-ink">
+                        <span className="text-[13px] font-medium text-ink">
                           Drop a syllabus PDF or photo here
                         </span>
                         <span className="text-[12px] text-muted">
@@ -238,7 +238,7 @@ export function ImportView() {
                     {file && (
                       <button
                         onClick={() => setFile(null)}
-                        className="px-2 py-2 text-sm font-medium text-muted hover:text-ink"
+                        className="h-7 px-2 text-[12px] font-medium text-muted hover:text-ink"
                       >
                         Remove file
                       </button>
@@ -258,7 +258,7 @@ export function ImportView() {
 
             <section className="flex min-h-64 flex-col rounded-2xl bg-line-soft p-4" aria-live="polite">
               <h2 className="mb-3 text-[13px] font-semibold text-ink">Preview</h2>
-              <div className="grid flex-1 place-items-center rounded-xl border-2 border-dashed border-line-strong p-8 text-center text-sm">
+              <div className="grid flex-1 place-items-center rounded-xl border-2 border-dashed border-line-strong p-8 text-center text-[13px]">
                 {busy ? (
                   <p role="status" className="flex flex-col items-center gap-2 font-medium text-ink">
                     <Sparkles className="h-5 w-5 animate-pulse text-grape-ink" />

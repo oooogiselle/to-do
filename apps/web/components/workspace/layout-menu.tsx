@@ -26,7 +26,7 @@ export function LayoutMenu({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="flex items-center gap-1.5 rounded-lg border border-line bg-paper px-2.5 py-1.5 text-[12px] font-medium text-ink hover:bg-line-soft"
+        className="flex h-7 items-center gap-1.5 rounded-lg border border-line bg-paper px-2.5 text-[12px] font-medium text-ink hover:bg-line-soft"
       >
         <LayoutTemplate className="h-3.5 w-3.5 text-muted" />
         Layout

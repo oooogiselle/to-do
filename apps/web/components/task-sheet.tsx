@@ -47,7 +47,7 @@ const ESTIMATES = [15, 30, 60, 90, 120, 180];
 
 const label = "mb-1.5 block text-[12px] font-medium text-chip-ink";
 const field =
-  "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20";
+  "w-full rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[13px] text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20";
 
 /** Text input that saves on blur or Enter, and resyncs when the stored value changes. */
 function CommitInput({
@@ -107,7 +107,7 @@ function StartField({
             if (!v) onChange(null);
             else if (v >= "2000-01-01" && v !== value) onChange(v);
           }}
-          className="rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          className="h-7 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         />
         {value && (
           <button
@@ -164,7 +164,7 @@ function TitleField({
         }
         if (e.key === "Escape") setDraft(value);
       }}
-      className={`w-full resize-none bg-transparent text-[22px] leading-tight font-semibold tracking-tight outline-none placeholder:opacity-50 ${done ? "line-through opacity-70" : ""}`}
+      className={`w-full resize-none bg-transparent text-[18px] leading-tight font-semibold tracking-[-0.015em] outline-none placeholder:opacity-50 ${done ? "line-through opacity-70" : ""}`}
     />
   );
 }
@@ -200,9 +200,9 @@ export function TaskSheet({
           <button
             onClick={onClose}
             aria-label="Close"
-            className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-paper hover:text-ink"
+            className="grid h-7 w-7 place-items-center rounded-lg text-muted hover:bg-paper hover:text-ink"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
         <p className="px-6 text-muted">This task was deleted or hasn&apos;t loaded yet.</p>
@@ -233,9 +233,9 @@ export function TaskSheet({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="grid h-8 w-8 place-items-center rounded-lg hover:bg-surface/60"
+            className="grid h-7 w-7 place-items-center rounded-lg hover:bg-surface/60"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
         <div className="flex items-start gap-3">
@@ -267,7 +267,7 @@ export function TaskSheet({
               onChange={(list_id) => update({ list_id })}
               lists={lists}
               emptyLabel="No list"
-              className="w-full rounded-xl px-3 py-2 text-left text-sm"
+              className="h-7 w-full rounded-lg px-2.5 text-left text-[13px]"
             />
           </div>
           <div>
@@ -276,7 +276,7 @@ export function TaskSheet({
               value={task.due_at}
               onChange={(due_at) => update({ due_at })}
               tz={settings.timezone}
-              className="w-full rounded-xl px-3 py-2 text-left text-sm"
+              className="h-7 w-full rounded-lg px-2.5 text-left text-[13px]"
             />
           </div>
         </div>
@@ -302,7 +302,7 @@ export function TaskSheet({
                   type="button"
                   aria-pressed={active}
                   onClick={() => update({ priority: p.value })}
-                  className="rounded-xl border-2 py-1.5 text-sm font-medium transition-colors"
+                  className="h-7 rounded-lg border text-[12px] font-medium transition-colors"
                   style={{
                     borderColor: active ? "var(--ink)" : "var(--line)",
                     background: active ? "var(--ink)" : "var(--surface)",
@@ -349,7 +349,7 @@ export function TaskSheet({
                   update({ estimate_min: Number.isFinite(n) && n > 0 ? n : null });
                 }}
                 placeholder="Other"
-                className="w-16 rounded-lg border border-line bg-surface px-2 py-1 text-[13px] font-medium text-ink outline-none focus:border-accent"
+                className="h-7 w-16 rounded-lg border border-line bg-surface px-2 text-[13px] text-ink outline-none focus:border-accent"
               />
               min
             </label>
@@ -437,7 +437,7 @@ export function TaskSheet({
                 type="button"
                 disabled={saving || task.status !== "open"}
                 onClick={() => setPanel("schedule")}
-                className="flex items-center gap-1.5 rounded-lg bg-accent px-2.5 py-1.5 text-[12px] font-medium text-surface disabled:opacity-50"
+                className="flex h-7 items-center gap-1.5 rounded-lg bg-accent px-2.5 text-[12px] font-medium text-surface disabled:opacity-50"
               >
                 <CalendarPlus className="h-3.5 w-3.5" />
                 Find time
@@ -494,7 +494,7 @@ export function TaskSheet({
 
         <NotesField task={task} onCommit={(notes) => update({ notes })} />
         {task.source_quote && (
-          <p className="rounded-xl bg-paper px-3 py-2 text-[12px] text-muted">
+          <p className="rounded-lg bg-paper px-3 py-2 text-[12px] text-muted">
             From your import: &ldquo;{task.source_quote}&rdquo;
           </p>
         )}
@@ -507,7 +507,7 @@ export function TaskSheet({
             deleteTask(task);
             onClose();
           }}
-          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-risk hover:bg-risk-bg"
+          className="flex h-7 items-center gap-1.5 rounded-lg px-2 text-[12px] font-medium text-risk hover:bg-risk-bg"
         >
           <Trash2 className="h-4 w-4" />
           Delete
@@ -515,7 +515,7 @@ export function TaskSheet({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-surface hover:opacity-90"
+          className="h-7 rounded-lg bg-ink px-3 text-[12px] font-medium text-surface hover:opacity-90"
         >
           Done
         </button>
@@ -599,7 +599,7 @@ function StepsEditor({
               onCommit={(v) =>
                 v.trim() && updateStep.mutate({ id: s.id, patch: { title: v.trim() } })
               }
-              className={`min-w-0 flex-1 bg-transparent text-sm font-medium outline-none ${s.done ? "text-faint line-through" : "text-ink"}`}
+              className={`min-w-0 flex-1 bg-transparent text-[13px] font-medium outline-none ${s.done ? "text-faint line-through" : "text-ink"}`}
             />
             {!isTemp(s.id) && (
               <div
@@ -662,7 +662,7 @@ function StepsEditor({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Add a step"
-          className="flex-1 bg-transparent py-1.5 text-sm font-medium text-ink outline-none placeholder:text-faint"
+          className="flex-1 bg-transparent py-1.5 text-[13px] text-ink outline-none placeholder:text-faint"
         />
       </form>
     </div>

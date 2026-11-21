@@ -65,7 +65,7 @@ export function InlineAdd({
         onChange={(e) => setDraft(e.target.value)}
         placeholder={placeholder ?? `Add to ${listName}`}
         aria-label={`Add task to ${listName}`}
-        className={`min-w-0 flex-1 bg-transparent py-1 font-medium text-ink placeholder:font-normal placeholder:text-faint focus:outline-none ${size === "sm" || grid ? "text-[12px]" : "text-sm"}`}
+        className={`min-w-0 flex-1 bg-transparent py-1 font-medium text-ink placeholder:font-normal placeholder:text-faint focus:outline-none ${size === "sm" || grid ? "text-[12px]" : "text-[13px]"}`}
       />
     </form>
   );

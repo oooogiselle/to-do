@@ -102,7 +102,7 @@ export function PlanAddModal({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="To-do"
               autoComplete="off"
-              className="block w-full bg-transparent text-xl font-semibold text-ink outline-none placeholder:font-medium placeholder:text-faint focus-visible:outline-none"
+              className="block w-full bg-transparent text-[15px] font-medium text-ink outline-none placeholder:font-normal placeholder:text-faint focus-visible:outline-none"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -112,7 +112,7 @@ export function PlanAddModal({
                 value={listId && listById.has(listId) ? listId : null}
                 onChange={setListId}
                 lists={lists}
-                className="w-full rounded-xl px-3 py-2 text-left text-sm"
+                className="h-7 w-full rounded-lg px-2.5 text-left text-[13px]"
               />
             </div>
             <div>
@@ -121,7 +121,7 @@ export function PlanAddModal({
                 value={dueAt}
                 onChange={setDueAt}
                 tz={settings.timezone}
-                className="w-full rounded-xl px-3 py-2 text-left text-sm"
+                className="h-7 w-full rounded-lg px-2.5 text-left text-[13px]"
               />
             </div>
           </div>

@@ -94,7 +94,7 @@ export function AssistantPanel() {
           <AssistantAvatar />
         )}
         <div className="min-w-0 flex-1">
-          <h2 className="text-[14px] leading-tight font-medium text-ink">{showHistory ? "Chats" : "Ask tt."}</h2>
+          <h2 className="text-[12px] leading-tight font-semibold text-ink">{showHistory ? "Chats" : "Ask tt."}</h2>
           <p className="truncate text-[11px] text-faint">{subtitle}</p>
         </div>
         <button
@@ -200,7 +200,7 @@ function Welcome({ onPick }: { onPick: (text: string) => void }) {
   return (
     <div className="flex min-h-full flex-col">
       <div className="pt-2">
-        <h3 className="text-[16px] font-medium tracking-tight text-ink">
+        <h3 className="text-[15px] font-semibold tracking-tight text-ink">
           Hi{name ? ` ${name}` : ""}, what are we planning?
         </h3>
         <p className="mt-1.5 text-[13px] leading-relaxed text-muted">

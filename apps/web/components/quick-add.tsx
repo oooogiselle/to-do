@@ -158,7 +158,7 @@ export function QuickAdd({ open, onClose }: { open: boolean; onClose: () => void
             onKeyDown={onKeyDown}
             placeholder="cs61 lab report fri 11pm high"
             autoComplete="off"
-            className="block w-full resize-none bg-transparent text-xl font-medium text-ink outline-none placeholder:font-medium placeholder:text-faint focus-visible:outline-none"
+            className="block w-full resize-none bg-transparent text-[15px] font-medium text-ink outline-none placeholder:font-normal placeholder:text-faint focus-visible:outline-none"
           />
           <div className="mt-3 flex min-h-[30px] flex-wrap items-center gap-1.5 text-[13px]">
             {long ? (

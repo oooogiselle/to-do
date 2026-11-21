@@ -70,7 +70,7 @@ export function CenterTabs(props: {
         ) : (
           <div className="grid h-full place-items-center p-6 text-center">
             <div>
-              <p className="text-sm font-semibold text-ink">No pane open here</p>
+              <p className="text-[12px] font-semibold text-ink">No pane open here</p>
               <p className="mt-1 text-[12px] text-muted">
                 Drag a pane in by its handle, or open one with +.
               </p>

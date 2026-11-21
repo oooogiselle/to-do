@@ -50,7 +50,7 @@ export function ListPane({ listId, pane, now }: { listId: string | null; pane: s
     return m;
   }, [blocks, now]);
 
-  if (listId && !list) return <p className="p-4 text-sm text-muted">This list no longer exists.</p>;
+  if (listId && !list) return <p className="p-4 text-[12px] text-muted">This list no longer exists.</p>;
   const name = list?.name ?? "No list";
   const color = list?.color ?? "var(--faint)";
 
