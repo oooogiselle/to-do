@@ -14,11 +14,16 @@ export function InlineAdd({
   listName,
   color,
   size = "sm",
+  grid = false,
+  placeholder,
 }: {
   listId: string | null;
   listName: string;
   color: string;
   size?: "sm" | "md";
+  /** On the To-dos list grid: the + sits on the check column, the input on the title column. */
+  grid?: boolean;
+  placeholder?: string;
 }) {
   const { lists, settings } = useModel();
   const createTask = useCreateTask();
@@ -40,23 +45,27 @@ export function InlineAdd({
   };
   return (
     <form
-      className={`flex items-center gap-2 border-t border-row-hover ${size === "sm" ? "px-3 py-1.5" : "px-4 py-2"}`}
+      className={
+        grid
+          ? "grid h-9 grid-cols-[16px_minmax(0,1fr)] items-center gap-3.5 px-3"
+          : `flex items-center gap-2 border-t border-row-hover ${size === "sm" ? "px-3 py-1.5" : "px-4 py-2"}`
+      }
       onSubmit={(e) => {
         e.preventDefault();
         submit();
       }}
     >
       <Plus
-        className={size === "sm" ? "h-3.5 w-3.5 shrink-0" : "h-4 w-4 shrink-0"}
+        className={`${size === "sm" || grid ? "h-3.5 w-3.5" : "h-4 w-4"} shrink-0 ${grid ? "justify-self-center" : ""}`}
         style={{ color }}
         strokeWidth={3}
       />
       <input
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        placeholder={`Add to ${listName}`}
+        placeholder={placeholder ?? `Add to ${listName}`}
         aria-label={`Add task to ${listName}`}
-        className={`min-w-0 flex-1 bg-transparent py-1 font-medium text-ink placeholder:text-faint focus:outline-none ${size === "sm" ? "text-[12px]" : "text-sm"}`}
+        className={`min-w-0 flex-1 bg-transparent py-1 font-medium text-ink placeholder:font-normal placeholder:text-faint focus:outline-none ${size === "sm" || grid ? "text-[12px]" : "text-sm"}`}
       />
     </form>
   );

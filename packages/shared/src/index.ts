@@ -19,3 +19,4 @@ export * from "./api";
 export * from "./import";
 export type { Database, Json, Tables, TablesInsert, TablesUpdate } from "./db";
 export * from "./gcal/cronPlan";
+export * from "./progress/doneThisWeek";

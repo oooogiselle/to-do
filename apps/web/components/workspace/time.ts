@@ -1,10 +1,4 @@
-import { addDays, localWeekday, zonedInstant } from "@tt/shared";
-
-/** Monday of the week containing `day`. */
-export function weekStart(day: string, tz: string) {
-  const wd = localWeekday(zonedInstant(day, "12:00", tz), tz);
-  return addDays(day, -((wd + 6) % 7));
-}
+export { weekStart } from "@tt/shared";
 
 /** Hour to scroll a calendar to on open: one before the earliest working-hours start. */
 export function earliestStart(hours: Record<string, { start: string } | null>) {

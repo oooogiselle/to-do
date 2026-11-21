@@ -3,7 +3,7 @@
 This file is the source of truth for how Tapestry looks: colour, type, weights, corners and the thread motif. When this file and the code disagree, the code is wrong and gets changed to match. This file only changes when Giselle approves the change.
 
 - **Reference mock:** `design/loom/my-day.html` (screenshot: `my-day.png`, 1440×900). It shows these rules on My day. If the mock and this file disagree, this file wins.
-- **Status (2026-11-21):** applied on the web: tokens, font, list colours and weights (#32); threads, labels and grid blocks (#33); and every component colour on tokens (`loom-cleanup`). Not yet applied: mobile `theme.ts` (it has its own palette and a dark mode).
+- **Status (2026-11-21):** applied on the web: tokens, font, list colours and weights (#32); threads, labels and grid blocks (#33); every component colour on tokens (#34); and the layout pieces below (`todos-redesign`). Not yet applied: mobile `theme.ts` (it has its own palette and a dark mode).
 - **History:** the directions that weren't chosen (Indigo, Daylight) and the type specimen are in `design/archive/my-day-directions/`.
 
 ## Principles
@@ -120,6 +120,17 @@ Control heights are 28 (`h-7`) and 24 (`h-6`); checks are 16 in rows and 14 in l
 - **Progress:** a strip of threads, one per to-do that day (routines first, then the plan, in order). Each is 4px tall, 4px apart and equal width. Empty threads are `--line-soft`; done ones fill in their list colour. This replaces the single mint progress bar, and it sits under the stats line ("3 of 8 done · 4h 15m planned · 3h 30m free").
 - **Motion:** the only automatic animation. On first load, done threads fill left to right (0.5s, staggered 70ms). It's turned off under `prefers-reduced-motion`. Everything else animates only in response to the user.
 - **Don't** use threads anywhere else as decoration, or turn other bars into threads.
+
+## Layout pieces
+Approved 2026-11-21 with the sidebar and To-dos redesign. They use only the tokens and sizes above.
+
+- **Sidebar list progress.** Under each list name in the sidebar, a 3px rounded bar starting at the name's left edge. It fills with done this week out of (done this week + open), in the list colour on `--line-soft`. The count on the right reads "1 of 3" at 11/400 faint, tabular. It isn't a thread: it's horizontal, sits under text, and appears only in the sidebar. The collapsed rail hides it.
+- **Ask tt. button.** A 40px round button floating 24px in from the bottom-right corner of the main area: `--ink` fill, an 18px `--surface` chat icon, `shadow-pop`. Its name and ⌘J show as a tooltip. A drawer open on the right pushes it left, and it hides while the assistant panel is open. It's the only floating control.
+- **Grouped To-dos list.** One column, at most 880 wide. Rows share one grid: check 16 / title / due 128 / estimate 64 / priority 40, 14 apart, 12 padding on each side.
+  - Rows are 42 tall with `--line-soft` dividers. The title is 13/500; after it come the booked-time chip, then 11/400 faint notes ("1 of 4 steps", "In My day").
+  - Each list starts with a heading: the list dot on the check column, the name 12/600 ink on the title column, and "2 open" at 11/400 faint, over a `--line` rule. Each list ends with its own add row on the same columns.
+  - No column-label row: the chips and marks explain themselves.
+  - The page header has two controls: a view menu (sort and Show done) and New list, or Edit list on a single list.
 
 ## Rules for new UI
 - Use the tokens above: no hex values, `white`/`black` utilities or Tailwind palette colours in components, and no sizes outside the scale.
