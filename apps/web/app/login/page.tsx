@@ -24,9 +24,9 @@ function LoginForm() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-rail p-6">
       <AppLogo size={40} />
-      <h1 className="text-[22px] font-medium tracking-tight">Sign in to tt.</h1>
+      <h1 className="text-[18px] font-semibold tracking-[-0.015em]">Sign in to tt.</h1>
       <p className="-mt-2 text-[13px] text-muted">Your calendar and to-dos on one timeline.</p>
-      {error && <p className="text-sm text-risk">{ERRORS[error] ?? ERRORS.signin}</p>}
+      {error && <p className="text-[12px] text-risk">{ERRORS[error] ?? ERRORS.signin}</p>}
       <button onClick={signIn} className="rounded-lg bg-ink px-4 py-2 text-[13px] text-surface hover:opacity-90">
         Sign in with Google
       </button>
@@ -62,7 +62,7 @@ function DemoSignIn() {
         Use demo account
       </button>
       {failed && (
-        <p className="text-sm text-risk">Demo account not found. Run `pnpm demo` again.</p>
+        <p className="text-[12px] text-risk">Demo account not found. Run `pnpm demo` again.</p>
       )}
     </>
   );

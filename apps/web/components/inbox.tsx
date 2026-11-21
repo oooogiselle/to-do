@@ -233,8 +233,8 @@ function ViewMenu({
 function EmptyState() {
   return (
     <div className="rounded-2xl border-2 border-dashed border-line bg-surface px-6 py-14 text-center">
-      <p className="text-base font-semibold text-ink">No to-dos yet.</p>
-      <p className="mt-1 text-sm font-medium text-accent">Press ⌘K to add your first one.</p>
+      <p className="text-[15px] font-semibold text-ink">No to-dos yet.</p>
+      <p className="mt-1 text-[12px] font-medium text-accent">Press ⌘K to add your first one.</p>
     </div>
   );
 }
@@ -454,7 +454,7 @@ export function ListEditor({
         autoFocus
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="min-w-[140px] flex-1 rounded-xl border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-accent/30"
+        className="h-7 min-w-[140px] flex-1 rounded-lg border border-line bg-surface px-2.5 text-[13px] font-medium text-ink outline-none focus:ring-2 focus:ring-accent/30"
       />
       <ColorPicker value={color} onChange={(v) => v && setColor(v)} label="List color" size={22} />
       <SomedayToggle checked={someday} onChange={setSomeday} />
@@ -467,18 +467,18 @@ export function ListEditor({
               : "";
             if (confirm(`Delete the list “${list.name}”?${note}`)) deleteList.mutate(list.id);
           }}
-          className="rounded-lg px-2 py-1 text-[13px] font-medium text-risk hover:bg-surface/60"
+          className="h-7 rounded-lg px-2 text-[12px] font-medium text-risk hover:bg-surface/60"
         >
           Delete list
         </button>
         <button
           type="button"
           onClick={onDone}
-          className="ml-auto rounded-lg px-2 py-1 text-[13px] font-medium text-muted hover:text-ink"
+          className="ml-auto h-7 rounded-lg px-2 text-[12px] font-medium text-muted hover:text-ink"
         >
           Cancel
         </button>
-        <button type="submit" className="rounded-xl bg-ink px-3 py-1.5 text-[13px] font-medium text-surface">
+        <button type="submit" className="h-7 rounded-lg bg-ink px-3 text-[12px] font-medium text-surface">
           Save
         </button>
       </div>
@@ -523,18 +523,18 @@ export function NewListForm({
         onChange={(e) => setName(e.target.value)}
         placeholder="List name, e.g. CS61"
         aria-label="List name"
-        className="min-w-[180px] flex-1 rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-accent/30"
+        className="h-7 min-w-[180px] flex-1 rounded-lg border border-line bg-surface px-2.5 text-[13px] font-medium text-ink outline-none focus:ring-2 focus:ring-accent/30"
       />
       <ColorPicker value={color} onChange={(v) => v && setColor(v)} label="List color" size={28} />
       <SomedayToggle checked={someday} onChange={setSomeday} />
-      <button type="submit" className="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-surface">
+      <button type="submit" className="h-7 rounded-lg bg-ink px-3 text-[12px] font-medium text-surface">
         Create
       </button>
       <button
         type="button"
         onClick={onDone}
         aria-label="Cancel"
-        className="grid h-9 w-9 place-items-center rounded-xl text-ink hover:bg-surface/60"
+        className="grid h-7 w-7 place-items-center rounded-lg text-ink hover:bg-surface/60"
       >
         <X className="h-4 w-4" />
       </button>

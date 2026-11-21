@@ -998,7 +998,7 @@ export function IdeaPlanCard({ messageId, index, resolved, block }: CardProps<"i
   return (
     <div className={cardShell}>
       <div className="px-3 pt-2.5 pb-3">
-        <p className="text-[14px] text-ink">{existing?.title ?? plan.title}</p>
+        <p className="text-[13px] font-medium text-ink">{existing?.title ?? plan.title}</p>
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           <Segmented<IdeaType>
             label="Type"

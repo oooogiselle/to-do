@@ -336,7 +336,7 @@ export function PlanPane({ pane, now }: { pane: string; now: number }) {
                                 >
                                   <Plus className="h-3 w-3" />
                                 </button>
-                                <span className="min-w-0 flex-1 truncate text-[12.5px] text-chip-ink">
+                                <span className="min-w-0 flex-1 truncate text-[12px] text-chip-ink">
                                   {st.title}
                                 </span>
                                 <span

@@ -24,6 +24,7 @@ import { useZoom } from "@/components/timeline/zoom";
 import { dayLabel, useCalendarAnchor } from "./calendar-dates";
 import { useCalendarKeys } from "./calendar-keys";
 import { earliestStart, weekStart } from "./time";
+import { useAskButtonHidden } from "../ask-button";
 
 const btn =
   "grid h-7 w-7 place-items-center rounded-lg border border-line bg-surface text-ink hover:bg-row-hover disabled:opacity-40";
@@ -33,6 +34,7 @@ export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: numbe
   const isWeek = pane === "week";
   const { settings, blocks, taskById, stepsByTask, listById, isLoading } = useModel();
   const { isBlockDone } = useCompletion();
+  const askHidden = useAskButtonHidden();
   const tz = settings.timezone;
   const today = localDate(new Date(now), tz);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -98,7 +100,7 @@ export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: numbe
   return (
     <div className="flex h-full min-h-0 flex-col" onPointerEnter={onFocus} onFocusCapture={onFocus}>
       <div className="flex flex-wrap items-center gap-2 px-3 py-2">
-        <h2 className="mr-auto text-[14px] font-semibold tracking-tight text-ink">{title}</h2>
+        <h2 className="mr-auto text-[15px] font-semibold tracking-tight text-ink">{title}</h2>
         <button
           type="button"
           className={btn}
@@ -176,7 +178,10 @@ export function CalendarPane({ pane, now }: { pane: "week" | "today"; now: numbe
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 px-3 py-2 text-[11px] font-medium text-muted">
+      {/* Right padding keeps the hint clear of the floating Ask tt. button (DESIGN.md, Layout pieces). */}
+      <div
+        className={`flex flex-wrap items-center gap-3 py-2 pl-3 text-[11px] font-medium text-muted ${askHidden ? "pr-3" : "pr-16"}`}
+      >
         <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-[1px_3px_3px_1px] bg-sky/15 shadow-[inset_2px_0_0_var(--tt-sky)]" /> Task
         </span>

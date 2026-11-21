@@ -51,7 +51,7 @@ export function BreakdownPanel({ task, onClose }: { task: Task; onClose: () => v
         <>
           <ol className="space-y-1">
             {draft.map((s, i) => (
-              <li key={i} className="group flex items-center gap-2 rounded-xl bg-surface px-2.5 py-1.5 text-sm">
+              <li key={i} className="group flex items-center gap-2 rounded-md bg-surface px-2.5 py-1.5 text-[13px]">
                 <span className="w-4 text-right text-[12px] font-medium text-faint">{i + 1}</span>
                 <input
                   aria-label={`Step ${i + 1} title`}
@@ -86,19 +86,19 @@ export function BreakdownPanel({ task, onClose }: { task: Task; onClose: () => v
               onClick={() =>
                 accept.mutate({ taskId: task.id, steps: draft }, { onSuccess: onClose })
               }
-              className="rounded-xl bg-ink px-3 py-1.5 text-[13px] font-medium text-surface hover:opacity-90 disabled:opacity-50"
+              className="h-7 rounded-lg bg-ink px-3 text-[12px] font-medium text-surface hover:opacity-90 disabled:opacity-50"
             >
               Use these steps
             </button>
             <button
               onClick={() => propose.mutate("default")}
-              className="rounded-xl bg-surface px-3 py-1.5 text-[13px] font-medium text-chip-ink hover:text-ink"
+              className="h-7 rounded-lg bg-surface px-3 text-[12px] font-medium text-chip-ink hover:text-ink"
             >
               Regenerate
             </button>
             <button
               onClick={() => propose.mutate("more_detailed")}
-              className="rounded-xl bg-surface px-3 py-1.5 text-[13px] font-medium text-chip-ink hover:text-ink"
+              className="h-7 rounded-lg bg-surface px-3 text-[12px] font-medium text-chip-ink hover:text-ink"
             >
               More detailed
             </button>

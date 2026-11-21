@@ -29,7 +29,9 @@ const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Satur
 const WEEKDAY_KEYS = ["1", "2", "3", "4", "5", "6", "0"] as const;
 
 const field =
-  "rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20";
+  "rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[13px] text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20";
+/** Single-line inputs and selects: a 28px control. */
+const fieldLine = `${field} h-7 py-0`;
 
 function Section({
   title,
@@ -42,8 +44,8 @@ function Section({
 }) {
   return (
     <section className="rounded-2xl border border-line bg-surface p-5">
-      <h2 className="text-base font-semibold text-ink">{title}</h2>
-      {description && <p className="mb-4 text-sm text-chip-ink">{description}</p>}
+      <h2 className="text-[12px] font-semibold text-ink">{title}</h2>
+      {description && <p className="mt-0.5 mb-4 text-[12px] text-muted">{description}</p>}
       <div className={description ? "" : "mt-3"}>{children}</div>
     </section>
   );
@@ -73,9 +75,9 @@ function SyncButton() {
         type="button"
         onClick={() => sync.mutate()}
         disabled={sync.isPending}
-        className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-surface transition-colors hover:bg-accent/90 disabled:opacity-70"
+        className="flex h-7 items-center gap-1.5 rounded-lg bg-accent px-3 text-[12px] font-medium text-surface transition-colors hover:bg-accent/90 disabled:opacity-70"
       >
-        <RefreshCw className={`h-4 w-4 ${sync.isPending ? "animate-spin" : ""}`} />
+        <RefreshCw className={`h-3.5 w-3.5 ${sync.isPending ? "animate-spin" : ""}`} />
         {sync.isPending ? "Syncing…" : sync.isSuccess ? "Synced" : "Sync now"}
       </button>
       {sync.isError && <span className="text-[12px] text-risk">{sync.error.message}</span>}
@@ -84,7 +86,7 @@ function SyncButton() {
 }
 
 const chip = (active: boolean) =>
-  `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${active ? "bg-ink text-surface" : "bg-chip text-chip-ink hover:bg-line"}`;
+  `h-7 rounded-lg px-2.5 text-[12px] font-medium transition-colors ${active ? "bg-ink text-surface" : "bg-chip text-chip-ink hover:bg-line"}`;
 
 /** One row of choices; `undefined` is "no preference". */
 function ChoiceRow<T extends string | number>({
@@ -100,7 +102,7 @@ function ChoiceRow<T extends string | number>({
 }) {
   return (
     <fieldset>
-      <legend className="mb-2 text-sm font-medium text-ink">{legend}</legend>
+      <legend className="mb-2 text-[12px] font-medium text-ink">{legend}</legend>
       <div className="flex flex-wrap gap-1.5">
         {options.map((o) => (
           <button
@@ -189,7 +191,7 @@ export function SettingsView() {
         <PageHeader title="Settings" description="Calendar, time zone, working hours, scheduling and the Someday assistant." />
         {googleStatus && (
           <p
-            className={`rounded-xl px-4 py-3 text-sm font-medium ${googleStatus === "connected" ? "bg-open text-open-ink" : "bg-risk-bg text-risk"}`}
+            className={`rounded-lg px-3 py-2.5 text-[13px] font-medium ${googleStatus === "connected" ? "bg-open text-open-ink" : "bg-risk-bg text-risk"}`}
           >
             {GOOGLE_MESSAGES[googleStatus] ?? GOOGLE_MESSAGES.error}
           </p>
@@ -198,8 +200,8 @@ export function SettingsView() {
         <section className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-surface p-5">
           <GoogleMark />
           <div className="mr-auto min-w-0">
-            <h2 className="text-base font-semibold text-ink">Google account</h2>
-            <p className={`text-sm ${google?.needs_reconnect ? "font-medium text-warn" : "text-chip-ink"}`}>
+            <h2 className="text-[12px] font-semibold text-ink">Google account</h2>
+            <p className={`mt-0.5 text-[12px] ${google?.needs_reconnect ? "font-medium text-warn" : "text-muted"}`}>
               {google?.needs_reconnect ? (
                 `Access for ${google.email} expired. Reconnect to keep your calendar in sync.`
               ) : google ? (
@@ -214,7 +216,7 @@ export function SettingsView() {
           {google && !google.needs_reconnect && <SyncButton />}
           <a
             href="/api/google/connect"
-            className={`rounded-xl px-4 py-2 text-sm font-medium ${google && !google.needs_reconnect ? "border border-line text-ink hover:bg-paper" : "bg-ink text-surface hover:opacity-90"}`}
+            className={`h-7 rounded-lg px-3 text-[12px] font-medium ${google && !google.needs_reconnect ? "border border-line text-ink hover:bg-paper" : "bg-ink text-surface hover:opacity-90"}`}
           >
             {google ? "Reconnect" : "Connect Google Calendar"}
           </a>
@@ -234,7 +236,7 @@ export function SettingsView() {
 
         <section className="grid gap-6 rounded-2xl border border-line bg-surface p-5 sm:grid-cols-2">
           <fieldset>
-            <legend className="mb-3 text-base font-semibold text-ink">Default block length</legend>
+            <legend className="mb-3 text-[12px] font-semibold text-ink">Default block length</legend>
             <div className="flex flex-wrap gap-1.5">
               {[15, 30, 45, 60, 90, 120].map((m) => {
                 const active = settings.default_block_min === m;
@@ -244,7 +246,7 @@ export function SettingsView() {
                     type="button"
                     aria-pressed={active}
                     onClick={() => updateSettings.mutate({ default_block_min: m })}
-                    className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${active ? "bg-ink text-surface" : "bg-chip text-chip-ink hover:bg-line"}`}
+                    className={chip(active)}
                   >
                     {formatMinutes(m)}
                   </button>
@@ -270,7 +272,7 @@ export function SettingsView() {
         />
 
         {updateSettings.isError && (
-          <p className="text-sm font-medium text-risk">
+          <p className="text-[12px] font-medium text-risk">
             Couldn&apos;t save: {updateSettings.error.message}
           </p>
         )}
@@ -278,7 +280,7 @@ export function SettingsView() {
         <DeleteAccountSection />
 
         <div className="flex items-center justify-end gap-2 pb-6">
-          <a href="/privacy" className="rounded-xl px-3 py-2 text-sm font-medium text-muted hover:text-ink">
+          <a href="/privacy" className="rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-muted hover:text-ink">
             Privacy
           </a>
           <button
@@ -286,7 +288,7 @@ export function SettingsView() {
               await createBrowserSupabase().auth.signOut();
               window.location.assign("/login");
             }}
-            className="rounded-xl px-4 py-2 text-sm font-medium text-risk hover:bg-risk-bg"
+            className="h-7 rounded-lg px-3 text-[12px] font-medium text-risk hover:bg-risk-bg"
           >
             Sign out
           </button>
@@ -402,11 +404,11 @@ function NoteField({
   return (
     <div>
       <div className="mb-1 flex items-baseline justify-between gap-2">
-        <label htmlFor={id} className="text-sm font-medium text-ink">
-          {label} <span className="font-medium text-muted">· {hint}</span>
+        <label htmlFor={id} className="text-[12px] font-medium text-ink">
+          {label} <span className="font-normal text-muted">· {hint}</span>
         </label>
         {draft.length > NOTE_MAX * 0.8 && (
-          <span className="text-[12px] text-muted">
+          <span className="text-[11px] text-muted tabular-nums">
             {draft.length}/{NOTE_MAX}
           </span>
         )}
@@ -422,7 +424,7 @@ function NoteField({
           const text = draft.trim();
           if (text !== value) onCommit(text);
         }}
-        className={`${field} block w-full resize-y font-medium`}
+        className={`${field} block w-full resize-y`}
       />
     </div>
   );
@@ -434,15 +436,15 @@ function DeleteAccountSection() {
 
   return (
     <section className="rounded-2xl border border-line bg-surface p-5">
-      <h2 className="text-base font-semibold text-ink">Delete account</h2>
-      <p className="mt-1 text-sm font-medium text-muted">
+      <h2 className="text-[12px] font-semibold text-ink">Delete account</h2>
+      <p className="mt-0.5 text-[12px] text-muted">
         Permanently deletes your tasks, lists, plans and settings, removes the Tasks calendar this
         app created in Google Calendar, and disconnects Google. This can&apos;t be undone.
       </p>
       {!confirming ? (
         <button
           onClick={() => setConfirming(true)}
-          className="mt-3 rounded-xl px-4 py-2 text-sm font-medium text-risk hover:bg-risk-bg"
+          className="mt-3 h-7 rounded-lg px-3 text-[12px] font-medium text-risk hover:bg-risk-bg"
         >
           Delete my account…
         </button>
@@ -458,21 +460,21 @@ function DeleteAccountSection() {
                 },
               })
             }
-            className="rounded-xl bg-risk px-4 py-2 text-sm font-medium text-surface disabled:opacity-60"
+            className="h-7 rounded-lg bg-risk px-3 text-[12px] font-medium text-surface disabled:opacity-60"
           >
             {del.isPending ? "Deleting…" : "Yes, delete everything"}
           </button>
           <button
             disabled={del.isPending}
             onClick={() => setConfirming(false)}
-            className="rounded-xl px-4 py-2 text-sm font-medium text-muted hover:text-ink"
+            className="h-7 rounded-lg px-3 text-[12px] font-medium text-muted hover:text-ink"
           >
             Cancel
           </button>
         </div>
       )}
       {del.isError && (
-        <p className="mt-2 text-sm font-medium text-risk">
+        <p className="mt-2 text-[12px] font-medium text-risk">
           Couldn&apos;t delete the account: {del.error.message}. Nothing was lost; try again.
         </p>
       )}
@@ -504,7 +506,7 @@ function CalendarsSection() {
           return (
             <li
               key={cal.id}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+              className="flex items-center gap-3 rounded-md px-3 py-2"
               style={{ background: on ? c.tint : "var(--paper)" }}
             >
               <span
@@ -512,7 +514,7 @@ function CalendarsSection() {
                 style={{ background: on ? c.solid : "var(--line-strong)" }}
                 aria-hidden
               />
-              <span className="min-w-0 truncate text-sm font-medium" style={{ color: on ? c.ink : "var(--faint)" }}>
+              <span className="min-w-0 truncate text-[13px] font-medium" style={{ color: on ? c.ink : "var(--faint)" }}>
                 {cal.summary}
               </span>
               {cal.is_tasks_calendar && (
@@ -530,7 +532,7 @@ function CalendarsSection() {
           );
         })}
       </ul>
-      {toggle.isError && <p className="mt-2 text-sm text-risk">{toggle.error.message}</p>}
+      {toggle.isError && <p className="mt-2 text-[12px] text-risk">{toggle.error.message}</p>}
     </Section>
   );
 }
@@ -555,7 +557,7 @@ function WorkingHoursEditor({
         const hours = draft[key] ?? null;
         return (
           <div key={key} className="contents">
-            <label className="flex items-center gap-2.5 text-sm font-medium text-ink">
+            <label className="flex items-center gap-2.5 text-[13px] font-medium text-ink">
               <Switch
                 checked={!!hours}
                 label={`Work on ${WEEKDAYS[i]}`}
@@ -571,20 +573,20 @@ function WorkingHoursEditor({
                   aria-label={`${WEEKDAYS[i]} start`}
                   value={hours.start}
                   onChange={(e) => set(key, { ...hours, start: e.target.value })}
-                  className={field}
+                  className={fieldLine}
                 />
-                <span className="text-sm font-medium text-muted">to</span>
+                <span className="text-[12px] text-muted">to</span>
                 <input
                   type="time"
                   step={900}
                   aria-label={`${WEEKDAYS[i]} end`}
                   value={hours.end}
                   onChange={(e) => set(key, { ...hours, end: e.target.value })}
-                  className={field}
+                  className={fieldLine}
                 />
               </div>
             ) : (
-              <span className="text-sm font-medium text-faint">Day off</span>
+              <span className="text-[12px] text-faint">Day off</span>
             )}
             <span className="text-[12px] font-medium text-risk">
               {hours && hours.start >= hours.end ? "End must be after start" : ""}
@@ -602,11 +604,11 @@ function TimezoneField({ value, onChange }: { value: string; onChange: (tz: stri
   const deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   return (
     <label className="block">
-      <span className="mb-3 block text-base font-semibold text-ink">Timezone</span>
+      <span className="mb-3 block text-[12px] font-semibold text-ink">Timezone</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`${field} w-full`}
+        className={`${fieldLine} w-full`}
       >
         {(zones.includes(value) ? zones : [value, ...zones]).map((z) => (
           <option key={z} value={z}>
