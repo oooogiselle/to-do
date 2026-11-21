@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import {
   type Notice,
   setNotice,
-  undoDeleteTask,
+  undoDelete,
   useRestoreBlock,
   useCompletionActions,
   useNotice,
@@ -73,8 +73,8 @@ function Added({ notice }: { notice: Extract<Notice, { kind: "added" }> }) {
 function Deleted({ notice }: { notice: Extract<Notice, { kind: "deleted" }> }) {
   return (
     <>
-      <span className="min-w-0 flex-1">Deleted “{notice.label}”.</span>
-      <button onClick={() => undoDeleteTask(notice.taskId)} className={primary}>
+      <span className="min-w-0 flex-1">Deleted {notice.label}.</span>
+      <button onClick={() => undoDelete(notice.batchId)} className={primary}>
         Undo
       </button>
     </>

@@ -313,6 +313,8 @@ export const Task = z.object({
   research: TaskResearch.nullable(),
   /** Extra instructions for this item's Someday assistant. */
   assistant_note: z.string().nullable(),
+  /** "Keep" on the overdue review: the due date the user chose to keep; asked again once due_at changes. */
+  overdue_kept_due: z.string().nullable(),
 });
 export type Task = z.infer<typeof Task>;
 
@@ -437,7 +439,11 @@ export const TaskPatch = TaskCreate.partial().extend({
   done_dates: z.array(PlainDate).optional(),
   /** Only so the user can remove resources; research itself runs through /research. */
   research: TaskResearch.nullable().optional(),
+  overdue_kept_due: z.string().datetime({ offset: true }).nullable().optional(),
 });
+
+/** Deletes several to-dos at once (To-dos select mode and the overdue review). */
+export const TaskBulkDelete = z.object({ ids: z.array(z.string().uuid()).min(1).max(200) });
 
 export const StepCreate = z.object({
   task_id: z.string().uuid(),

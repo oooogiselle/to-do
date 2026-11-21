@@ -1,9 +1,9 @@
 "use client";
 
 import { PageHeader } from "./page-header";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ListFilter, Pencil, Plus, Sparkles, X } from "lucide-react";
+import { Check, ChevronDown, ListChecks, ListFilter, Pencil, Plus, Sparkles, X } from "lucide-react";
 import {
   completedAt,
   formatMinutes,
@@ -24,6 +24,7 @@ import {
   tempId,
   useCompletion,
   useCreateList,
+  useDeleteTasksWithUndo,
   useDeleteList,
   isSomedayTask,
   useInbox,
@@ -35,6 +36,7 @@ import {
 import { useOpenTask } from "@/components/app-shell";
 import { ColorPicker } from "@/components/color-picker";
 import { DueDrawer } from "@/components/due-drawer";
+import { OverdueReview } from "@/components/overdue-review";
 import { DueChip } from "@/components/ui/due-chip";
 import { InlineAdd } from "@/components/ui/inline-add";
 import { PriorityMark } from "@/components/ui/priority-mark";
@@ -63,6 +65,10 @@ export function Inbox() {
   const [showDone, setShowDone] = useState(false);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(false);
+  // Select mode: rows pick instead of open, and a bar at the bottom deletes the picked ones.
+  const [selected, setSelected] = useState<Set<string> | null>(null);
+  const selecting = selected !== null;
+  const deleteTasks = useDeleteTasksWithUndo();
   const { groups, nextBlock } = useInbox(sort, showDone);
   // A sidebar list link (?list=<id>) shows just that list.
   const [listParam] = useListParam();
@@ -82,6 +88,23 @@ export function Inbox() {
         t.status === "open" &&
         (list ? t.list_id === list.id : !t.list_id || !lists.some((l) => l.id === t.list_id)),
     ).length;
+  const selectable = shown.flatMap((g) => g.tasks).filter((t) => !isTemp(t.id));
+  const picked = selectable.filter((t) => selected?.has(t.id));
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const stopSelecting = () => setSelected(null);
+  useEffect(() => {
+    if (!selecting) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setSelected(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selecting]);
+
   const meta = [
     `${openTasks.length} open`,
     `${doneWeek} done this week`,
@@ -110,6 +133,12 @@ export function Inbox() {
               description={<span className={current ? "pl-[30px]" : ""}>{meta}</span>}
             >
               <ViewMenu sort={sort} onSort={setSort} showDone={showDone} onShowDone={setShowDone} />
+              {selectable.length > 0 && !selecting && (
+                <button type="button" onClick={() => setSelected(new Set())} className={controlBtn}>
+                  <ListChecks className="h-3.5 w-3.5 text-muted" />
+                  Select
+                </button>
+              )}
               {current ? (
                 !isTemp(current.id) && (
                   <button type="button" onClick={() => setEditing(true)} className={controlBtn}>
@@ -125,6 +154,8 @@ export function Inbox() {
               )}
             </PageHeader>
           </div>
+
+          {!selecting && !isLoading && <OverdueReview listId={current?.id ?? null} now={now} />}
 
           {creating && !current && <NewListForm count={lists.length} onDone={() => setCreating(false)} />}
           {editing && current && (
@@ -150,6 +181,8 @@ export function Inbox() {
                 nextBlock={nextBlock}
                 inMyDay={inMyDay}
                 stepsByTask={stepsByTask}
+                selected={selected}
+                onSelect={toggle}
               />
             ))
           )}
@@ -164,6 +197,23 @@ export function Inbox() {
                 {someday.openCount} idea{someday.openCount === 1 ? "" : "s"} in Someday
               </span>
             </Link>
+          )}
+
+          {selecting && (
+            <SelectBar
+              count={picked.length}
+              allPicked={picked.length === selectable.length}
+              onAll={() =>
+                setSelected(
+                  picked.length === selectable.length ? new Set() : new Set(selectable.map((t) => t.id)),
+                )
+              }
+              onCancel={stopSelecting}
+              onDelete={() => {
+                deleteTasks(picked);
+                stopSelecting();
+              }}
+            />
           )}
         </div>
       </div>
@@ -230,6 +280,43 @@ function ViewMenu({
   );
 }
 
+/** Select mode's bar, stuck to the bottom of the To-dos column. */
+function SelectBar(props: {
+  count: number;
+  allPicked: boolean;
+  onAll: () => void;
+  onCancel: () => void;
+  onDelete: () => void;
+}) {
+  const quiet = "h-7 rounded-lg px-2.5 text-[12px] font-medium text-chip-ink hover:bg-row-hover hover:text-ink";
+  return (
+    <div
+      role="toolbar"
+      aria-label="Selected to-dos"
+      className="animate-pop-in sticky bottom-4 z-10 mt-4 flex items-center gap-2 rounded-2xl border border-line bg-surface py-2 pr-2 pl-3 shadow-pop"
+    >
+      <span className="min-w-0 flex-1 text-[13px] font-medium text-ink">
+        {props.count ? `${props.count} selected` : "Select to-dos to delete"}
+        <span className="font-normal text-faint"> · Esc to stop</span>
+      </span>
+      <button type="button" onClick={props.onAll} className={quiet}>
+        {props.allPicked && props.count ? "Select none" : "Select all"}
+      </button>
+      <button type="button" onClick={props.onCancel} className={quiet}>
+        Cancel
+      </button>
+      <button
+        type="button"
+        onClick={props.onDelete}
+        disabled={!props.count}
+        className="h-7 rounded-lg bg-risk px-3 text-[12px] font-medium text-surface disabled:opacity-50"
+      >
+        {props.count ? `Delete ${props.count}` : "Delete"}
+      </button>
+    </div>
+  );
+}
+
 function EmptyState() {
   return (
     <div className="rounded-2xl border-2 border-dashed border-line bg-surface px-6 py-14 text-center">
@@ -250,6 +337,8 @@ function ListSection({
   nextBlock,
   inMyDay,
   stepsByTask,
+  selected,
+  onSelect,
 }: {
   list: List | null;
   tasks: Task[];
@@ -260,6 +349,9 @@ function ListSection({
   nextBlock: Map<string, number>;
   inMyDay: Set<string>;
   stepsByTask: Map<string, Step[]>;
+  /** Picked ids in select mode; null when not selecting. */
+  selected: Set<string> | null;
+  onSelect: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const c = swatch(list?.color ?? NO_COLOR);
@@ -309,18 +401,22 @@ function ListSection({
               nextAt={nextBlock.get(t.id)}
               steps={stepsByTask.get(t.id) ?? []}
               inMyDay={inMyDay.has(t.id)}
+              picked={selected ? selected.has(t.id) : undefined}
+              onPick={() => onSelect(t.id)}
             />
           ))}
         </ul>
       )}
 
-      <InlineAdd
-        grid
-        listId={list?.id ?? null}
-        listName={name}
-        color={c.solid}
-        placeholder={single ? `Add to ${name}, e.g. read chapter 3 fri 5pm high` : undefined}
-      />
+      {!selected && (
+        <InlineAdd
+          grid
+          listId={list?.id ?? null}
+          listName={name}
+          color={c.solid}
+          placeholder={single ? `Add to ${name}, e.g. read chapter 3 fri 5pm high` : undefined}
+        />
+      )}
     </section>
   );
 }
@@ -345,6 +441,8 @@ function TaskRow({
   nextAt,
   steps,
   inMyDay,
+  picked,
+  onPick,
 }: {
   task: Task;
   color: string;
@@ -353,25 +451,41 @@ function TaskRow({
   nextAt?: number;
   steps: Step[];
   inMyDay: boolean;
+  /** Set in select mode: whether this row is picked. */
+  picked?: boolean;
+  onPick: () => void;
 }) {
   const openTask = useOpenTask();
   const { setTaskDone } = useCompletion();
   const done = task.status === "done";
   const doneAt = completedAt(task);
   const stepsDone = steps.filter((s) => s.done).length;
+  const selecting = picked !== undefined;
   return (
-    <li className={`${GRID} min-h-[42px] border-b border-line-soft py-2 transition-colors hover:bg-row`}>
-      <TaskCheck
-        size={16}
-        done={done}
-        color={task.color ?? color}
-        onToggle={() => setTaskDone(task.id, !done)}
-        label={task.title}
-        disabled={isTemp(task.id)}
-      />
+    <li
+      onClick={selecting && !isTemp(task.id) ? onPick : undefined}
+      className={`${GRID} min-h-[42px] border-b border-line-soft py-2 transition-colors hover:bg-row ${selecting ? "cursor-pointer" : ""} ${picked ? "bg-row" : ""}`}
+    >
+      {selecting ? (
+        <SelectBox picked={picked} label={task.title} onToggle={onPick} disabled={isTemp(task.id)} />
+      ) : (
+        <TaskCheck
+          size={16}
+          done={done}
+          color={task.color ?? color}
+          onToggle={() => setTaskDone(task.id, !done)}
+          label={task.title}
+          disabled={isTemp(task.id)}
+        />
+      )}
       <button
         type="button"
-        onClick={() => !isTemp(task.id) && openTask(task.id)}
+        tabIndex={selecting ? -1 : undefined}
+        onClick={(e) => {
+          if (selecting) return; // the row handles it
+          e.stopPropagation();
+          if (!isTemp(task.id)) openTask(task.id);
+        }}
         className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-left"
       >
         <span className={`text-[13px] font-medium ${done ? "text-faint line-through" : "text-ink"}`}>
@@ -412,6 +526,28 @@ function TaskRow({
         <PriorityMark priority={task.priority} />
       </span>
     </li>
+  );
+}
+
+/** Square pick box for select mode, in place of the round done check. */
+function SelectBox(props: { picked: boolean; label: string; onToggle: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={props.picked}
+      aria-label={`Select “${props.label}”`}
+      disabled={props.disabled}
+      onClick={(e) => {
+        e.stopPropagation();
+        props.onToggle();
+      }}
+      className={`grid h-4 w-4 shrink-0 place-items-center rounded-sm border-2 transition-colors disabled:opacity-50 ${
+        props.picked ? "border-ink bg-ink" : "border-line-strong bg-surface"
+      }`}
+    >
+      {props.picked && <Check className="h-3 w-3 text-surface" strokeWidth={3} aria-hidden />}
+    </button>
   );
 }
 

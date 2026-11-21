@@ -2,42 +2,62 @@
 
 import { useCallback } from "react";
 import type { Task, TimeBlock } from "@tt/shared";
-import { tempId, useCreateBlock, useDeleteBlock, useDeleteTask } from "./data";
+import { tempId, useCreateBlock, useDeleteBlock, useDeleteTask, useDeleteTasks } from "./data";
 import { setNotice } from "./notice";
-import { addPendingDelete, removePendingDelete } from "./pending-deletes";
+import { addPendingDeletes, removePendingDeletes } from "./pending-deletes";
 
 /** How long a deleted task can be brought back before the delete is sent. */
 export const UNDO_MS = 8_000;
 
-const timers = new Map<string, ReturnType<typeof setTimeout>>();
+/** Delete batches waiting out their undo window, by batch id. */
+const batches = new Map<string, { ids: string[]; timer: ReturnType<typeof setTimeout> }>();
+let nextBatch = 0;
 
-/** Deleting a task hides it at once and offers Undo; the server delete is sent when the window ends. */
-export function useDeleteTaskWithUndo() {
-  const del = useDeleteTask();
+/**
+ * Deleting tasks hides them at once and offers one Undo for the lot; the server delete is sent
+ * when the window ends (one request however many there are).
+ */
+export function useDeleteTasksWithUndo() {
+  const delOne = useDeleteTask();
+  const delMany = useDeleteTasks();
   const commit = useCallback(
-    (id: string) => {
-      timers.delete(id);
-      del.mutate(id, { onSettled: () => removePendingDelete(id) });
+    (batchId: string) => {
+      const batch = batches.get(batchId);
+      if (!batch) return;
+      batches.delete(batchId);
+      const done = () => removePendingDeletes(batch.ids);
+      if (batch.ids.length === 1) delOne.mutate(batch.ids[0]!, { onSettled: done });
+      else delMany.mutate(batch.ids, { onSettled: done });
     },
-    [del],
+    [delOne, delMany],
   );
   return useCallback(
-    (task: Pick<Task, "id" | "title">) => {
-      addPendingDelete(task.id);
-      setNotice({ kind: "deleted", taskId: task.id, label: task.title });
-      timers.set(task.id, setTimeout(() => commit(task.id), UNDO_MS));
+    (tasks: Pick<Task, "id" | "title">[]) => {
+      if (!tasks.length) return;
+      const batchId = `del-${++nextBatch}`;
+      const ids = tasks.map((t) => t.id);
+      addPendingDeletes(ids);
+      const label = tasks.length === 1 ? `“${tasks[0]!.title}”` : `${tasks.length} to-dos`;
+      setNotice({ kind: "deleted", batchId, label });
+      batches.set(batchId, { ids, timer: setTimeout(() => commit(batchId), UNDO_MS) });
     },
     [commit],
   );
 }
 
-/** Brings a just-deleted task back, if its delete hasn't been sent yet. */
-export function undoDeleteTask(taskId: string) {
-  const t = timers.get(taskId);
-  if (t === undefined) return;
-  clearTimeout(t);
-  timers.delete(taskId);
-  removePendingDelete(taskId);
+/** Deleting a task hides it at once and offers Undo; the server delete is sent when the window ends. */
+export function useDeleteTaskWithUndo() {
+  const del = useDeleteTasksWithUndo();
+  return useCallback((task: Pick<Task, "id" | "title">) => del([task]), [del]);
+}
+
+/** Brings just-deleted tasks back, if their delete hasn't been sent yet. */
+export function undoDelete(batchId: string) {
+  const batch = batches.get(batchId);
+  if (!batch) return;
+  clearTimeout(batch.timer);
+  batches.delete(batchId);
+  removePendingDeletes(batch.ids);
   setNotice(null);
 }
 

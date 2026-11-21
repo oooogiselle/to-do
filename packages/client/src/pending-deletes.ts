@@ -14,10 +14,10 @@ const emit = (next: Set<string>) => {
   listeners.forEach((l) => l());
 };
 
-export const addPendingDelete = (id: string) => emit(new Set(pending).add(id));
-export const removePendingDelete = (id: string) => {
+export const addPendingDeletes = (ids: string[]) => emit(new Set([...pending, ...ids]));
+export const removePendingDeletes = (ids: string[]) => {
   const next = new Set(pending);
-  next.delete(id);
+  ids.forEach((id) => next.delete(id));
   emit(next);
 };
 

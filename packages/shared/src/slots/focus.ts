@@ -1,6 +1,7 @@
 import type { SuggestFocus } from "../schemas";
 import { addDays, localDate } from "../time";
 import type { RawPick } from "./normalizePicks";
+import { STALE_OVERDUE_DAYS } from "../risk/staleOverdue";
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -44,9 +45,6 @@ export function matchesFocus(kind: FocusKind, focus: SuggestFocus | undefined): 
   }
 }
 
-/** Overdue work older than this stops forcing its way to the top. */
-const OVERDUE_DAYS = 3;
-
 /**
  * An assignment with work left that's due within 48h after the gap starts, or already overdue
  * (by up to 3 days). A deadline that passes between now and the gap isn't pressing for that gap:
@@ -59,7 +57,7 @@ export function isPressing(
 ): boolean {
   if (t.kind !== "assignment" || !t.due_at || t.remainingMin <= 0) return false;
   const due = Date.parse(t.due_at);
-  if (due < nowMs) return nowMs - due <= OVERDUE_DAYS * 24 * HOUR;
+  if (due < nowMs) return nowMs - due <= STALE_OVERDUE_DAYS * 24 * HOUR;
   return due >= gapStart && due - gapStart <= PRESSING_HOURS * HOUR;
 }
 

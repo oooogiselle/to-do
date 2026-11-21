@@ -278,6 +278,7 @@ export function useCreateTask() {
           start_date: v.body.start_date ?? null,
           research: null,
           assistant_note: v.body.assistant_note ?? null,
+          overdue_kept_due: null,
         }),
         id: v.tempId,
       }),
@@ -337,6 +338,18 @@ export function useDeleteTask() {
   return useOptimistic({
     mutationFn: (id: string) => api.deleteTask(id),
     apply: (s, id) => updateRow(s, "tasks", id, { deleted_at: now() }),
+  });
+}
+
+export function useDeleteTasks() {
+  const api = useApi();
+  return useOptimistic({
+    mutationFn: (ids: string[]) => api.deleteTasks(ids),
+    apply: (s, ids) => {
+      const gone = new Set(ids);
+      const t = now();
+      return { ...s, tasks: s.tasks.map((x) => (gone.has(x.id) ? { ...x, deleted_at: t } : x)) };
+    },
   });
 }
 
