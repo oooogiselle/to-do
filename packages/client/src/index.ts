@@ -16,3 +16,4 @@ export * from "./assistant";
 export * from "./pending-deletes";
 export * from "./delete-undo";
 export * from "./overdue";
+export * from "./persist";
