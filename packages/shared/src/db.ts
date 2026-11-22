@@ -325,7 +325,45 @@ isOneToOne: false
                            },
 "hit_rate_limit":
 { Args: { "p_bucket": string,"p_max": number,"p_user": string,"p_window_seconds": number }; Returns: boolean
-                           }
+                           },
+"replace_steps":
+{ Args: { "p_steps": Json,"p_task": string }; Returns: Json
+                           },
+"set_task_done_date":
+{ Args: { "p_date": string,"p_done": boolean,"p_task": string }; Returns: {
+              "assistant_note": string | null,
+"color": string | null,
+"completed_at": string | null,
+"created_at": string,
+"deleted_at": string | null,
+"done_dates": (string)[],
+"due_at": string | null,
+"estimate_min": number | null,
+"horizon": string | null,
+"id": string,
+"idea_kind": string | null,
+"import_id": string | null,
+"link_url": string | null,
+"list_id": string | null,
+"notes": string,
+"overdue_kept_due": string | null,
+"priority": Database["public"]['Enums']["priority"],
+"repeat": string,
+"repeat_days": (number)[],
+"research": Json | null,
+"source_quote": string | null,
+"start_date": string | null,
+"status": Database["public"]['Enums']["task_status"],
+"title": string,
+"updated_at": string,
+"user_id": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "tasks"
+        isOneToOne: false
+        isSetofReturn: true
+      } }
           }
           Enums: {
             "import_kind": "text"|"syllabus","priority": "none"|"low"|"med"|"high","task_status": "open"|"done"|"archived"

@@ -352,71 +352,94 @@ export function ChangesCard({ messageId, index, resolved, block }: CardProps<"ch
     }
   };
 
-  const apply = (c: Change) => {
+  /**
+   * Makes the change. Resolves once the server has it, so the card only says "Done" for changes
+   * that saved. Removing a block or a to-do goes through its own Undo toast, so those count as
+   * done once started.
+   */
+  const apply = async (c: Change): Promise<unknown> => {
     switch (c.op) {
       case "edit": {
         const { done, ...fields } = c.patch;
-        if (Object.keys(fields).length) {
-          if (c.step_id) updateStep.mutate({ id: c.step_id, patch: { title: fields.title } });
-          else updateTask.mutate({ id: c.task_id, patch: fields });
-        }
+        const saved =
+          !Object.keys(fields).length
+            ? undefined
+            : c.step_id
+              ? updateStep.mutateAsync({ id: c.step_id, patch: { title: fields.title } })
+              : updateTask.mutateAsync({ id: c.task_id, patch: fields });
         if (done) {
           if (c.step_id) completion.setStepDone(c.task_id, c.step_id, true);
           else completion.setTaskDone(c.task_id, true);
         }
-        break;
+        return saved;
       }
       case "move":
-        moveBlock.mutate({ id: c.block_id, start: c.to.start, end: c.to.end });
-        break;
+        return moveBlock.mutateAsync({ id: c.block_id, start: c.to.start, end: c.to.end });
       case "remove": {
         const task = taskById.get(c.task_id)!;
         if (c.what === "block") {
           const b = blockOf(c.id);
           if (b) removeBlock(b, task.title);
-        } else if (c.what === "task") deleteTask(task);
-        else if (c.what === "step") deleteStep.mutate(c.id);
-        else removeFromPlan.mutate(c.id);
-        break;
+          return;
+        }
+        if (c.what === "task") return deleteTask(task);
+        if (c.what === "step") return deleteStep.mutateAsync(c.id);
+        return removeFromPlan.mutateAsync(c.id);
       }
     }
   };
 
-  const undo = (c: Change) => {
+  const undo = async (c: Change): Promise<unknown> => {
     switch (c.op) {
       case "edit": {
         const { done, ...fields } = c.before;
-        if (Object.keys(fields).length) {
-          if (c.step_id) updateStep.mutate({ id: c.step_id, patch: { title: fields.title } });
-          else updateTask.mutate({ id: c.task_id, patch: fields });
-        }
+        const saved =
+          !Object.keys(fields).length
+            ? undefined
+            : c.step_id
+              ? updateStep.mutateAsync({ id: c.step_id, patch: { title: fields.title } })
+              : updateTask.mutateAsync({ id: c.task_id, patch: fields });
         if (c.patch.done && done === false) {
           if (c.step_id) completion.setStepDone(c.task_id, c.step_id, false);
           else completion.setTaskDone(c.task_id, false);
         }
-        break;
+        return saved;
       }
       case "move":
-        moveBlock.mutate({ id: c.block_id, start: c.from.start, end: c.from.end });
-        break;
+        return moveBlock.mutateAsync({ id: c.block_id, start: c.from.start, end: c.from.end });
       case "remove":
-        if (c.what === "block") restoreBlock({ task_id: c.task_id, step_id: c.step_id, ...c.span! });
-        else if (c.what === "step")
-          createStep.mutate({ tempId: tempId(), body: { task_id: c.task_id, ...c.step!, estimate_min: c.step!.estimate_min } });
-        else if (c.what === "plan")
-          addToPlan.mutate({
+        if (c.what === "block") return restoreBlock({ task_id: c.task_id, step_id: c.step_id, ...c.span! });
+        if (c.what === "step")
+          return createStep.mutateAsync({
+            tempId: tempId(),
+            body: { task_id: c.task_id, ...c.step!, estimate_min: c.step!.estimate_min },
+          });
+        if (c.what === "plan")
+          return addToPlan.mutateAsync({
             tempId: tempId(),
             body: { task_id: c.task_id, step_id: c.step_id, plan_date: c.plan!.date, position: c.plan!.position },
           });
-        break;
+        return;
     }
   };
 
+  // Rows whose change is being saved, and rows whose last try didn't save.
+  const [busy, setBusy] = useState<ReadonlySet<number>>(new Set());
+  const [failed, setFailed] = useState<ReadonlySet<number>>(new Set());
   const state = (j: number) => resolved[keyOf(j)];
-  const pending = block.changes.map((_, j) => j).filter((j) => !state(j) && current(block.changes[j]!));
-  const act = (js: number[], to: "applied" | "undone") => {
-    resolve.mutate({ messageId, entries: Object.fromEntries(js.map((j) => [keyOf(j), to])) });
-    js.forEach((j) => (to === "applied" ? apply : undo)(block.changes[j]!));
+  const pending = block.changes
+    .map((_, j) => j)
+    .filter((j) => !state(j) && !busy.has(j) && current(block.changes[j]!));
+  /** Makes (or undoes) the changes, and marks on the card only the ones that saved. */
+  const act = async (js: number[], to: "applied" | "undone") => {
+    const without = (set: ReadonlySet<number>) => new Set([...set].filter((j) => !js.includes(j)));
+    setBusy((b) => new Set([...b, ...js]));
+    setFailed(without);
+    const results = await Promise.allSettled(js.map((j) => (to === "applied" ? apply : undo)(block.changes[j]!)));
+    const saved = js.filter((_, i) => results[i]!.status === "fulfilled");
+    if (saved.length) resolve.mutate({ messageId, entries: Object.fromEntries(saved.map((j) => [keyOf(j), to])) });
+    setFailed((f) => new Set([...f, ...js.filter((j) => !saved.includes(j))]));
+    setBusy(without);
   };
 
   /** What the row is about, and what changes, in words. */
@@ -490,8 +513,14 @@ export function ChangesCard({ messageId, index, resolved, block }: CardProps<"ch
                     <Check className="h-3.5 w-3.5" />
                     Done
                   </span>
+                  {failed.has(j) && <span className="text-[12px] text-risk">Undo didn&rsquo;t save</span>}
                   {undoable(c) && (
-                    <button type="button" onClick={() => act([j], "undone")} className="text-[12px] text-muted hover:text-ink">
+                    <button
+                      type="button"
+                      onClick={() => act([j], "undone")}
+                      disabled={busy.has(j)}
+                      className="text-[12px] text-muted hover:text-ink disabled:opacity-50"
+                    >
                       Undo
                     </button>
                   )}
@@ -501,15 +530,18 @@ export function ChangesCard({ messageId, index, resolved, block }: CardProps<"ch
               ) : stale ? (
                 <span className="inline-flex h-7 shrink-0 items-center text-[12px] text-faint">Changed since</span>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => act([j], "applied")}
-                  disabled={isTemp(c.task_id)}
-                  className={secondaryBtn}
-                  aria-label={`Apply: ${title}, ${detail}`}
-                >
-                  Apply
-                </button>
+                <span className="flex shrink-0 items-center gap-2">
+                  {failed.has(j) && <span className="text-[12px] text-risk">Didn&rsquo;t save</span>}
+                  <button
+                    type="button"
+                    onClick={() => act([j], "applied")}
+                    disabled={isTemp(c.task_id) || busy.has(j)}
+                    className={secondaryBtn}
+                    aria-label={`Apply: ${title}, ${detail}`}
+                  >
+                    Apply
+                  </button>
+                </span>
               )}
             </li>
           );

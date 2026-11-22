@@ -9,7 +9,6 @@ import {
   type List,
   type Task,
   type TaskResearch,
-  toggleDoneDate,
 } from "@tt/shared";
 import type { ApiClient } from "./api-context";
 import {
@@ -19,7 +18,7 @@ import {
   useCreateList,
   useCreateTask,
   useModel,
-  useUpdateTask,
+  useSetDoneDate,
 } from "./data";
 
 /**
@@ -60,9 +59,8 @@ export function contactLabel(date: string, today: string): string {
 
 /** Logs a day the user connected with someone; the free-time suggestions read it back. */
 export function useLogContact() {
-  const updateTask = useUpdateTask();
-  return (task: Pick<Task, "id" | "done_dates">, date: string) =>
-    updateTask.mutate({ id: task.id, patch: { done_dates: toggleDoneDate(task.done_dates, date, true) } });
+  const setDoneDate = useSetDoneDate();
+  return (task: Pick<Task, "id">, date: string) => setDoneDate.mutate({ id: task.id, date, done: true });
 }
 
 /** Section order on the Someday page: soonest timeframe first, unsorted ideas last. */
