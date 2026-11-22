@@ -14,7 +14,14 @@ import {
   type WorkingHours,
 } from "@tt/shared";
 import { api } from "@/lib/client/api";
-import { keys, useCalendars, useDeleteAccount, useSettings, useUpdateSettings } from "@tt/client";
+import {
+  clearPersistedCache,
+  keys,
+  useCalendars,
+  useDeleteAccount,
+  useSettings,
+  useUpdateSettings,
+} from "@tt/client";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { Switch } from "@/components/ui/switch";
 import { setAskButtonHidden, useAskButtonHidden } from "./ask-button";
@@ -286,6 +293,7 @@ export function SettingsView() {
           <button
             onClick={async () => {
               await createBrowserSupabase().auth.signOut();
+              clearPersistedCache();
               window.location.assign("/login");
             }}
             className="h-7 rounded-lg px-3 text-[12px] font-medium text-risk hover:bg-risk-bg"
@@ -456,6 +464,7 @@ function DeleteAccountSection() {
               del.mutate(undefined, {
                 onSuccess: async () => {
                   await createBrowserSupabase().auth.signOut();
+                  clearPersistedCache();
                   window.location.assign("/login");
                 },
               })
