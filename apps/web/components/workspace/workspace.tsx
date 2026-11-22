@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useIsRestoring, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { addDays, localDate } from "@tt/shared";
 import { fmtDay, fmtTime, useModel, useSettings, useSync } from "@tt/client";
@@ -28,6 +28,7 @@ export function Workspace({ screen }: { screen: Screen }) {
 
 function WorkspaceView({ screen }: { screen: Screen }) {
   const { lists, tasks, settings, isLoading, error } = useModel();
+  const restoring = useIsRestoring();
   const now = useNow();
   const ws = useWorkspaceLayout(lists, !isLoading && !error, screen);
   const { layout } = ws;
@@ -37,7 +38,13 @@ function WorkspaceView({ screen }: { screen: Screen }) {
       <div className="flex h-full flex-col">
         <Header now={now} tz={settings.timezone} ws={ws} screen={screen} />
         <div className="grid flex-1 place-items-center font-medium text-muted">
-          {error ? `Couldn't load your tasks: ${error.message}` : "Loading…"}
+          {/* Only while really fetching. Reading the saved planner, or the one render before the
+              layout is set, stays blank rather than flashing "Loading…". */}
+          {error
+            ? `Couldn't load your tasks: ${error.message}`
+            : isLoading && !restoring
+              ? "Loading…"
+              : null}
         </div>
       </div>
     );
