@@ -110,7 +110,8 @@ export function useEvents(from: number, to: number) {
       const ready = lists.every((l) => l !== undefined);
       return {
         data: ready ? { events: mergeEvents(lists as EventsResponse["events"][], from, to) } : undefined,
-        isLoading: results.some((r) => r.isLoading),
+        // isPending, not isLoading: while the saved cache is restoring nothing is fetching yet.
+        isLoading: results.some((r) => r.isPending),
         error: results.find((r) => r.error)?.error ?? null,
       };
     },
@@ -152,7 +153,9 @@ const FALLBACK_SETTINGS: Settings = {
 
 /** Indexed, non-deleted views over the sync snapshot. */
 export function useModel() {
-  const { data, isLoading, error } = useSync();
+  // isPending (no data yet), not isLoading: while the saved cache is being restored the query
+  // isn't fetching, so isLoading is false with no data, and callers would act on an empty planner.
+  const { data, isPending: isLoading, error } = useSync();
   const pendingDeletes = usePendingDeletes();
   return useMemo(() => {
     const live = <T extends { deleted_at: string | null }>(rows: T[] = []) =>
