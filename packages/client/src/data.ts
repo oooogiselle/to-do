@@ -14,6 +14,7 @@ import {
   eventBucketOf,
   eventBuckets,
   mergeEvents,
+  mergeSync,
   HUES,
   type EventsResponse,
   toggleDoneDate,
@@ -51,10 +52,35 @@ export const keys = {
   events: (bucket: number) => ["events", bucket] as const,
 };
 
-/** Everything the app owns (lists, tasks, steps, blocks, settings) in one cached snapshot. */
+/** The cached sync snapshot, plus when it was last pulled in full (client-only). */
+export type Snapshot = SyncResponse & { full_at?: string };
+
+/** A full pull at least this often, as a safety net for anything a delta can't carry. */
+const FULL_SYNC_MS = 24 * 3_600_000;
+
+/**
+ * Everything the app owns (lists, tasks, steps, blocks, settings) in one cached snapshot.
+ * The first fetch pulls everything; later ones ask only for rows changed since the cursor
+ * and merge them in.
+ */
 export function useSync() {
   const api = useApi();
-  return useQuery({ queryKey: keys.sync, queryFn: () => api.sync() });
+  const qc = useQueryClient();
+  return useQuery({
+    queryKey: keys.sync,
+    queryFn: async (): Promise<Snapshot> => {
+      const prev = qc.getQueryData<Snapshot>(keys.sync);
+      const fullAt = prev?.full_at ? Date.parse(prev.full_at) : 0;
+      if (!prev || Date.now() - fullAt > FULL_SYNC_MS) {
+        const started = new Date().toISOString();
+        return { ...(await api.sync()), full_at: started };
+      }
+      const delta = await api.sync(prev.cursor);
+      // Merge into the snapshot as it is now: a settle or optimistic patch may have landed
+      // while the request was out.
+      return mergeSync(qc.getQueryData<Snapshot>(keys.sync) ?? prev, delta);
+    },
+  });
 }
 
 // Realtime invalidates events whenever calendar_events changes, so they can stay fresh longer.
@@ -239,6 +265,20 @@ function updateRow<C extends Collection>(
   return { ...s, [c]: rows.map((r) => (r.id === id ? { ...r, ...patch, updated_at: now() } : r)) };
 }
 
+/**
+ * Swaps an optimistic row for the server's copy. A delta can bring the server row in before
+ * the create settles, so any copy already there is dropped rather than duplicated. If the
+ * temp row is already gone (a full pull replaced the snapshot), the server row is upserted.
+ */
+function replaceTemp<R extends { id: string }>(rows: R[], tempId: string, row: R): R[] {
+  if (!rows.some((r) => r.id === tempId)) {
+    return rows.some((r) => r.id === row.id)
+      ? rows.map((r) => (r.id === row.id ? row : r))
+      : [...rows, row];
+  }
+  return rows.flatMap((r) => (r.id === tempId ? [row] : r.id === row.id ? [] : [r]));
+}
+
 function tempRow<T>(fields: T) {
   const t = now();
   return {
@@ -282,7 +322,7 @@ export function useCreateTask() {
         }),
         id: v.tempId,
       }),
-    settle: (s, task, v) => ({ ...s, tasks: s.tasks.map((t) => (t.id === v.tempId ? task : t)) }),
+    settle: (s, task, v) => ({ ...s, tasks: replaceTemp(s.tasks, v.tempId, task) }),
   });
 }
 
@@ -370,7 +410,7 @@ export function useCreateStep() {
         }),
         id: v.tempId,
       }),
-    settle: (s, step, v) => ({ ...s, steps: s.steps.map((x) => (x.id === v.tempId ? step : x)) }),
+    settle: (s, step, v) => ({ ...s, steps: replaceTemp(s.steps, v.tempId, step) }),
   });
 }
 
@@ -407,7 +447,7 @@ export function useCreateList() {
         }),
         id: v.tempId,
       }),
-    settle: (s, list, v) => ({ ...s, lists: s.lists.map((l) => (l.id === v.tempId ? list : l)) }),
+    settle: (s, list, v) => ({ ...s, lists: replaceTemp(s.lists, v.tempId, list) }),
   });
 }
 
@@ -499,9 +539,7 @@ export function useCreateBlock() {
     },
     onError: (_e, _v, ctx) => ctx?.prev && qc.setQueryData(keys.sync, ctx.prev),
     onSuccess: (block, v) =>
-      patchSnapshot(qc, (s) =>
-        updateBlocks(s, (b) => b.map((x) => (x.id === v.tempId ? block : x))),
-      ),
+      patchSnapshot(qc, (s) => updateBlocks(s, (b) => replaceTemp(b, v.tempId, block))),
   });
 }
 
@@ -632,7 +670,7 @@ export function useAddToPlan() {
       }),
     settle: (s, item, v) => ({
       ...s,
-      day_plan_items: s.day_plan_items.map((i) => (i.id === v.tempId ? item : i)),
+      day_plan_items: replaceTemp(s.day_plan_items, v.tempId, item),
     }),
   });
 }
