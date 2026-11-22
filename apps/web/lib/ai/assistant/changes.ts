@@ -1,5 +1,6 @@
 import "server-only";
 import {
+  hasDeleteIntent,
   localDate,
   placePicks,
   subtract,
@@ -22,6 +23,8 @@ const PRIORITIES = ["none", "low", "med", "high"] as const;
 const round5 = (n: number) => Math.round(n / 5) * 5;
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 const bold = (s: string) => `**${s}**`;
+/** Most to-dos one reply can offer to delete (all removals together stay at 6). */
+const MAX_TASK_DELETES = 3;
 
 type Span = { start: string; end: string };
 
@@ -291,8 +294,21 @@ export function placeTimes(out: ReplyOut, snap: Snapshot, now = Date.now()): Tim
   };
 }
 
-/** The edits, moves and removals in a reply, checked against the snapshot; empty when none hold up. */
-export function buildChanges(out: ReplyOut, snap: Snapshot, times: TimeResult): AssistantChange[] {
+/**
+ * The edits, moves and removals in a reply, checked against the snapshot; empty when none hold up.
+ * Deleting a to-do or step needs the user's latest message to ask for something to go: otherwise
+ * the delete is left out (and named in `skipped`), so text in a task's notes or a search result
+ * can't talk the model into offering one.
+ */
+export function buildChanges(
+  out: ReplyOut,
+  snap: Snapshot,
+  times: TimeResult,
+  userText: string,
+): { changes: AssistantChange[]; skipped: string[] } {
+  const mayDelete = hasDeleteIntent(userText);
+  const skipped: string[] = [];
+  let taskDeletes = 0;
   const tz = snap.timezone;
   const changes: AssistantChange[] = [];
   const seen = new Set<string>();
@@ -417,6 +433,10 @@ export function buildChanges(out: ReplyOut, snap: Snapshot, times: TimeResult): 
       }
     } else if (stepId) {
       const step = snap.stepInfo.get(stepId)!;
+      if (!mayDelete) {
+        if (once(`skip:${stepId}`)) skipped.push(step.title);
+        continue;
+      }
       if (once(`step:${stepId}`)) {
         changes.push({
           op: "remove",
@@ -428,7 +448,13 @@ export function buildChanges(out: ReplyOut, snap: Snapshot, times: TimeResult): 
           step: { title: step.title, estimate_min: step.estimate_min, order: step.order },
         });
       }
-    } else if (taskId && snap.taskInfo.has(taskId) && once(`task:${taskId}`)) {
+    } else if (taskId && snap.taskInfo.has(taskId)) {
+      if (!mayDelete || taskDeletes >= MAX_TASK_DELETES) {
+        if (once(`skip:${taskId}`)) skipped.push(snap.taskInfo.get(taskId)!.title);
+        continue;
+      }
+      if (!once(`task:${taskId}`)) continue;
+      taskDeletes++;
       changes.push({
         op: "remove",
         what: "task",
@@ -440,5 +466,5 @@ export function buildChanges(out: ReplyOut, snap: Snapshot, times: TimeResult): 
       });
     }
   }
-  return changes;
+  return { changes, skipped };
 }

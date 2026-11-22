@@ -1,6 +1,9 @@
 import "server-only";
 import { z } from "zod/v4";
 import {
+  claimsAction,
+  collectUrlKeys,
+  guardText,
   localDate,
   localWeekday,
   normalizeLink,
@@ -125,15 +128,20 @@ const KINDS = ["article", "video", "course", "book", "tool", "community", "other
 const resources = (rs: z.infer<typeof Resource>[]) =>
   rs.map((r) => ({ ...r, kind: oneOf(r.kind, KINDS, "other"), minutes: r.minutes > 0 ? r.minutes : null }));
 
+/** Cards the user can act on, as opposed to ones that only show something. */
+const ACTIONABLE = new Set<AssistantBlock["kind"]>(["schedule", "draft", "changes", "steps", "idea"]);
+
 /**
  * Turns the model's reply into stored cards with real ids, dropping anything that doesn't check
- * out: unknown codes, times outside free slots, links that didn't come from a search.
+ * out: unknown codes, times outside free slots, links that didn't come from a search, deletes
+ * the user didn't ask for. The text gets the same treatment (`guardText`): no codes, no
+ * unverified links, no markdown beyond bold and bullets. `guard` lists every check that fired.
  */
 export function validateReply(
   out: ReplyOut,
   snap: Snapshot,
   ctx: { toolBlocks: unknown[]; userText: string; trusted: string[] },
-): { blocks: AssistantBlock[]; follow_ups: string[]; title: string } {
+): { blocks: AssistantBlock[]; follow_ups: string[]; title: string; guard: string[] } {
   const task = (code: string | null) => (code ? (snap.taskByCode.get(code.trim()) ?? null) : null);
   const dayOf = (v: string) => dayIn(snap, v);
   const blocks: AssistantBlock[] = [];
@@ -141,7 +149,29 @@ export function validateReply(
   const notes: string[] = [];
   // Every time in the reply (new blocks, moves, draft bookings) is worked out together.
   const times = placeTimes(out, snap);
-  const changes = buildChanges(out, snap, times);
+  const { changes, skipped } = buildChanges(out, snap, times, ctx.userText);
+  const guard = new Set<string>();
+  if (skipped.length) guard.add("changes:delete_no_intent");
+  // Links the text may show: this turn's search results, earlier verified links, the user's own.
+  const allowedUrlKeys = collectUrlKeys([ctx.toolBlocks, ctx.trusted, ctx.userText]);
+  const nameOf = (code: string) => {
+    const c = code.toLowerCase();
+    const stepId = snap.stepByCode.get(c);
+    if (stepId) return snap.stepInfo.get(stepId)?.title ?? null;
+    const taskId = snap.taskByCode.get(c);
+    if (taskId) return snap.titleOf.get(taskId) ?? null;
+    const block = snap.blockByCode.get(c);
+    if (block) {
+      const title = snap.titleOf.get(block.task_id);
+      return title ? `${title} block` : null;
+    }
+    return null;
+  };
+  const clean = (text: string) => {
+    const r = guardText(text, { nameOf, allowedUrlKeys });
+    for (const tag of r.fired) guard.add(`text:${tag}`);
+    return r.text;
+  };
   const idea = out.idea[0];
   const slotsDay = out.slots_day.trim();
   const parts = [
@@ -180,7 +210,7 @@ export function validateReply(
   for (const b of parts) {
     switch (b.kind) {
       case "text": {
-        const text = b.text.trim().slice(0, 1500);
+        const text = clean(b.text).slice(0, 1500);
         if (text) blocks.push({ kind: "text", text });
         break;
       }
@@ -284,6 +314,21 @@ export function validateReply(
   // The reply may already mention an overlap; don't say it twice.
   const said = out.text.toLowerCase();
   notes.push(...times.notes.filter((n) => !(n.includes(" overlaps ") && said.includes("overlap"))));
+  if (skipped.length) {
+    const names = skipped.map((t) => `**${t}**`);
+    notes.push(
+      `I left out deleting ${names.length > 2 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names.join(" and ")}. Say so if you want ${skipped.length > 1 ? "them" : "it"} gone.`,
+    );
+  }
+  // The model only proposes; if it says something already happened, set that straight.
+  if (claimsAction(out.text)) {
+    guard.add("text:claim");
+    notes.push(
+      blocks.some((b) => ACTIONABLE.has(b.kind))
+        ? "Nothing's changed yet. Use the card to make it happen."
+        : "Nothing's changed yet. I can only suggest changes, as cards you apply.",
+    );
+  }
   if (notes.length) {
     const first = blocks.find((b) => b.kind === "text");
     if (first) first.text = `${first.text}\n\n${notes.join(" ")}`;
@@ -292,8 +337,8 @@ export function validateReply(
   if (!blocks.length) {
     blocks.push({ kind: "text", text: "I couldn't put that together. Try asking another way." });
   }
-  const follow_ups = [...new Set(out.follow_ups.map((f) => f.trim().slice(0, 60)).filter(Boolean))].slice(0, 3);
-  return { blocks, follow_ups, title: cleanTitle(out.title) };
+  const follow_ups = [...new Set(out.follow_ups.map((f) => clean(f).slice(0, 60)).filter(Boolean))].slice(0, 3);
+  return { blocks, follow_ups, title: cleanTitle(out.title), guard: [...guard] };
 }
 
 /** The model's chat title, one line without wrapping quotes or a final period; '' for none. */
