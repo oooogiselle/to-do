@@ -59,14 +59,14 @@ isOneToOne: false
                   ]
                 },"assistant_messages": {
                   Row: {
-                    "blocks": NonNullable<Json>,"chat_id": string | null,"content": string,"created_at": string,"deleted_at": string | null,"error": string | null,"focus_task_id": string | null,"follow_ups": NonNullable<Json>,"id": string,"requested_at": string | null,"resolved": NonNullable<Json>,"role": string,"status": string,"updated_at": string,"user_id": string
+                    "blocks": NonNullable<Json>,"chat_id": string | null,"content": string,"created_at": string,"deleted_at": string | null,"error": string | null,"focus_task_id": string | null,"follow_ups": NonNullable<Json>,"guard": (string)[],"id": string,"requested_at": string | null,"resolved": NonNullable<Json>,"role": string,"status": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "blocks"?: NonNullable<Json>,"chat_id"?: string | null,"content"?: string,"created_at"?: string,"deleted_at"?: string | null,"error"?: string | null,"focus_task_id"?: string | null,"follow_ups"?: NonNullable<Json>,"id"?: string,"requested_at"?: string | null,"resolved"?: NonNullable<Json>,"role": string,"status"?: string,"updated_at"?: string,"user_id": string
+                    "blocks"?: NonNullable<Json>,"chat_id"?: string | null,"content"?: string,"created_at"?: string,"deleted_at"?: string | null,"error"?: string | null,"focus_task_id"?: string | null,"follow_ups"?: NonNullable<Json>,"guard"?: (string)[],"id"?: string,"requested_at"?: string | null,"resolved"?: NonNullable<Json>,"role": string,"status"?: string,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "blocks"?: NonNullable<Json>,"chat_id"?: string | null,"content"?: string,"created_at"?: string,"deleted_at"?: string | null,"error"?: string | null,"focus_task_id"?: string | null,"follow_ups"?: NonNullable<Json>,"id"?: string,"requested_at"?: string | null,"resolved"?: NonNullable<Json>,"role"?: string,"status"?: string,"updated_at"?: string,"user_id"?: string
+                    "blocks"?: NonNullable<Json>,"chat_id"?: string | null,"content"?: string,"created_at"?: string,"deleted_at"?: string | null,"error"?: string | null,"focus_task_id"?: string | null,"follow_ups"?: NonNullable<Json>,"guard"?: (string)[],"id"?: string,"requested_at"?: string | null,"resolved"?: NonNullable<Json>,"role"?: string,"status"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {

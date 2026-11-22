@@ -6,10 +6,15 @@ import type { z } from "zod/v4";
 import { HttpError } from "@/lib/api";
 import { adminClient } from "@/lib/supabase/admin";
 
-const MODEL = "claude-opus-5-5";
-// USD per million tokens for MODEL; thinking tokens bill as output. Cache writes (5-minute TTL)
-// cost 1.25x input; cache reads are billed separately from `input_tokens`.
-const PRICE = { input: 4, output: 20, cacheWrite: 5, cacheRead: 0.2 };
+export type Model = "claude-opus-5-5" | "claude-haiku-5-5";
+const MODEL: Model = "claude-opus-5-5";
+// USD per million tokens; thinking tokens bill as output. Cache writes (5-minute TTL) cost 1.25x
+// input; cache reads are billed separately from `input_tokens`. Haiku's rates are for prompts up
+// to 100K tokens, which every Haiku call here is.
+const PRICE: Record<Model, { input: number; output: number; cacheWrite: number; cacheRead: number }> = {
+  "claude-opus-5-5": { input: 4, output: 20, cacheWrite: 5, cacheRead: 0.2 },
+  "claude-haiku-5-5": { input: 0.1, output: 0.5, cacheWrite: 0.125, cacheRead: 0.01 },
+};
 const EPHEMERAL = { type: "ephemeral" } as const;
 
 type Content = Anthropic.Beta.Messages.BetaMessageParam["content"];
@@ -30,16 +35,19 @@ const MAX_RESUMES = 2;
 
 type Response = Anthropic.Beta.Messages.BetaMessage;
 
-async function logUsage(userId: string, response: Response) {
+async function logUsage(userId: string, model: Model, response: Response) {
   const u = response.usage;
+  // Priced by the model asked for: a server-side fallback bills at its own rates, which this
+  // slightly misstates, but only for the rare refused turn.
+  const price = PRICE[model];
   const searches = u.server_tool_use?.web_search_requests ?? 0;
   const written = u.cache_creation_input_tokens ?? 0;
   const read = u.cache_read_input_tokens ?? 0;
   const cost =
-    (u.input_tokens * PRICE.input +
-      written * PRICE.cacheWrite +
-      read * PRICE.cacheRead +
-      u.output_tokens * PRICE.output) /
+    (u.input_tokens * price.input +
+      written * price.cacheWrite +
+      read * price.cacheRead +
+      u.output_tokens * price.output) /
       1e6 +
     searches * SEARCH_PRICE;
   if (process.env.NODE_ENV !== "production") {
@@ -88,6 +96,8 @@ export async function runStructured<S extends z.ZodType>(opts: {
   schema: S;
   effort: "low" | "medium" | "high";
   maxTokens?: number;
+  /** Defaults to Opus. */
+  model?: Model;
 }): Promise<z.infer<S>> {
   return (await runStructuredWithTools(opts)).output;
 }
@@ -103,6 +113,8 @@ export async function runStructuredWithTools<S extends z.ZodType>(
     schema: S;
     effort: "low" | "medium" | "high";
     maxTokens?: number;
+    /** Defaults to Opus. */
+    model?: Model;
     tools?: Anthropic.Beta.Messages.BetaToolUnion[];
   } & (
     | { content: Content }
@@ -111,6 +123,7 @@ export async function runStructuredWithTools<S extends z.ZodType>(
   ),
 ): Promise<{ output: z.infer<S>; content: Anthropic.Beta.Messages.BetaContentBlock[] }> {
   const api = anthropic();
+  const model = opts.model ?? MODEL;
   const messages: Anthropic.Beta.Messages.BetaMessageParam[] =
     "messages" in opts ? withHistoryBreakpoint(opts.messages) : [{ role: "user", content: opts.content }];
   const blocks: Anthropic.Beta.Messages.BetaContentBlock[] = [];
@@ -120,10 +133,10 @@ export async function runStructuredWithTools<S extends z.ZodType>(
       // Streamed so large outputs (long syllabi) aren't capped by the SDK's non-streaming limit.
       response = await api.beta.messages
         .stream({
-          model: MODEL,
+          model,
           max_tokens: opts.maxTokens ?? 16000,
-          betas: ["server-side-fallback-2026-07-01"],
-          fallbacks: "default",
+          // Haiku has no server-side refusal fallback.
+          ...(model === MODEL ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
           output_config: { effort: opts.effort, format: betaZodOutputFormat(opts.schema) },
           // Tools, output schema and system prompt are fixed per feature, so they cache together.
           system: [{ type: "text", text: opts.system, cache_control: EPHEMERAL }],
@@ -146,7 +159,7 @@ export async function runStructuredWithTools<S extends z.ZodType>(
         throw new HttpError(502, "The AI service didn't respond. Try again.");
       throw err;
     }
-    await logUsage(opts.userId, response);
+    await logUsage(opts.userId, model, response);
     blocks.push(...response.content);
     if (response.stop_reason !== "pause_turn") break;
     // Resume: send the paused turn back as is; the API picks up where it left off.
