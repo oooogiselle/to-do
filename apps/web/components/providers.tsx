@@ -1,15 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { ApiProvider, persistOptions, useRealtimeInvalidation } from "@tt/client";
+import {
+  ApiProvider,
+  persistOptions,
+  takePendingDeletes,
+  useRealtimeInvalidation,
+} from "@tt/client";
 import { api } from "@/lib/client/api";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 function RealtimeInvalidation() {
   const [supabase] = useState(createBrowserSupabase);
   useRealtimeInvalidation(supabase);
+  return null;
+}
+
+/** The bulk-delete route takes at most this many ids per request (TaskBulkDelete). */
+const BULK_DELETE_MAX = 200;
+
+/**
+ * Sends deletes still waiting out their Undo window when the page goes away. A keepalive
+ * request finishes after the tab closes; a normal one would be cancelled.
+ */
+function FlushDeletesOnExit() {
+  useEffect(() => {
+    const flush = () => {
+      const ids = takePendingDeletes();
+      for (let i = 0; i < ids.length; i += BULK_DELETE_MAX) {
+        void fetch("/api/v1/tasks/bulk-delete", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ids: ids.slice(i, i + BULK_DELETE_MAX) }),
+          keepalive: true,
+        });
+      }
+    };
+    window.addEventListener("pagehide", flush);
+    return () => window.removeEventListener("pagehide", flush);
+  }, []);
   return null;
 }
 
@@ -34,6 +65,7 @@ export function Providers({
   const inner = (
     <ApiProvider api={api}>
       <RealtimeInvalidation />
+      <FlushDeletesOnExit />
       {children}
     </ApiProvider>
   );

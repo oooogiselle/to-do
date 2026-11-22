@@ -694,12 +694,27 @@ export function useRemoveFromPlan() {
   });
 }
 
+/**
+ * Adds or removes one done date on a task. The server changes just that date (not the whole
+ * array), so check-offs from another device or tab that this cache hasn't seen yet survive.
+ */
+export function useSetDoneDate() {
+  const api = useApi();
+  return useOptimistic({
+    mutationFn: (v: { id: string; date: string; done: boolean }) =>
+      api.setDoneDate(v.id, v.date, v.done),
+    apply: (s, v) => {
+      const task = s.tasks.find((t) => t.id === v.id);
+      if (!task) return s;
+      return updateRow(s, "tasks", v.id, { done_dates: toggleDoneDate(task.done_dates, v.date, v.done) });
+    },
+    settle: (s, task) => upsertRow(s, "tasks", task),
+  });
+}
+
 /** Checks a repeating task off (or back on) for one local date. */
 export function useToggleRoutine() {
-  const update = useUpdateTask();
-  return (task: Pick<Task, "id" | "done_dates">, date: string, done: boolean) =>
-    update.mutate({
-      id: task.id,
-      patch: { done_dates: toggleDoneDate(task.done_dates, date, done) },
-    });
+  const setDoneDate = useSetDoneDate();
+  return (task: Pick<Task, "id">, date: string, done: boolean) =>
+    setDoneDate.mutate({ id: task.id, date, done });
 }

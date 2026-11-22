@@ -445,6 +445,9 @@ export const TaskPatch = TaskCreate.partial().extend({
 /** Deletes several to-dos at once (To-dos select mode and the overdue review). */
 export const TaskBulkDelete = z.object({ ids: z.array(z.string().uuid()).min(1).max(200) });
 
+/** Checks a repeating task off for one local date, or unchecks it (done: false). */
+export const DoneDateSet = z.object({ date: PlainDate, done: z.boolean() });
+
 export const StepCreate = z.object({
   task_id: z.string().uuid(),
   title: z.string().min(1),
