@@ -414,6 +414,11 @@ export function ChangesCard({ messageId, index, resolved, block }: CardProps<"ch
 
   const state = (j: number) => resolved[keyOf(j)];
   const pending = block.changes.map((_, j) => j).filter((j) => !state(j) && current(block.changes[j]!));
+  // Deleting a to-do or step can't be undone once its toast is gone, so each one takes its own
+  // click: "Apply all" leaves them out.
+  const isDelete = (c: Change) => c.op === "remove" && (c.what === "task" || c.what === "step");
+  const bulk = pending.filter((j) => !isDelete(block.changes[j]!));
+  const heldBack = pending.length - bulk.length;
   const act = (js: number[], to: "applied" | "undone") => {
     resolve.mutate({ messageId, entries: Object.fromEntries(js.map((j) => [keyOf(j), to])) });
     js.forEach((j) => (to === "applied" ? apply : undo)(block.changes[j]!));
@@ -515,11 +520,16 @@ export function ChangesCard({ messageId, index, resolved, block }: CardProps<"ch
           );
         })}
       </ul>
-      {pending.length > 1 && (
+      {bulk.length > 1 && (
         <div className={cardFooter}>
-          <button type="button" onClick={() => act(pending, "applied")} className={primaryBtn}>
-            Apply all {pending.length}
+          <button type="button" onClick={() => act(bulk, "applied")} className={primaryBtn}>
+            {heldBack ? `Apply ${bulk.length}` : `Apply all ${bulk.length}`}
           </button>
+          {heldBack > 0 && (
+            <span className="text-[12px] text-muted">
+              {heldBack > 1 ? "Deletes need their own click" : "The delete needs its own click"}
+            </span>
+          )}
         </div>
       )}
     </div>

@@ -22,3 +22,4 @@ export * from "./import";
 export type { Database, Json, Tables, TablesInsert, TablesUpdate } from "./db";
 export * from "./gcal/cronPlan";
 export * from "./progress/doneThisWeek";
+export * from "./assistant/guard";

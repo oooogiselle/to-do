@@ -3,6 +3,7 @@ import { z } from "zod";
 import { AssistantSend, type Json } from "@tt/shared";
 import { HttpError, parseBody, route, unwrap } from "@/lib/api";
 import { assertAiAllowed } from "@/lib/ai/limits";
+import { cannedReply, screenMessage } from "@/lib/ai/assistant/screen";
 import { buildSnapshot } from "@/lib/ai/assistant/snapshot";
 import { assistantTurn, type PastMessage } from "@/lib/ai/assistant/turn";
 import { adminClient } from "@/lib/supabase/admin";
@@ -151,7 +152,13 @@ export const POST = route(async (req, { supabase, user }) => {
   after(async () => {
     // The request is over, so write with the service role, scoped to this user, and only if
     // the pending row is still the live one (not cleared or replaced since).
-    const finish = (patch: { blocks?: Json[]; follow_ups?: string[]; status: string; error?: string | null }) =>
+    const finish = (patch: {
+      blocks?: Json[];
+      follow_ups?: string[];
+      status: string;
+      error?: string | null;
+      guard?: string[];
+    }) =>
       admin
         .from("assistant_messages")
         .update(patch)
@@ -172,18 +179,41 @@ export const POST = route(async (req, { supabase, user }) => {
           .eq("status", "done")
           .order("created_at"),
       ) as Row[];
-      history = rows.map((r) => {
-        const m = toMessage(r);
-        return { role: m.role, content: m.content, blocks: m.blocks, resolved: m.resolved };
-      });
-      const reply = await assistantTurn(user.id, history, snap);
-      title = reply.title;
-      await finish({
-        blocks: reply.blocks as unknown as Json[],
-        follow_ups: reply.follow_ups,
-        status: "done",
-        error: null,
-      });
+      const messages = rows.map(toMessage);
+      history = messages.map((m) => ({ role: m.role, content: m.content, blocks: m.blocks, resolved: m.resolved }));
+
+      // A cheap screen first: off-topic, harmful and crisis messages get a fixed reply and no
+      // Opus turn. It lets the message through when unsure or when it fails.
+      const asked = messages[messages.length - 1];
+      const prev = [...messages.slice(0, -1)].reverse().find((m) => m.role === "assistant");
+      const verdict =
+        asked?.role === "user"
+          ? await screenMessage(user.id, {
+              text: asked.content,
+              prevReply: prev ? prev.blocks.flatMap((b) => (b.kind === "text" ? [b.text] : [])).join("\n") || null : null,
+              prevFollowUps: prev?.follow_ups ?? [],
+            })
+          : "ok";
+      const canned = cannedReply(verdict);
+      if (canned) {
+        await finish({
+          blocks: canned.blocks as unknown as Json[],
+          follow_ups: canned.follow_ups,
+          status: "done",
+          error: null,
+          guard: [`screen:${verdict}`],
+        });
+      } else {
+        const reply = await assistantTurn(user.id, history, snap);
+        title = reply.title;
+        await finish({
+          blocks: reply.blocks as unknown as Json[],
+          follow_ups: reply.follow_ups,
+          status: "done",
+          error: null,
+          guard: reply.guard,
+        });
+      }
     } catch (err) {
       if (!(err instanceof HttpError)) console.error("assistant", err);
       await finish({
