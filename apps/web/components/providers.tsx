@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import {
+  afterRestore,
   ApiProvider,
   persistOptions,
   takePendingDeletes,
@@ -46,7 +47,7 @@ function FlushDeletesOnExit() {
 
 /**
  * React Query for the app. With a user id, the planner is saved to localStorage and restored
- * on the next visit, so the page paints before the first sync returns.
+ * on the next visit, so the page paints before the first sync returns, then catches up.
  */
 export function Providers({
   userId,
@@ -70,7 +71,11 @@ export function Providers({
     </ApiProvider>
   );
   return persist ? (
-    <PersistQueryClientProvider client={client} persistOptions={persist}>
+    <PersistQueryClientProvider
+      client={client}
+      persistOptions={persist}
+      onSuccess={() => afterRestore(client)}
+    >
       {inner}
     </PersistQueryClientProvider>
   ) : (

@@ -33,3 +33,19 @@ export function mergeSync<S extends SyncResponse>(prev: S, delta: SyncResponse):
   out.cursor = delta.cursor > prev.cursor ? delta.cursor : prev.cursor;
   return out;
 }
+
+/**
+ * Drops optimistic `temp-` rows from a snapshot. Used on a snapshot restored from storage:
+ * the mutations that would have swapped them for the server's rows died with the old page,
+ * and the catch-up sync brings the real rows. Returns the same object when there are none.
+ */
+export function stripTempRows<S extends SyncResponse>(snapshot: S): S {
+  let out: S | null = null;
+  for (const c of COLLECTIONS) {
+    const rows = snapshot[c] as Row[];
+    if (!rows.some((r) => r.id.startsWith("temp-"))) continue;
+    out ??= { ...snapshot };
+    (out as Record<string, unknown>)[c] = rows.filter((r) => !r.id.startsWith("temp-"));
+  }
+  return out ?? snapshot;
+}
