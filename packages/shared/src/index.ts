@@ -10,6 +10,7 @@ export * from "./parse/quickAdd";
 export * from "./parse/link";
 export * from "./research";
 export * from "./events/buckets";
+export * from "./sync/merge";
 export * from "./blocks/trim";
 export * from "./format/eventTitle";
 export * from "./format/color";
