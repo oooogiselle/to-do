@@ -1,6 +1,9 @@
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import type { PersistQueryClientProviderProps } from "@tanstack/react-query-persist-client";
 import { removeOldestQuery } from "@tanstack/react-query-persist-client";
+import type { QueryClient } from "@tanstack/react-query";
+import { stripTempRows } from "@tt/shared";
+import { keys, type Snapshot } from "./data";
 
 /** Bump whenever SyncResponse or a row shape changes, so old saved caches are thrown away. */
 const CACHE_VERSION = "1";
@@ -18,8 +21,8 @@ const storage = () => (typeof localStorage === "undefined" ? undefined : localSt
 
 /**
  * Options for PersistQueryClientProvider: the app paints from the last saved snapshot, then
- * catches up with a delta sync. The user id is part of the buster, so another account's cache
- * is discarded on restore instead of shown.
+ * catches up (pass `afterRestore` as the provider's `onSuccess`). The user id is part of the
+ * buster, so another account's cache is discarded on restore instead of shown.
  */
 export function persistOptions(userId: string): PersistQueryClientProviderProps["persistOptions"] {
   return {
@@ -37,6 +40,24 @@ export function persistOptions(userId: string): PersistQueryClientProviderProps[
         q.state.status === "success" && PERSISTED.has(String(q.queryKey[0])),
     },
   };
+}
+
+/**
+ * Runs once the saved cache is back. Restored queries keep their old fetch time, so one
+ * synced under `staleTime` ago wouldn't refetch, and a change saved just before the reload
+ * (the cache is written at most once a second) would stay missing. So everything saved is
+ * refetched now: a delta sync, plus the event weeks on screen.
+ *
+ * Optimistic `temp-` rows are dropped first. Their mutations died with the old page, so
+ * nothing would swap them for the server's rows, and the sync would add those beside them.
+ */
+export function afterRestore(qc: QueryClient) {
+  const snap = qc.getQueryData<Snapshot>(keys.sync);
+  if (snap) {
+    const clean = stripTempRows(snap);
+    if (clean !== snap) qc.setQueryData(keys.sync, clean);
+  }
+  return qc.invalidateQueries({ predicate: (q) => PERSISTED.has(String(q.queryKey[0])) });
 }
 
 /** Removes the saved cache. Call on sign-out and account deletion. */

@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import {
+  afterRestore,
   ApiProvider,
   clearPersistedCache,
   persistOptions,
@@ -87,7 +88,11 @@ function RootStack() {
     </ApiProvider>
   );
   return persist ? (
-    <PersistQueryClientProvider client={queryClient} persistOptions={persist}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={persist}
+      onSuccess={() => afterRestore(queryClient)}
+    >
       {content}
     </PersistQueryClientProvider>
   ) : (

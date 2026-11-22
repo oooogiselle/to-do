@@ -28,6 +28,7 @@ import {
   type TimeBlock,
 } from "@tt/shared";
 import { useApi, type ApiClient } from "./api-context";
+import { asOnServer, useHydrated } from "./hydrated";
 import { usePendingDeletes } from "./pending-deletes";
 
 /** Colors lists and tasks can take. */
@@ -61,12 +62,13 @@ const FULL_SYNC_MS = 24 * 3_600_000;
 /**
  * Everything the app owns (lists, tasks, steps, blocks, settings) in one cached snapshot.
  * The first fetch pulls everything; later ones ask only for rows changed since the cursor
- * and merge them in.
+ * and merge them in. While React hydrates, it reports no data, as the server rendered it.
  */
 export function useSync() {
   const api = useApi();
   const qc = useQueryClient();
-  return useQuery({
+  const hydrated = useHydrated();
+  const q = useQuery({
     queryKey: keys.sync,
     queryFn: async (): Promise<Snapshot> => {
       const prev = qc.getQueryData<Snapshot>(keys.sync);
@@ -81,6 +83,7 @@ export function useSync() {
       return mergeSync(qc.getQueryData<Snapshot>(keys.sync) ?? prev, delta);
     },
   });
+  return hydrated ? q : asOnServer(q);
 }
 
 // Realtime invalidates events whenever calendar_events changes, so they can stay fresh longer.
@@ -103,6 +106,7 @@ function eventsQuery(api: ApiClient, bucket: number) {
  */
 export function useEvents(from: number, to: number) {
   const api = useApi();
+  const hydrated = useHydrated();
   const buckets = eventBuckets(from, to);
   const combine = useCallback(
     (results: UseQueryResult<EventsResponse>[]) => {
@@ -116,7 +120,9 @@ export function useEvents(from: number, to: number) {
     },
     [from, to],
   );
-  return useQueries({ queries: buckets.map((b) => eventsQuery(api, b)), combine });
+  const result = useQueries({ queries: buckets.map((b) => eventsQuery(api, b)), combine });
+  // While hydrating, render what the server did (see asOnServer).
+  return hydrated ? result : { data: undefined, isLoading: false, error: null };
 }
 
 /** Loads the weeks either side of [from, to) in the background, so stepping weeks doesn't wait. */
@@ -133,12 +139,16 @@ export function usePrefetchEvents(from: number, to: number) {
 
 export function useSettings() {
   const api = useApi();
-  return useQuery({ queryKey: keys.settings, queryFn: () => api.settings() });
+  const hydrated = useHydrated();
+  const q = useQuery({ queryKey: keys.settings, queryFn: () => api.settings() });
+  return hydrated ? q : asOnServer(q);
 }
 
 export function useCalendars() {
   const api = useApi();
-  return useQuery({ queryKey: keys.calendars, queryFn: () => api.calendars() });
+  const hydrated = useHydrated();
+  const q = useQuery({ queryKey: keys.calendars, queryFn: () => api.calendars() });
+  return hydrated ? q : asOnServer(q);
 }
 
 const FALLBACK_SETTINGS: Settings = {

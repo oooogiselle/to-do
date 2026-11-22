@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Settings, SyncResponse, Task } from "../schemas";
-import { mergeSync } from "./merge";
+import { mergeSync, stripTempRows } from "./merge";
 
 // Only the fields mergeSync looks at matter; the rest are filled loosely.
 const task = (id: string, title: string, deleted = false) =>
@@ -73,5 +73,20 @@ describe("mergeSync", () => {
   it("leaves untouched collections as the same array", () => {
     const prev = snap({ tasks: [task("a", "A")] });
     expect(mergeSync(prev, snap()).tasks).toBe(prev.tasks);
+  });
+});
+
+describe("stripTempRows", () => {
+  it("drops temp rows and keeps the rest, leaving clean collections as the same array", () => {
+    const prev = snap({ tasks: [task("a", "A"), task("temp-1", "New")], lists: [] });
+    const out = stripTempRows(prev);
+    expect(out.tasks.map((t) => t.id)).toEqual(["a"]);
+    expect(out.lists).toBe(prev.lists);
+    expect(prev.tasks).toHaveLength(2);
+  });
+
+  it("returns the same snapshot when there are no temp rows", () => {
+    const prev = snap({ tasks: [task("a", "A")] });
+    expect(stripTempRows(prev)).toBe(prev);
   });
 });
