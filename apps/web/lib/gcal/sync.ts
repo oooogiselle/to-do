@@ -2,11 +2,22 @@ import "server-only";
 import type { calendar_v3 } from "@googleapis/calendar";
 import { zonedInstant } from "@tt/shared";
 import { calendarClient, googleStatus } from "@/lib/google";
+import { deleteBlockEvent } from "@/lib/gcal/write";
 import { adminClient } from "@/lib/supabase/admin";
 
 const FULL_SYNC_PAST_DAYS = 30;
 const FULL_SYNC_FUTURE_DAYS = 120;
 const DELETE_CHUNK = 100;
+/** Supabase caps a response at 1000 rows (`max_rows`), so load in pages. */
+const PAGE = 1000;
+/**
+ * A block's event is created a moment before its row. An event younger than this with no row
+ * may be mid-create, so reconcile leaves it alone.
+ */
+const ORPHAN_MIN_AGE_MS = 10 * 60_000;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+type Window = { timeMin: string; timeMax: string };
 
 /**
  * gcal's fixed event palette by colorId, as the Google Calendar UI shows it. colors.get returns
@@ -72,20 +83,36 @@ export async function syncCalendar(userId: string, calendarId: string): Promise<
   const tz = settings?.timezone ?? "UTC";
   const gcal = await calendarClient(userId);
 
+  const startedAt = Date.now();
+  const window = fullSyncWindow(startedAt);
+  // On the Tapestry calendar, the app's block events a full pull lists (blockId -> event).
+  const seen = new Map<string, calendar_v3.Schema$Event>();
+  const onPage = async (events: calendar_v3.Schema$Event[]) => {
+    if (cal.is_tasks_calendar) {
+      for (const ev of events) {
+        const blockId = ev.extendedProperties?.private?.blockId;
+        if (blockId && ev.id && ev.status !== "cancelled") seen.set(blockId, ev);
+      }
+    }
+    await applyEvents(userId, calendarId, cal.is_tasks_calendar, tz, events);
+  };
+
   let syncToken = state?.sync_token ?? null;
   let nextSyncToken: string | undefined;
   try {
-    nextSyncToken = await pull(gcal, calendarId, syncToken, async (events) => {
-      await applyEvents(userId, calendarId, cal.is_tasks_calendar, tz, events);
-    });
+    nextSyncToken = await pull(gcal, calendarId, syncToken, window, onPage);
   } catch (err) {
     if (googleStatus(err) !== 410 || !syncToken) throw err;
     // Token expired: drop the cache for this calendar and start over.
     syncToken = null;
+    seen.clear();
     await db.from("calendar_events").delete().eq("user_id", userId).eq("calendar_id", calendarId);
-    nextSyncToken = await pull(gcal, calendarId, null, async (events) => {
-      await applyEvents(userId, calendarId, cal.is_tasks_calendar, tz, events);
-    });
+    nextSyncToken = await pull(gcal, calendarId, null, window, onPage);
+  }
+  // A full pull lists only what exists, so it can't report deletions the way an incremental
+  // one does. Check the blocks against it.
+  if (cal.is_tasks_calendar && !syncToken) {
+    await reconcileTasksCalendar(userId, gcal, calendarId, seen, startedAt, window);
   }
 
   const { error } = await db.from("calendar_sync_state").upsert({
@@ -97,14 +124,21 @@ export async function syncCalendar(userId: string, calendarId: string): Promise<
   if (error) throw new Error(error.message);
 }
 
+function fullSyncWindow(now: number): Window {
+  const day = 24 * 60 * 60 * 1000;
+  return {
+    timeMin: new Date(now - FULL_SYNC_PAST_DAYS * day).toISOString(),
+    timeMax: new Date(now + FULL_SYNC_FUTURE_DAYS * day).toISOString(),
+  };
+}
+
 async function pull(
   gcal: calendar_v3.Calendar,
   calendarId: string,
   syncToken: string | null,
+  window: Window,
   onPage: (events: calendar_v3.Schema$Event[]) => Promise<void>,
 ): Promise<string | undefined> {
-  const now = Date.now();
-  const day = 24 * 60 * 60 * 1000;
   let pageToken: string | undefined;
   for (;;) {
     const res = await gcal.events.list({
@@ -113,12 +147,7 @@ async function pull(
       maxResults: 2500,
       singleEvents: true,
       showDeleted: !!syncToken,
-      ...(syncToken
-        ? { syncToken }
-        : {
-            timeMin: new Date(now - FULL_SYNC_PAST_DAYS * day).toISOString(),
-            timeMax: new Date(now + FULL_SYNC_FUTURE_DAYS * day).toISOString(),
-          }),
+      ...(syncToken ? { syncToken } : window),
     });
     await onPage(res.data.items ?? []);
     if (res.data.nextPageToken) {
@@ -236,4 +265,88 @@ async function reconcileTimeBlock(userId: string, blockId: string, ev: calendar_
     .update({ start: new Date(start).toISOString(), end: new Date(end).toISOString() })
     .eq("user_id", userId)
     .eq("id", blockId);
+}
+
+/**
+ * After a full pull of the Tapestry calendar, puts blocks and their events back in step:
+ * - A live block in the window whose event wasn't listed may have been deleted in Google while
+ *   there was no sync token to report it. It's unscheduled only if Google confirms this calendar
+ *   had the event and deleted it. After a reconnect that made a new calendar, the old blocks'
+ *   events were never in this one (404), and those blocks are left alone.
+ * - A listed event whose block row is missing (the request died between creating the event and
+ *   the row) or deleted is removed from Google. deleteBlockEvent only ever touches this calendar.
+ * Blocks written and events created after the pull began are skipped: the listing may predate them.
+ */
+async function reconcileTasksCalendar(
+  userId: string,
+  gcal: calendar_v3.Calendar,
+  calendarId: string,
+  seen: Map<string, calendar_v3.Schema$Event>,
+  startedAt: number,
+  window: Window,
+) {
+  const db = adminClient();
+
+  const blocks: { id: string; gcal_event_id: string }[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await db
+      .from("time_blocks")
+      .select("id, gcal_event_id")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .lt("start", window.timeMax)
+      .gt("end", window.timeMin)
+      .lt("updated_at", new Date(startedAt).toISOString())
+      .order("id")
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
+    blocks.push(...data);
+    if (data.length < PAGE) break;
+  }
+  // Demo-mode blocks have no event in Google.
+  const unlisted = blocks.filter((b) => !seen.has(b.id) && !b.gcal_event_id.startsWith("local-"));
+  const missing: string[] = [];
+  for (const b of unlisted) {
+    if (await eventDeleted(gcal, calendarId, b.gcal_event_id)) missing.push(b.id);
+  }
+  for (let i = 0; i < missing.length; i += DELETE_CHUNK) {
+    const { error } = await db
+      .from("time_blocks")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("user_id", userId)
+      .in("id", missing.slice(i, i + DELETE_CHUNK))
+      .is("deleted_at", null);
+    if (error) throw new Error(error.message);
+  }
+
+  const candidates = [...seen.entries()].filter(
+    ([blockId, ev]) =>
+      UUID.test(blockId) && ev.created && Date.parse(ev.created) < startedAt - ORPHAN_MIN_AGE_MS,
+  );
+  const live = new Set<string>();
+  for (let i = 0; i < candidates.length; i += DELETE_CHUNK) {
+    const { data, error } = await db
+      .from("time_blocks")
+      .select("id")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .in("id", candidates.slice(i, i + DELETE_CHUNK).map(([id]) => id));
+    if (error) throw new Error(error.message);
+    for (const row of data) live.add(row.id);
+  }
+  for (const [blockId, ev] of candidates) {
+    if (!live.has(blockId)) await deleteBlockEvent(userId, ev.id!);
+  }
+}
+
+/** Whether Google says this calendar had the event and it was deleted (not just never here). */
+async function eventDeleted(gcal: calendar_v3.Calendar, calendarId: string, eventId: string) {
+  try {
+    const { data } = await gcal.events.get({ calendarId, eventId });
+    return data.status === "cancelled";
+  } catch (err) {
+    if (googleStatus(err) === 410) return true;
+    if (googleStatus(err) === 404) return false;
+    throw err;
+  }
 }

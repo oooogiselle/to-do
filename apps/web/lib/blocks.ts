@@ -40,7 +40,14 @@ export async function createTimeBlock(
     stepTitle = step.title;
   }
   const list = task.list_id
-    ? (await db.from("lists").select("name").eq("id", task.list_id).maybeSingle()).data
+    ? (
+        await db
+          .from("lists")
+          .select("name")
+          .eq("id", task.list_id)
+          .is("deleted_at", null)
+          .maybeSingle()
+      ).data
     : null;
 
   const blockId = randomUUID();

@@ -61,6 +61,21 @@ export function undoDelete(batchId: string) {
   setNotice(null);
 }
 
+/**
+ * Ends every undo window now and hands back the task ids still waiting to be deleted, for a
+ * sender that outlives the page (closing the tab mid-window would otherwise drop the delete,
+ * and the to-dos would be back on the next visit).
+ */
+export function takePendingDeletes(): string[] {
+  const ids: string[] = [];
+  for (const batch of batches.values()) {
+    clearTimeout(batch.timer);
+    ids.push(...batch.ids);
+  }
+  batches.clear();
+  return ids;
+}
+
 /** Takes a block off the calendar (the task stays). Upcoming blocks get an Undo toast. */
 export function useRemoveBlockWithUndo() {
   const del = useDeleteBlock();

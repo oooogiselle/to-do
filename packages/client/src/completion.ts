@@ -5,7 +5,6 @@ import {
   isDoneOn,
   isRecurring,
   localDate,
-  toggleDoneDate,
   trimmedEnd,
   type TimeBlock,
 } from "@tt/shared";
@@ -14,6 +13,7 @@ import {
   useModel,
   useMoveBlock,
   useRemoveUpcomingBlocks,
+  useSetDoneDate,
   useTrimBlock,
   useUpdateStep,
   useUpdateTask,
@@ -104,6 +104,7 @@ export function useCompletionActions(n: Completion) {
 export function useCompletion() {
   const { blocks, taskById, stepsByTask, settings } = useModel();
   const updateTask = useUpdateTask();
+  const setDoneDate = useSetDoneDate();
   const updateStep = useUpdateStep();
   const deleteStep = useDeleteStep();
   const { trimRunning, restoreTrimmed } = useBlockTrims();
@@ -131,10 +132,7 @@ export function useCompletion() {
     const routine = taskById.get(taskId);
     if (routine && isRecurring(routine)) {
       const day = date ?? localDate(new Date(), settings.timezone);
-      updateTask.mutate({
-        id: taskId,
-        patch: { done_dates: toggleDoneDate(routine.done_dates, day, done) },
-      });
+      setDoneDate.mutate({ id: taskId, date: day, done });
       if (done) trimRunning(taskId, undefined, day);
       else restoreTrimmed(taskId);
       return;
